@@ -93,6 +93,7 @@
 
         <section class="app-card" style="padding: 1.5rem; margin-top: 1.5rem;">
             <h2 class="app-card-title">Daftar bank untuk panti</h2>
+            <p>Bank nonaktif tidak dapat dipilih pada pendaftaran atau permohonan rekening baru. Rekening panti yang sudah tercatat tidak dihapus.</p>
             <form method="POST" action="{{ route('admin.bank.store') }}">
                 @csrf
                 <div class="app-form-group">
@@ -107,12 +108,12 @@
             </form>
             <div class="app-table-responsive" style="margin-top: 1rem;">
                 <table class="app-table">
-                    <thead><tr><th>Kode</th><th>Nama</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Kode</th><th>Nama</th><th>Status</th><th>Aksi</th></tr></thead>
                     <tbody>
                         @forelse ($bank as $item)
-                            <tr><td>{{ $item->kode }}</td><td>{{ $item->nama }}</td><td>{{ $item->is_active ? 'Aktif' : 'Nonaktif' }}</td></tr>
+                            <tr><td>{{ $item->kode }}</td><td>{{ $item->nama }}</td><td>{{ $item->is_active ? 'Aktif' : 'Nonaktif' }}</td><td><form method="POST" action="{{ route('admin.bank.active', $item->id) }}">@csrf @method('PATCH')<input type="hidden" name="is_active" value="{{ $item->is_active ? 0 : 1 }}"><button type="submit" class="btn-app btn-app-outline">{{ $item->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form></td></tr>
                         @empty
-                            <tr><td colspan="3">Belum ada bank. Tambahkan sebelum PJ mendaftarkan panti.</td></tr>
+                            <tr><td colspan="4">Belum ada bank. Tambahkan sebelum PJ mendaftarkan panti.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

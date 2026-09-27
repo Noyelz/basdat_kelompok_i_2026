@@ -176,6 +176,33 @@ class AdminController extends Controller
         return back()->with('success', 'Bank ditambahkan.');
     }
 
+    public function setBankActive(Request $request, int $id): RedirectResponse
+    {
+        $data = $request->validate(['is_active' => ['required', 'boolean']]);
+
+        DB::transaction(function () use ($request, $data, $id): void {
+            $bank = DB::table('bank')->where('id', $id)->lockForUpdate()->first(['id', 'kode', 'is_active']);
+            abort_unless($bank, 404);
+
+            DB::table('bank')->where('id', $id)->update([
+                'is_active' => (bool) $data['is_active'],
+                'updated_at' => now(),
+            ]);
+
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => $data['is_active'] ? 'bank.diaktifkan' : 'bank.dinonaktifkan',
+                'jenis_objek' => 'bank',
+                'objek_id' => $id,
+                'detail' => json_encode(['kode' => $bank->kode], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        });
+
+        return back()->with('success', 'Status bank diperbarui. Rekening panti yang sudah ada tetap tercatat.');
+    }
+
     public function setOperationalSettings(Request $request): RedirectResponse
     {
         $data = $request->validate([
