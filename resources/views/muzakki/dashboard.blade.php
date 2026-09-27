@@ -15,6 +15,23 @@
     <div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><h3 class="h6">Penyaluran selesai</h3><strong class="fs-3">{{ $ringkasan['selesai'] }}</strong></div></div></div>
 </div>
 
+@if ($notifikasi->isNotEmpty())
+    <section class="card border-0 shadow-sm mb-4"><div class="card-body">
+        <h3 class="h5">Pemberitahuan penyaluran</h3>
+        <p class="small text-muted">Pemberitahuan di aplikasi ini belum dikirim melalui email.</p>
+        @foreach ($notifikasi as $pesan)
+            <div class="border-top py-3">
+                <strong>{{ $pesan->dibaca_at ? 'Sudah dibaca' : 'Baru' }}</strong> · Penyaluran pesanan
+                <a href="{{ route('muzakki.payment.show', $pesan->detail['transaksi_id'] ?? 0) }}">{{ $pesan->detail['kode_transaksi'] ?? 'lihat riwayat' }}</a>
+                ke {{ $pesan->detail['nama_panti'] ?? 'panti' }} selesai.
+                @if (! $pesan->dibaca_at)
+                    <form method="POST" action="{{ route('notifikasi.read', $pesan->id) }}" class="mt-2">@csrf<button type="submit" class="btn btn-sm btn-outline-primary">Tandai dibaca</button></form>
+                @endif
+            </div>
+        @endforeach
+    </div></section>
+@endif
+
 <div class="row">
     <!-- Card Zakat Fitrah -->
     <div class="col-md-6 mb-4">

@@ -16,6 +16,17 @@ class YayasanController extends Controller
 {
     public function dashboard(Request $request): View
     {
+        $notifikasi = DB::table('notifikasi_aplikasi')
+            ->where('user_id', $request->user()->id)
+            ->where('jenis', 'penyaluran_selesai')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get(['id', 'payload', 'dibaca_at', 'created_at'])
+            ->map(function ($item) {
+                $item->detail = json_decode($item->payload, true) ?: [];
+
+                return $item;
+            });
         $yayasan = Yayasan::where('pj_user_id', $request->user()->id)->first();
         $bank = DB::table('bank')->where('is_active', true)->orderBy('nama')->get(['id', 'nama']);
         $catatanVerifikasi = $yayasan
@@ -43,7 +54,7 @@ class YayasanController extends Controller
                 ->get(['alokasi_transaksi.*', 'transaksi_zakat.kode_transaksi', 'transaksi_zakat.jenis_zakat', 'bukti_panitia.id as bukti_panitia_id', 'bukti_pj.id as bukti_pj_id'])
             : collect();
 
-        return view('yayasan.dashboard', compact('yayasan', 'bank', 'catatanVerifikasi', 'permohonanRekening', 'alokasi'));
+        return view('yayasan.dashboard', compact('yayasan', 'bank', 'catatanVerifikasi', 'permohonanRekening', 'alokasi', 'notifikasi'));
     }
 
     public function storePanti(Request $request): RedirectResponse

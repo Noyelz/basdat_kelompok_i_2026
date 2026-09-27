@@ -39,6 +39,21 @@
             </div>
         @endif
 
+        @if ($notifikasi->isNotEmpty())
+            <section class="card border-0 shadow-sm mb-4"><div class="card-body">
+                <h2 class="h5">Pemberitahuan penyaluran</h2>
+                <p class="small text-muted">Pemberitahuan ini hanya tampil di aplikasi; email belum dikirim otomatis.</p>
+                @foreach ($notifikasi as $pesan)
+                    <div class="border-top py-3">
+                        <strong>{{ $pesan->dibaca_at ? 'Sudah dibaca' : 'Baru' }}</strong> · Penyaluran pesanan {{ $pesan->detail['kode_transaksi'] ?? 'zakat' }} untuk {{ $pesan->detail['nama_panti'] ?? 'panti' }} selesai.
+                        @if (! $pesan->dibaca_at)
+                            <form method="POST" action="{{ route('notifikasi.read', $pesan->id) }}" class="mt-2">@csrf<button type="submit" class="btn btn-sm btn-outline-primary">Tandai dibaca</button></form>
+                        @endif
+                    </div>
+                @endforeach
+            </div></section>
+        @endif
+
         @if ($yayasan)
             <section class="card border-0 shadow-sm">
                 <div class="card-body">

@@ -6,6 +6,7 @@ use App\Http\Controllers\BankChangeRequestController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\FitrahCheckoutController;
 use App\Http\Controllers\HandoverEvidenceController;
+use App\Http\Controllers\InAppNotificationController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\MaalCheckoutController;
@@ -36,6 +37,7 @@ Route::post('/muzakki/bayar-uji/{token}', [SimulationPaymentController::class, '
     ->name('muzakki.payment.pay');
 
 Route::middleware('auth')->group(function () {
+    Route::post('/notifikasi/{id}/dibaca', [InAppNotificationController::class, 'markRead'])->whereNumber('id')->name('notifikasi.read');
     Route::get('/home', function () {
         if (Auth::user()->must_change_password) {
             return redirect()->route('password.change');

@@ -22,6 +22,17 @@ class MuzakkiController extends Controller
             'selesai' => DB::table('transaksi_zakat')->where('user_id', $userId)->where('status_penyaluran', 'selesai')->count(),
         ];
         $terbaru = TransaksiZakat::with('yayasan')->where('user_id', $userId)->latest()->limit(5)->get();
+        $notifikasi = DB::table('notifikasi_aplikasi')
+            ->where('user_id', $userId)
+            ->where('jenis', 'penyaluran_selesai')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get(['id', 'payload', 'dibaca_at', 'created_at'])
+            ->map(function ($item) {
+                $item->detail = json_decode($item->payload, true) ?: [];
+
+                return $item;
+            });
 
         $fitrahMasuk = DB::table('transaksi_zakat')
             ->join('transaksi_fitrah', 'transaksi_fitrah.transaksi_id', '=', 'transaksi_zakat.id')
@@ -78,7 +89,7 @@ class MuzakkiController extends Controller
             ? (int) now('Asia/Jakarta')->startOfDay()->diffInDays(CarbonImmutable::parse($tanggalIdulfitri, 'Asia/Jakarta')->startOfDay(), false)
             : null;
 
-        return view('muzakki.dashboard', compact('ringkasan', 'terbaru', 'pantiFitrah', 'pantiFitrahRendah', 'pantiMaal', 'pantiMaalRendah', 'pantiSekitar', 'tanggalIdulfitri', 'sisaHari'));
+        return view('muzakki.dashboard', compact('ringkasan', 'terbaru', 'notifikasi', 'pantiFitrah', 'pantiFitrahRendah', 'pantiMaal', 'pantiMaalRendah', 'pantiSekitar', 'tanggalIdulfitri', 'sisaHari'));
     }
 
     public function showMaal(): View

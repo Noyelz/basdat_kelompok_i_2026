@@ -87,7 +87,7 @@ class HandoverEvidenceController extends Controller
                     ->join('yayasan', 'yayasan.id', '=', 'alokasi_transaksi.yayasan_id')
                     ->where('alokasi_transaksi.id', $id)
                     ->lockForUpdate()
-                    ->first(['alokasi_transaksi.*', 'transaksi_zakat.jenis_zakat', 'transaksi_zakat.status_pembayaran', 'yayasan.pj_user_id']);
+                    ->first(['alokasi_transaksi.*', 'transaksi_zakat.jenis_zakat', 'transaksi_zakat.status_pembayaran', 'transaksi_zakat.user_id', 'transaksi_zakat.kode_transaksi', 'yayasan.pj_user_id', 'yayasan.nama as nama_panti']);
                 abort_unless($alokasi, 404);
                 abort_unless($alokasi->status_pembayaran === 'simulated_paid', 422);
                 abort_unless($pihak !== 'yayasan' || $alokasi->pj_user_id === $request->user()->id, 403);
@@ -146,6 +146,21 @@ class HandoverEvidenceController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+
+                    $payload = json_encode([
+                        'kode_transaksi' => $alokasi->kode_transaksi,
+                        'transaksi_id' => $alokasi->transaksi_id,
+                        'nama_panti' => $alokasi->nama_panti,
+                    ], JSON_THROW_ON_ERROR);
+                    foreach (array_unique([$alokasi->user_id, $alokasi->pj_user_id]) as $penerimaId) {
+                        DB::table('notifikasi_aplikasi')->insert([
+                            'user_id' => $penerimaId,
+                            'jenis' => 'penyaluran_selesai',
+                            'payload' => $payload,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
                 }
 
                 if ($titik) {
