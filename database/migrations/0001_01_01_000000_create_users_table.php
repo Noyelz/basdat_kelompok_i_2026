@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,27 +12,45 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user', function (Blueprint $table) {
-            $table->id();
-            $table->string('nik', 16)->nullable()->unique();
-            $table->string('nama');
-            $table->string('telp', 20)->nullable();
-            $table->string('email', 191)->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('pass_hash');
-            $table->date('tggl_lahir')->nullable();
-            $table->string('gender', 1)->nullable();
-            $table->string('kota_kabupaten', 100)->nullable();
-            $table->string('provinsi', 100)->nullable();
-            $table->text('alamat_lengkap')->nullable();
-            $table->string('npwp', 25)->nullable();
-            $table->string('role', 20)->default('pemberi')->index();
-            $table->boolean('is_active')->default(true);
-            $table->boolean('must_change_password')->default(false);
-            $table->foreignId('created_by_admin_id')->nullable()->constrained('user')->nullOnDelete();
-            $table->rememberToken();
-            $table->timestamps();
-        });
+        if (Schema::hasTable('user')) {
+            $requiredColumns = ['id', 'nik', 'nama', 'email', 'pass_hash', 'role', 'is_active', 'must_change_password', 'created_by_admin_id'];
+
+            if (! Schema::hasColumns('user', $requiredColumns)
+                || ! Schema::hasForeignKey('user', 'user_created_by_admin_id_foreign')
+                || DB::table('user')->exists()) {
+                throw new RuntimeException('Tabel user yang sudah ada bukan tabel parsial kosong yang aman dipulihkan.');
+            }
+
+            if (! Schema::hasIndex('user', 'user_nik_unique')) {
+                Schema::table('user', fn (Blueprint $table) => $table->unique('nik'));
+            }
+
+            if (! Schema::hasIndex('user', 'user_email_unique')) {
+                Schema::table('user', fn (Blueprint $table) => $table->unique('email'));
+            }
+        } else {
+            Schema::create('user', function (Blueprint $table) {
+                $table->id();
+                $table->string('nik', 16)->nullable()->unique();
+                $table->string('nama');
+                $table->string('telp', 20)->nullable();
+                $table->string('email', 191)->unique();
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('pass_hash');
+                $table->date('tggl_lahir')->nullable();
+                $table->string('gender', 1)->nullable();
+                $table->string('kota_kabupaten', 100)->nullable();
+                $table->string('provinsi', 100)->nullable();
+                $table->text('alamat_lengkap')->nullable();
+                $table->string('npwp', 25)->nullable();
+                $table->string('role', 20)->default('pemberi')->index();
+                $table->boolean('is_active')->default(true);
+                $table->boolean('must_change_password')->default(false);
+                $table->foreignId('created_by_admin_id')->nullable()->constrained('user')->nullOnDelete();
+                $table->rememberToken();
+                $table->timestamps();
+            });
+        }
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
