@@ -899,6 +899,64 @@ main a:not(.btn):not(.btn-app):not(.nav-link):hover {
     margin: 20px 0;
 }
 
+.choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.choice-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px;
+    min-width: 0;
+    border: 2px solid var(--slate-200);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.choice-card:hover {
+    border-color: var(--primary-border);
+    box-shadow: var(--shadow-sm);
+}
+
+.choice-card:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.choice-card:has(input:focus-visible) {
+    outline: 3px solid var(--yellow);
+    outline-offset: 2px;
+}
+
+.choice-card input {
+    accent-color: var(--primary);
+    margin-top: 4px;
+    flex: none;
+}
+
+.choice-card strong {
+    display: block;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+
+.choice-card small {
+    color: var(--slate-700);
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+.choice-card.choice-unavailable {
+    background: var(--slate-100);
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 @media (max-width: 850px) {
     .landing-hero,
     .landing-calculator,
@@ -927,6 +985,10 @@ main a:not(.btn):not(.btn-app):not(.nav-link):hover {
     }
 
     .landing-grid-three {
+        grid-template-columns: 1fr;
+    }
+
+    .choice-grid {
         grid-template-columns: 1fr;
     }
 

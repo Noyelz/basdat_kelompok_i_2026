@@ -50,7 +50,24 @@ class FitrahCheckoutController extends Controller
             ->where('wilayah_layanan.batas_checkout_at', '>', now())
             ->orderBy('yayasan.provinsi')
             ->orderBy('yayasan.kota_kabupaten')
-            ->get(['yayasan.id', 'yayasan.nama', 'yayasan.kota_kabupaten', 'yayasan.provinsi', 'yayasan.jumlah_mustahik_layak', 'yayasan.jarak_jalan_km', 'yayasan.kapasitas_penerimaan_kg']);
+            ->get(['yayasan.id', 'yayasan.nama', 'yayasan.kota_kabupaten', 'yayasan.provinsi', 'yayasan.jumlah_mustahik_layak', 'yayasan.jarak_jalan_km', 'yayasan.kapasitas_penerimaan_kg', 'yayasan.kebutuhan_saat_ini']);
+
+        $fitrahMasuk = DB::table('transaksi_zakat')
+            ->join('transaksi_fitrah', 'transaksi_fitrah.transaksi_id', '=', 'transaksi_zakat.id')
+            ->where('transaksi_zakat.status_pembayaran', 'simulated_paid')
+            ->selectRaw('transaksi_zakat.yayasan_id, SUM(transaksi_fitrah.total_beras_kg) AS jumlah')
+            ->groupBy('transaksi_zakat.yayasan_id')
+            ->pluck('jumlah', 'yayasan_id');
+        $fitrahSelesai = DB::table('penyaluran')
+            ->where('jenis_zakat', 'fitrah')
+            ->where('status', 'selesai')
+            ->selectRaw('yayasan_id, SUM(jumlah) AS jumlah')
+            ->groupBy('yayasan_id')
+            ->pluck('jumlah', 'yayasan_id');
+        $panti->each(function ($item) use ($fitrahMasuk, $fitrahSelesai): void {
+            $item->fitrah_masuk = $fitrahMasuk[$item->id] ?? '0.00';
+            $item->fitrah_selesai = $fitrahSelesai[$item->id] ?? '0.00';
+        });
 
         $bobot = DB::table('pengaturan_operasional')->where('kunci', 'bobot_fitrah_per_jiwa_kg')->value('nilai');
 
