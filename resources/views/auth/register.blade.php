@@ -440,10 +440,10 @@
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">
-                        <span>Nama Lengkap / Yayasan</span>
+                        <span>Nama lengkap</span>
                         <span class="required-badge">*</span>
                     </label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="form-input" required placeholder="Nama lengkap">
+                    <input type="text" name="name" value="{{ old('name') }}" class="form-input" autocomplete="name" required placeholder="Nama lengkap">
                 </div>
 
                 <div class="form-group">
@@ -451,7 +451,7 @@
                         <span>Alamat Email</span>
                         <span class="required-badge">*</span>
                     </label>
-                    <input type="email" name="email" value="{{ old('email') }}" class="form-input" required placeholder="nama@email.com">
+                    <input type="email" name="email" value="{{ old('email') }}" class="form-input" autocomplete="email" required placeholder="nama@email.com">
                 </div>
             </div>
 
@@ -463,7 +463,7 @@
                 </label>
                 <select name="role" id="role-select" class="form-select" required>
                     <option value="muzakki" {{ old('role') === 'muzakki' ? 'selected' : '' }}>Muzakki (Pemberi Zakat)</option>
-                    <option value="yayasan" {{ old('role') === 'yayasan' ? 'selected' : '' }}>Yayasan (Penerima & Penyalur Zakat)</option>
+                    <option value="pj" {{ old('role') === 'pj' ? 'selected' : '' }}>Penanggung jawab panti asuhan</option>
                 </select>
             </div>
 
@@ -474,7 +474,7 @@
                         <span>NIK (KTP 16 Digit)</span>
                         <span class="required-badge">*</span>
                     </label>
-                    <input type="text" name="nik" value="{{ old('nik') }}" maxlength="16" pattern="[0-9]{16}" class="form-input" required placeholder="16 digit angka NIK">
+                    <input type="text" name="nik" value="{{ old('nik') }}" maxlength="16" pattern="[0-9]{16}" class="form-input" autocomplete="off" required placeholder="16 digit angka NIK">
                 </div>
 
                 <div class="form-group">
@@ -482,7 +482,7 @@
                         <span>No. Telepon / WhatsApp</span>
                         <span class="required-badge">*</span>
                     </label>
-                    <input type="text" name="telp" value="{{ old('telp') }}" class="form-input" required placeholder="Contoh: 08123456789">
+                    <input type="text" name="telp" value="{{ old('telp') }}" class="form-input" autocomplete="tel" required placeholder="Contoh: 08123456789">
                 </div>
             </div>
 
@@ -536,7 +536,7 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>Alamat Lengkap</span>
-                    <span id="alamat-badge" class="conditional-badge">(Wajib untuk Yayasan)</span>
+                    <span id="alamat-badge" class="conditional-badge">(Opsional untuk muzakki)</span>
                 </label>
                 <textarea name="alamat_lengkap" id="alamat_lengkap" rows="2" class="form-textarea" placeholder="Alamat jalan, nomor, RT/RW, kelurahan...">{{ old('alamat_lengkap') }}</textarea>
             </div>
@@ -545,7 +545,7 @@
             <div class="form-group">
                 <label class="form-label">
                     <span>NPWP</span>
-                    <span id="npwp-badge" class="conditional-badge">(Wajib untuk Yayasan)</span>
+                    <span id="npwp-badge" class="conditional-badge">(Opsional)</span>
                 </label>
                 <input type="text" name="npwp" id="npwp" value="{{ old('npwp') }}" maxlength="25" class="form-input" placeholder="Contoh: 01.234.567.8-901.000">
             </div>
@@ -558,7 +558,7 @@
                         <span class="required-badge">*</span>
                     </label>
                     <div class="input-wrapper">
-                        <input type="password" id="reg_password" name="password" class="form-input" style="padding-right: 44px;" required placeholder="Minimal 8 karakter">
+                        <input type="password" id="reg_password" name="password" class="form-input" style="padding-right: 44px;" autocomplete="new-password" minlength="10" required placeholder="Minimal 10 karakter, huruf dan angka">
                         <button type="button" class="toggle-password" onclick="togglePassword('reg_password', 'eye-icon-1')" title="Lihat password">
                             <svg id="eye-icon-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -574,7 +574,7 @@
                         <span class="required-badge">*</span>
                     </label>
                     <div class="input-wrapper">
-                        <input type="password" id="reg_password_confirmation" name="password_confirmation" class="form-input" style="padding-right: 44px;" required placeholder="Ulangi kata sandi">
+                        <input type="password" id="reg_password_confirmation" name="password_confirmation" class="form-input" style="padding-right: 44px;" autocomplete="new-password" minlength="10" required placeholder="Ulangi kata sandi">
                         <button type="button" class="toggle-password" onclick="togglePassword('reg_password_confirmation', 'eye-icon-2')" title="Lihat password">
                             <svg id="eye-icon-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -614,19 +614,15 @@
         const alamatBadge = document.getElementById('alamat-badge');
         const npwpBadge = document.getElementById('npwp-badge');
         const alamatInput = document.getElementById('alamat_lengkap');
-        const npwpInput = document.getElementById('npwp');
-
         function updateRoleRequirements() {
-            if (roleSelect.value === 'yayasan') {
-                alamatBadge.innerHTML = '<span class="required-badge">* Wajib untuk Yayasan</span>';
-                npwpBadge.innerHTML = '<span class="required-badge">* Wajib untuk Yayasan</span>';
+            if (roleSelect.value === 'pj') {
+                alamatBadge.innerHTML = '<span class="required-badge">* Wajib untuk PJ</span>';
+                npwpBadge.innerHTML = '<span class="optional-badge">(Opsional)</span>';
                 alamatInput.setAttribute('required', 'required');
-                npwpInput.setAttribute('required', 'required');
             } else {
                 alamatBadge.innerHTML = '<span class="optional-badge">(Opsional untuk Muzakki)</span>';
-                npwpBadge.innerHTML = '<span class="optional-badge">(Opsional untuk Muzakki)</span>';
+                npwpBadge.innerHTML = '<span class="optional-badge">(Opsional)</span>';
                 alamatInput.removeAttribute('required');
-                npwpInput.removeAttribute('required');
             }
         }
 

@@ -2,134 +2,96 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Penyaluran;
 use App\Models\Yayasan;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+use RuntimeException;
+use Throwable;
 
 class YayasanController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request): View
     {
-        $yayasan = Yayasan::where('pj_user_id', Auth::id())->first();
-        
-        // Jika akun PJ belum terhubung dengan data yayasan, hubungkan/buatkan otomatis
-        if (!$yayasan && Auth::user()->role === 'pj') {
-            $yayasan = Yayasan::firstOrCreate(
-                ['pj_user_id' => Auth::id()],
-                [
-                    'nama'           => 'Yayasan ' . Auth::user()->nama,
-                    'nomor_izin'     => 'YYS/' . date('Y') . '/' . Auth::id(),
-                    'telp'           => Auth::user()->telp ?? '081200000000',
-                    'email'          => Auth::user()->email,
-                    'kota_kabupaten' => Auth::user()->kota_kabupaten ?? 'Surabaya',
-                    'provinsi'       => Auth::user()->provinsi ?? 'Jawa Timur',
-                    'alamat_lengkap' => Auth::user()->alamat_lengkap ?? 'Surabaya',
-                    'nama_bank'      => 'BSI',
-                    'no_rek'         => '1234567890',
-                    'atas_nama_rek'  => Auth::user()->nama,
-                    'status_verif'   => 'verified',
-                    'is_active'      => true,
-                ]
-            );
-        }
+        $yayasan = Yayasan::where('pj_user_id', $request->user()->id)->first();
+        $bank = DB::table('bank')->where('is_active', true)->orderBy('nama')->get(['id', 'nama']);
+        $catatanVerifikasi = $yayasan
+            ? DB::table('verifikasi_panti')->where('yayasan_id', $yayasan->id)->latest('id')->value('catatan')
+            : null;
 
-        $proposals = collect();
+        return view('yayasan.dashboard', compact('yayasan', 'bank', 'catatanVerifikasi'));
+    }
 
-        if ($yayasan) {
-            $penyaluranList = Penyaluran::with('mustahik')
-                ->where('yayasan_id', $yayasan->id)
-                ->latest()
-                ->get();
+    public function storePanti(Request $request): RedirectResponse
+    {
+        abort_if(Yayasan::where('pj_user_id', $request->user()->id)->exists(), 409);
 
-            $proposals = $penyaluranList->map(function ($item) {
-                return (object) [
-                    'id'                 => $item->id,
-                    'judul_program'      => $item->barang ?? ('Penyaluran ' . ucfirst($item->jenis_zakat)),
-                    'kebutuhan_dana'     => ($item->jenis_zakat === 'mal' || $item->satuan === 'Rupiah') ? $item->jumlah : 0,
-                    'kebutuhan_beras_kg' => ($item->jenis_zakat === 'fitrah' || $item->satuan === 'Kg') ? $item->jumlah : 0,
-                    'deskripsi'          => 'Penyaluran untuk mustahik: ' . ($item->mustahik->nama ?? '-'),
-                    'status'             => $item->bukti_pict_id ? 'completed' : 'pending',
-                    'bukti_penerimaan'   => $item->bukti_pict_id,
-                    'created_at'         => $item->created_at,
-                ];
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'nomor_izin' => ['required', 'string', 'max:100', Rule::unique('yayasan', 'nomor_izin')],
+            'telp' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'email', 'max:191'],
+            'provinsi' => ['required', 'string', 'max:100'],
+            'kota_kabupaten' => ['required', 'string', 'max:100'],
+            'alamat_lengkap' => ['required', 'string'],
+            'kode_pos' => ['required', 'string', 'max:10'],
+            'bank_id' => ['required', Rule::exists('bank', 'id')->where('is_active', true)],
+            'no_rek' => ['required', 'string', 'max:50'],
+            'atas_nama_rek' => ['required', 'string', 'max:255'],
+            'foto' => ['required', 'array', 'min:1', 'max:5'],
+            'foto.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $storedPaths = [];
+
+        try {
+            DB::transaction(function () use ($request, $data, &$storedPaths): void {
+                $bank = DB::table('bank')->where('id', $data['bank_id'])->where('is_active', true)->first(['nama']);
+                abort_unless($bank, 422);
+
+                $yayasan = Yayasan::create([
+                    'pj_user_id' => $request->user()->id,
+                    'nama' => $data['nama'],
+                    'nomor_izin' => $data['nomor_izin'],
+                    'telp' => $data['telp'],
+                    'email' => $data['email'],
+                    'provinsi' => $data['provinsi'],
+                    'kota_kabupaten' => $data['kota_kabupaten'],
+                    'alamat_lengkap' => $data['alamat_lengkap'],
+                    'kode_pos' => $data['kode_pos'],
+                    'bank_id' => $data['bank_id'],
+                    'nama_bank' => $bank->nama,
+                    'no_rek' => $data['no_rek'],
+                    'atas_nama_rek' => $data['atas_nama_rek'],
+                    'status_verif' => 'pending',
+                    'is_active' => false,
+                ]);
+
+                foreach ($request->file('foto') as $file) {
+                    $path = $file->store('panti', 'local');
+                    if (! $path) {
+                        throw new RuntimeException('Foto panti gagal disimpan.');
+                    }
+
+                    $storedPaths[] = $path;
+                    DB::table('foto_yayasan')->insert([
+                        'yayasan_id' => $yayasan->id,
+                        'diunggah_oleh' => $request->user()->id,
+                        'path_private' => $path,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
             });
+        } catch (Throwable $exception) {
+            Storage::disk('local')->delete($storedPaths);
+
+            throw $exception;
         }
 
-        return view('yayasan.dashboard', compact('proposals', 'yayasan'));
-    }
-
-    public function storeProposal(Request $request)
-    {
-        $request->validate([
-            'judul_program'      => 'required|string|max:255',
-            'kebutuhan_dana'     => 'required|numeric|min:0',
-            'kebutuhan_beras_kg' => 'required|numeric|min:0',
-            'deskripsi'          => 'required|string',
-        ]);
-
-        $yayasan = Yayasan::where('pj_user_id', Auth::id())->first();
-        if (!$yayasan) {
-            $yayasan = Yayasan::firstOrCreate(
-                ['pj_user_id' => Auth::id()],
-                [
-                    'nama'           => 'Yayasan ' . Auth::user()->nama,
-                    'nomor_izin'     => 'YYS/' . date('Y') . '/' . Auth::id(),
-                    'telp'           => Auth::user()->telp ?? '081200000000',
-                    'email'          => Auth::user()->email,
-                    'kota_kabupaten' => Auth::user()->kota_kabupaten ?? 'Surabaya',
-                    'provinsi'       => Auth::user()->provinsi ?? 'Jawa Timur',
-                    'alamat_lengkap' => Auth::user()->alamat_lengkap ?? 'Surabaya',
-                    'nama_bank'      => 'BSI',
-                    'no_rek'         => '1234567890',
-                    'atas_nama_rek'  => Auth::user()->nama,
-                    'status_verif'   => 'verified',
-                    'is_active'      => true,
-                ]
-            );
-        }
-
-        // Pastikan ada data mustahik terkait yayasan ini
-        $mustahik = \App\Models\Mustahik::firstOrCreate(
-            ['yayasan_id' => $yayasan->id, 'nama' => 'Penerima Manfaat ' . $yayasan->nama],
-            [
-                'kelamin'        => 'L',
-                'tggl_lahir'     => '2000-01-01',
-                'kategori_asnaf' => 'fakir',
-            ]
-        );
-
-        $isBeras = $request->kebutuhan_beras_kg > 0;
-        Penyaluran::create([
-            'yayasan_id'    => $yayasan->id,
-            'mustahik_id'   => $mustahik->id,
-            'jenis_zakat'   => $isBeras ? 'fitrah' : 'mal',
-            'barang'        => $request->judul_program,
-            'jumlah'        => $isBeras ? $request->kebutuhan_beras_kg : $request->kebutuhan_dana,
-            'satuan'        => $isBeras ? 'Kg' : 'Rupiah',
-            'bukti_pict_id' => null,
-        ]);
-
-        return back()->with('success', 'Proposal pengajuan berhasil dikirimkan ke Panitia!');
-    }
-
-    public function confirmReceipt(Request $request, $id)
-    {
-        $request->validate([
-            'bukti_penerimaan'   => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'is_jumlah_sesuai'   => 'required|boolean',
-            'catatan_penerimaan' => 'nullable|string',
-        ]);
-
-        $penyaluran = Penyaluran::findOrFail($id);
-        $file = $request->file('bukti_penerimaan');
-        $filename = time() . '_' . $file->getClientOriginalName();
-        $file->move(public_path('uploads/bukti'), $filename);
-
-        $penyaluran->update([
-            'bukti_pict_id' => 'uploads/bukti/' . $filename,
-        ]);
-
-        return back()->with('success', 'Penerimaan berhasil dikonfirmasi!');
+        return redirect()->route('yayasan.dashboard')->with('success', 'Pendaftaran panti dikirim dan menunggu pemeriksaan panitia.');
     }
 }

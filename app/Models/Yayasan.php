@@ -20,6 +20,7 @@ class Yayasan extends Model
         'provinsi',
         'alamat_lengkap',
         'kode_pos',
+        'bank_id',
         'nama_bank',
         'no_rek',
         'atas_nama_rek',

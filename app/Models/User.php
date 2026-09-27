@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
 {
@@ -27,6 +28,9 @@ class User extends Authenticatable
         'alamat_lengkap',
         'npwp',
         'role',
+        'is_active',
+        'must_change_password',
+        'created_by_admin_id',
     ];
 
     protected $hidden = [
@@ -39,6 +43,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'tggl_lahir' => 'date',
+            'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
         ];
     }
 
@@ -70,8 +76,8 @@ class User extends Authenticatable
 
     public function setPasswordAttribute($value)
     {
-        $this->attributes['pass_hash'] = \Illuminate\Support\Facades\Hash::needsRehash($value) 
-            ? \Illuminate\Support\Facades\Hash::make($value) 
+        $this->attributes['pass_hash'] = Hash::needsRehash($value)
+            ? Hash::make($value)
             : $value;
     }
 

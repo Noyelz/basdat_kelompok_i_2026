@@ -661,18 +661,18 @@ Buka `http://localhost:8020` di browser, atau gunakan port forwarding IDE pada p
 - [ ] Pasang otorisasi **per peran dan per objek** pada seluruh route/controller; kepemilikan transaksi/panti selalu diperiksa di server. `/admin` tersembunyi dari menu bukan pengaman akses.
 - [ ] Batasi akses panitia ke data pengguna yang diperlukan saja; NIK, NPWP, alamat, rekening, dan data anak tidak ditampilkan di daftar umum. Foto/bukti privat hanya dapat dibuka pihak berwenang.
 - [ ] Catat audit perubahan penting: verifikasi panti, perubahan rekening, koreksi stok, harga, admin/panitia, pembayaran simulasi, dan penyaluran.
-- [ ] Hapus kredensial tetap di seeder; akun admin dibuat hanya oleh proses bootstrap terbatas dan disimpan di database dengan `pass_hash`, bukan kata sandi polos yang terus digunakan dari `.env`.
+- [x] Hapus kredensial tetap di seeder; akun admin pertama dibuat melalui perintah interaktif `php artisan app:create-initial-admin` sesudah migration berhasil, dengan kata sandi hash di `pass_hash`. Perintah belum dijalankan karena MariaDB belum pulih.
 - [ ] Hilangkan data contoh yang dibuat otomatis di jalur pendaftaran/transaksi. Jangan otomatis membuat yayasan terverifikasi atau memilih baris yayasan/beras pertama sebagai pengganti pilihan pengguna.
 
 ### 11.3 Tahap B — Pendaftaran, login, dan PJ panti
 
-- [ ] Form pendaftaran akun meminta nama lengkap, email, peran, NIK, telepon, tanggal lahir, jenis kelamin, provinsi, kabupaten/kota, dan kata sandi. Alamat lengkap **opsional untuk muzakki**, **wajib untuk PJ**, dengan label **alamat lengkap tempat tinggal**. NPWP opsional untuk keduanya.
-- [ ] Ubah label `Nama Lengkap / Yayasan` menjadi **Nama lengkap**; opsi peran tampil sebagai **Muzakki** dan **Penanggung jawab panti asuhan**. Data lembaga diisi setelah akun PJ dibuat, bukan pada form akun.
+- [x] Form pendaftaran akun meminta nama lengkap, email, peran, NIK, telepon, tanggal lahir, jenis kelamin, provinsi, kabupaten/kota, dan kata sandi. Alamat lengkap **opsional untuk muzakki**, **wajib untuk PJ**. NPWP opsional untuk keduanya. Validasi server sudah disesuaikan; label alamat tempat tinggal masih perlu diperjelas.
+- [x] Ubah label `Nama Lengkap / Yayasan` menjadi **Nama lengkap**; opsi peran tampil sebagai **Muzakki** dan **Penanggung jawab panti asuhan**. Data lembaga diisi setelah akun PJ dibuat, bukan pada form akun.
 - [ ] Sesuaikan label peran pada halaman login agar menyebut **Penanggung jawab panti asuhan**, selaras dengan pendaftaran.
 - [ ] Tinjau autofill browser: `old(...)` saat ini hanya mengembalikan isian setelah validasi gagal. Tambahkan atribut `autocomplete` yang tepat dan jangan mengandalkan browser untuk validasi.
-- [ ] Pertahankan hashing kata sandi yang sudah memakai `Hash::make`; tetapkan aturan kekuatan kata sandi di server dan tampilkan petunjuk/indikator yang selaras di form untuk kedua peran.
-- [ ] Setelah login pertama, PJ hanya dapat mengisi **Daftarkan panti asuhan** dan melihat status. Menu lain nonaktif sampai verifikasi berhasil. Penolakan menampilkan alasan atau petunjuk menghubungi panitia.
-- [ ] Form panti meminta nama, nomor izin, telepon, email, provinsi, kabupaten/kota, alamat lengkap, kode pos, nama bank, nomor rekening, dan nama pemilik rekening. Status awal `pending`; `is_active` dikelola terpisah dan dapat dinonaktifkan setelah pemeriksaan panitia, misalnya setiap bulan.
+- [x] Pertahankan hashing kata sandi yang sudah memakai `Hash::make`; tetapkan minimal 10 karakter berisi huruf dan angka di server dan petunjuk yang selaras di form untuk kedua peran.
+- [x] Setelah login pertama, PJ hanya dapat mengisi **Daftarkan panti asuhan** dan melihat status. Jalur proposal lama dimatikan; catatan pemeriksaan panitia ditampilkan bila ada. Fitur PJ setelah verifikasi masih perlu dibangun.
+- [x] Form panti meminta nama, nomor izin, telepon, email, provinsi, kabupaten/kota, alamat lengkap, kode pos, bank, nomor rekening, nama pemilik rekening, dan 1–5 foto. Status awal `pending` dan `is_active=false`; pemeriksaan/aktivasi berkala panitia belum dibangun.
 - [ ] Buat dropdown bank yang bisa dicari dan diperbarui berdasarkan direktori bank aktif (misalnya OJK); jangan menanam daftar yang dapat kedaluwarsa di Blade. Pastikan bank syariah dan bank daerah relevan tercakup.
 - [ ] Sediakan banyak foto panti dari PJ/panitia dengan tabel relasi foto, sumber pengunggah, waktu, dan hak akses; satu `pict_id` lama tidak cukup.
 - [ ] PJ dapat memperbarui profil dan data panti yang tidak sensitif; perubahan rekening/identitas penting masuk permohonan terpisah untuk pemeriksaan dan, jika diperlukan, kunjungan panitia.
@@ -837,7 +837,9 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 | :--- | :--- | :--- |
 | Setup agent Laravel Boost | Selesai | Paket dan panduan proyek diperbarui; tidak mengubah tabel atau data aplikasi. |
 | Skema database pengembangan | Migration ditulis | Migration untuk akun `user`, panti, gudang/vendor/lot, transaksi, reservasi, pembayaran simulasi, alokasi, bukti, dan audit sudah disusun. Kesesuaian dengan aplikasi masih dikerjakan. |
-| Migrasi ke `zakat_db` | Tertunda | `.env` sudah diarahkan ke `zakat_db` dan Laravel mengonfirmasi nama koneksi. Migration pertama terhenti ketika layanan MariaDB di host lokal putus; `zakat_db` mungkin berisi tabel parsial. Jangan menjalankan migration ulang sebelum layanan pulih dan kondisi tabel baru diperiksa. Database lama `zakat` tidak disentuh. |
-| Penyesuaian aplikasi | Belum | Controller, route, dan tampilan lama masih perlu disesuaikan dengan skema dan alur simulasi. |
+| Migrasi ke `zakat_db` | Tertunda | `.env` sudah diarahkan ke `zakat_db` dan Laravel mengonfirmasi nama koneksi. Migration pertama terhenti ketika MariaDB abort. Jurnal root menunjukkan `InnoDB: fdatasync() returned 28` (ENOSPC/kegagalan alokasi ruang tulis). `df` di lingkungan ini masih melaporkan sekitar 2,9 GB kosong dan inode cukup, sehingga penyebab di lapisan penyimpanan/host perlu diperiksa. `zakat_db` mungkin berisi tabel parsial. Jangan menjalankan migration ulang sebelum layanan pulih dan kondisi tabel baru diperiksa. Database lama `zakat` tidak disentuh. |
+| Autentikasi dan peran | Kode dasar selesai, belum diuji dengan MySQL | Register hanya membuka muzakki/PJ; login menolak akun nonaktif; route dipisah menurut peran; admin dapat membuat/nonaktifkan panitia; sandi sementara wajib diganti; seeder kata sandi tetap dihapus. |
+| Pendaftaran panti | Kode dasar selesai, belum diuji dengan MySQL | PJ mengisi data panti dan foto privat, lalu menunggu verifikasi. Panti tidak lagi dibuat otomatis atau langsung dianggap terverifikasi. |
+| Penyesuaian transaksi dan stok | Belum | Controller dan tampilan transaksi lama masih perlu diganti dengan reservasi lot, harga snapshot, QR simulasi, dan penyaluran dua bukti. Jangan gunakan alur pembayaran/konversi lama sebagai hasil akhir. |
 
 Setiap tahap yang selesai disimpan dalam commit lokal. Commit Git dapat memulihkan kode, sedangkan pemulihan isi MySQL memerlukan cadangan database tersendiri.

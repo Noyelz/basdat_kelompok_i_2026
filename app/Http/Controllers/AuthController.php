@@ -3,132 +3,108 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function showLogin()
+    public function showLogin(): View
     {
         return view('auth.login');
     }
 
-    public function showRegister()
+    public function showRegister(): View
     {
         return view('auth.register');
     }
 
-    public function register(Request $request)
+    public function register(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name'           => 'required|string|max:255',
-            'email'          => 'required|string|email|max:191|unique:user,email',
-            'password'       => 'required|string|min:8|confirmed',
-            'role'           => 'required|in:muzakki,yayasan,pemberi,pj',
-            'nik'            => 'required|digits:16',
-            'telp'           => 'required|string|max:20',
-            'tggl_lahir'     => 'required|date',
-            'gender'         => 'required|in:L,P',
-            'kota_kabupaten' => 'required|string|max:100',
-            'provinsi'       => 'required|string|max:100',
-            'alamat_lengkap' => 'required_if:role,yayasan,pj|nullable|string',
-            'npwp'           => 'required_if:role,yayasan,pj|nullable|string|max:25',
-        ], [
-            'nik.required'               => 'NIK (Nomor Induk Kependudukan) wajib diisi.',
-            'nik.digits'                 => 'NIK harus terdiri dari 16 digit angka.',
-            'telp.required'              => 'Nomor telepon wajib diisi.',
-            'tggl_lahir.required'        => 'Tanggal lahir wajib diisi.',
-            'gender.required'            => 'Jenis kelamin wajib dipilih.',
-            'gender.in'                  => 'Pilihan jenis kelamin tidak valid.',
-            'kota_kabupaten.required'    => 'Kota / Kabupaten wajib dipilih.',
-            'provinsi.required'          => 'Provinsi wajib dipilih.',
-            'alamat_lengkap.required_if' => 'Alamat lengkap wajib diisi untuk pendaftaran Yayasan.',
-            'npwp.required_if'           => 'NPWP wajib diisi untuk pendaftaran Yayasan.',
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:191', Rule::unique('user', 'email')],
+            'password' => ['required', 'confirmed', Password::min(10)->letters()->numbers()],
+            'role' => ['required', Rule::in(['muzakki', 'pj'])],
+            'nik' => ['required', 'digits:16', Rule::unique('user', 'nik')],
+            'telp' => ['required', 'string', 'max:20'],
+            'tggl_lahir' => ['required', 'date', 'before:today'],
+            'gender' => ['required', Rule::in(['L', 'P'])],
+            'kota_kabupaten' => ['required', 'string', 'max:100'],
+            'provinsi' => ['required', 'string', 'max:100'],
+            'alamat_lengkap' => ['required_if:role,pj', 'nullable', 'string'],
+            'npwp' => ['nullable', 'string', 'max:25'],
         ]);
-
-        // Pemetaan peran ke database enum ('pemberi', 'pj', 'panitia')
-        $dbRole = 'pemberi';
-        if ($request->role === 'yayasan' || $request->role === 'pj') {
-            $dbRole = 'pj';
-        }
 
         $user = User::create([
-            'nama'           => $request->name,
-            'email'          => $request->email,
-            'pass_hash'      => Hash::make($request->password),
-            'nik'            => $request->nik ?: null,
-            'telp'           => $request->telp,
-            'tggl_lahir'     => $request->tggl_lahir ?: null,
-            'gender'         => $request->gender ?: null,
-            'kota_kabupaten' => $request->kota_kabupaten,
-            'provinsi'       => $request->provinsi,
-            'alamat_lengkap' => $request->alamat_lengkap ?: null,
-            'npwp'           => $request->npwp ?: null,
-            'role'           => $dbRole,
+            'nama' => $data['name'],
+            'email' => $data['email'],
+            'pass_hash' => Hash::make($data['password']),
+            'role' => $data['role'] === 'pj' ? 'pj' : 'pemberi',
+            'nik' => $data['nik'],
+            'telp' => $data['telp'],
+            'tggl_lahir' => $data['tggl_lahir'],
+            'gender' => $data['gender'],
+            'kota_kabupaten' => $data['kota_kabupaten'],
+            'provinsi' => $data['provinsi'],
+            'alamat_lengkap' => $data['alamat_lengkap'] ?? null,
+            'npwp' => $data['npwp'] ?? null,
         ]);
 
-        if ($dbRole === 'pj') {
-            \App\Models\Yayasan::firstOrCreate(
-                ['pj_user_id' => $user->id],
-                [
-                    'nama'           => 'Yayasan ' . $user->nama,
-                    'nomor_izin'     => 'YYS/' . date('Y') . '/' . $user->id,
-                    'telp'           => $user->telp,
-                    'email'          => $user->email,
-                    'kota_kabupaten' => $user->kota_kabupaten,
-                    'provinsi'       => $user->provinsi,
-                    'alamat_lengkap' => $user->alamat_lengkap ?? '-',
-                    'nama_bank'      => 'BSI',
-                    'no_rek'         => '1234567890',
-                    'atas_nama_rek'  => $user->nama,
-                    'status_verif'   => 'pending',
-                    'is_active'      => true,
-                ]
-            );
-        }
-
         Auth::login($user);
-
-        if ($user->role === 'pemberi' || $user->role === 'muzakki') {
-            return redirect()->route('muzakki.dashboard');
-        } elseif ($user->role === 'pj' || $user->role === 'yayasan') {
-            return redirect()->route('yayasan.dashboard');
-        }
+        $request->session()->regenerate();
 
         return redirect()->route('home');
     }
 
-    public function login(Request $request)
+    public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            $user = Auth::user();
-
-            if ($user->role === 'panitia') {
-                return redirect()->route('panitia.dashboard');
-            } elseif ($user->role === 'pemberi' || $user->role === 'muzakki') {
-                return redirect()->route('muzakki.dashboard');
-            } elseif ($user->role === 'pj' || $user->role === 'yayasan') {
-                return redirect()->route('yayasan.dashboard');
-            }
-
-            return redirect()->route('home');
+        if (! Auth::attempt([...$credentials, 'is_active' => true])) {
+            return back()->withInput($request->only('email'))->with('error', 'Email atau kata sandi salah, atau akun tidak aktif.');
         }
 
-        return back()->with('error', 'Email atau password salah.');
+        $request->session()->regenerate();
+
+        return redirect()->route('home');
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
+    }
+
+    public function showChangePassword(): View
+    {
+        return view('auth.change-password');
+    }
+
+    public function changePassword(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', Password::min(12)->letters()->numbers()],
+        ]);
+
+        $request->user()->forceFill([
+            'pass_hash' => Hash::make($data['password']),
+            'must_change_password' => false,
+        ])->save();
+
+        $request->session()->regenerate();
+
+        return redirect()->route('home')->with('success', 'Kata sandi berhasil diubah.');
     }
 }
