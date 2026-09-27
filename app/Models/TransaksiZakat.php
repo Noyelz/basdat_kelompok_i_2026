@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class TransaksiZakat extends Model
 {
@@ -25,6 +27,29 @@ class TransaksiZakat extends Model
         'expired_at',
         'paid_at',
     ];
+
+    public static function expirePending(): void
+    {
+        $ids = DB::table('transaksi_zakat')
+            ->where('status_pembayaran', 'pending')
+            ->where('expired_at', '<=', now())
+            ->orderBy('id')
+            ->limit(100)
+            ->pluck('id');
+
+        foreach ($ids as $id) {
+            DB::transaction(function () use ($id): void {
+                $pesanan = DB::table('transaksi_zakat')->where('id', $id)->lockForUpdate()->first();
+                if (! $pesanan || $pesanan->status_pembayaran !== 'pending' || CarbonImmutable::parse($pesanan->expired_at)->isFuture()) {
+                    return;
+                }
+
+                DB::table('transaksi_zakat')->where('id', $id)->update(['status_pembayaran' => 'expired', 'updated_at' => now()]);
+                DB::table('percobaan_pembayaran')->where('transaksi_id', $id)->where('status', 'pending')->update(['status' => 'expired', 'updated_at' => now()]);
+                DB::table('reservasi_stok')->where('transaksi_id', $id)->where('status', 'active')->update(['status' => 'expired', 'released_at' => now(), 'updated_at' => now()]);
+            });
+        }
+    }
 
     protected function casts(): array
     {
@@ -50,6 +75,7 @@ class TransaksiZakat extends Model
         if ($this->status_pembayaran === 'paid') {
             return 'success';
         }
+
         return $this->status_pembayaran;
     }
 

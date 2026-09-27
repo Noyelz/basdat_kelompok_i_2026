@@ -13,7 +13,7 @@
             <div class="card-body">
                 <h4 class="card-title text-success fw-bold">Zakat Fitrah</h4>
                 <p class="card-text">
-                    Zakat yang wajib dikeluarkan oleh setiap muslim pada bulan Ramadan berupa makanan pokok atau uang tunai setara 3 kg beras per jiwa (ditetapkan Rp35.000/jiwa).
+                    Pesan beras dari stok gudang untuk panti terverifikasi. Berat per jiwa dan rincian biaya mengikuti pengaturan yang berlaku saat checkout.
                 </p>
                 <a href="{{ route('muzakki.fitrah') }}" class="btn btn-success w-100 mt-3">Mulai Zakat Fitrah</a>
             </div>
@@ -28,7 +28,7 @@
                 <p class="card-text">
                     Zakat harta yang dikeluarkan dari hasil simpanan/aset (Emas, Investasi, Perdagangan, Piutang dikurangi Utang) yang telah mencapai nisab dengan besaran 2,5%.
                 </p>
-                <a href="{{ route('muzakki.maal') }}" class="btn btn-success w-100 mt-3">Hitung Kalkulator & Bayar Zakat Maal</a>
+                <a href="{{ route('muzakki.maal') }}" class="btn btn-outline-success w-100 mt-3">Lihat status pengembangan maal</a>
             </div>
         </div>
     </div>

@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FitrahCheckoutController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MuzakkiController;
 use App\Http\Controllers\PanitiaController;
 use App\Http\Controllers\PantiVerificationController;
+use App\Http\Controllers\SimulationPaymentController;
 use App\Http\Controllers\YayasanController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -48,9 +50,13 @@ Route::middleware('auth')->group(function () {
     // Group Route Muzakki
     Route::prefix('muzakki')->name('muzakki.')->middleware('role:pemberi')->group(function () {
         Route::get('/dashboard', [MuzakkiController::class, 'index'])->name('dashboard');
-        Route::get('/zakat-fitrah', [MuzakkiController::class, 'showFitrah'])->name('fitrah');
+        Route::get('/zakat-fitrah', [FitrahCheckoutController::class, 'index'])->name('fitrah');
+        Route::post('/zakat-fitrah', [FitrahCheckoutController::class, 'store'])->name('fitrah.store');
         Route::get('/zakat-maal', [MuzakkiController::class, 'showMaal'])->name('maal');
-        Route::post('/store', [MuzakkiController::class, 'store'])->name('store');
+        Route::get('/pembayaran/{id}', [SimulationPaymentController::class, 'show'])->whereNumber('id')->name('payment.show');
+        Route::post('/pembayaran/{id}/batalkan', [SimulationPaymentController::class, 'cancel'])->whereNumber('id')->name('payment.cancel');
+        Route::get('/bayar-uji/{token}', [SimulationPaymentController::class, 'scan'])->name('payment.scan');
+        Route::post('/bayar-uji/{token}', [SimulationPaymentController::class, 'pay'])->middleware('throttle:5,1')->name('payment.pay');
         Route::get('/riwayat', [MuzakkiController::class, 'riwayat'])->name('riwayat');
         Route::get('/profil', [MuzakkiController::class, 'profil'])->name('profil');
         Route::post('/profil', [MuzakkiController::class, 'updateProfil'])->name('profil.update');

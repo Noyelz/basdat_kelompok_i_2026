@@ -1,78 +1,28 @@
 @extends('muzakki.layout')
 
 @section('content')
-<div class="row justify-content-center">
-    <div class="col-md-7">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Form Pembayaran Zakat Fitrah</h5>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('muzakki.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="jenis_zakat" value="fitrah">
+<div class="row justify-content-center"><div class="col-lg-9">
+    <h1 class="h3 mb-2">Pesan zakat fitrah</h1>
+    <p class="text-muted">Berat acuan saat ini {{ $bobot ?? '—' }} kg per jiwa. Harga akhir dihitung ulang oleh server dari lot beras yang tersedia dan dikunci setelah pesanan dibuat.</p>
 
-                    <h6>1. Data Pembayar</h6>
-                    <div class="mb-3">
-                        <label class="form-label">Nama Pembayar</label>
-                        <input type="text" name="nama_pembayar" class="form-control" value="{{ Auth::user()->name }}" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Umur (Tahun)</label>
-                            <input type="number" name="umur" class="form-control" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Tanggal Lahir</label>
-                            <input type="date" name="tanggal_lahir" class="form-control" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Pekerjaan</label>
-                            <input type="text" name="pekerjaan" class="form-control" required>
-                        </div>
-                    </div>
+    @if ($errors->any())
+        <div class="alert alert-danger"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+    @endif
 
-                    <hr>
-                    <h6>2. Perhitungan Jiwa</h6>
-                    <div class="mb-3">
-                        <label class="form-label">Jumlah Tanggungan / Anggota Keluarga (Jiwa)</label>
-                        <input type="number" id="jumlah_keluarga" name="jumlah_keluarga" class="form-control" min="1" value="1" required>
-                        <small class="text-muted">Tarif: Rp{{ number_format($hargaPerJiwa, 0, ',', '.') }} / jiwa</small>
-                    </div>
-
-                    <div class="alert alert-info">
-                        <strong>Total Tagihan:</strong> Rp<span id="text_total">{{ number_format($hargaPerJiwa, 0, ',', '.') }}</span>
-                        <input type="hidden" name="total_bayar" id="total_bayar" value="{{ $hargaPerJiwa }}">
-                    </div>
-
-                    <hr>
-                    <h6>3. Pembayaran & Upload Bukti</h6>
-                    <div class="text-center my-3">
-                        <p class="mb-1 fw-bold">Scan QRIS Berikut untuk Pembayaran:</p>
-                        <img src="https://via.placeholder.com/200x200?text=QRIS+ZAKAT" class="img-thumbnail" width="200">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Upload Bukti Transfer (Format JPG/JPEG)</label>
-                        <input type="file" name="bukti_pembayaran" class="form-control" accept="image/jpeg,image/jpg" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-success w-100">Kirim Pembayaran Zakat Fitrah</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+    @if ($beras->isEmpty() || $panti->isEmpty())
+        <div class="alert alert-warning">Pesanan fitrah belum dibuka. Panitia perlu menyiapkan stok beras, memverifikasi panti, dan admin perlu mengaktifkan wilayah sebelum batas checkout.</div>
+    @else
+        <div class="card border-0 shadow-sm"><div class="card-body p-4">
+            <form method="POST" action="{{ route('muzakki.fitrah.store') }}" class="row g-3">
+                @csrf
+                <div class="col-md-4"><label class="form-label">Jumlah jiwa</label><input type="number" name="jumlah_jiwa" class="form-control" min="1" max="50" value="{{ old('jumlah_jiwa', 1) }}" required></div>
+                <div class="col-md-8"><label class="form-label">Jenis beras</label><select name="katalog_beras_id" class="form-select" required><option value="">Pilih beras</option>@foreach ($beras as $item)<option value="{{ $item->id }}" @selected(old('katalog_beras_id') == $item->id)>{{ $item->nama_beras }} · harga katalog saat ini Rp{{ number_format($item->harga_per_kg, 2, ',', '.') }}/kg</option>@endforeach</select></div>
+                <div class="col-12"><label class="form-label">Panti tujuan</label><select name="yayasan_id" class="form-select" required><option value="">Pilih panti yang terverifikasi dan terjangkau</option>@foreach ($panti as $item)<option value="{{ $item->id }}" @selected(old('yayasan_id') == $item->id)>{{ $item->nama }} · {{ $item->kota_kabupaten }}, {{ $item->provinsi }} · {{ $item->jumlah_mustahik_layak }} penerima layak</option>@endforeach</select></div>
+                <div class="col-12"><label class="form-label">Titip doa (opsional)</label><textarea name="catatan_doa" class="form-control" rows="2" maxlength="1000">{{ old('catatan_doa') }}</textarea></div>
+                <div class="col-12"><div class="alert alert-info mb-0">Rincian final memisahkan harga pokok beras, keuntungan, biaya admin, dan ongkos kirim. Pesanan berlaku 30 menit untuk simulasi pembayaran.</div></div>
+                <div class="col-12"><button type="submit" class="btn btn-success w-100">Buat pesanan & lihat rincian harga</button></div>
+            </form>
+        </div></div>
+    @endif
+</div></div>
 @endsection
-
-@push('scripts')
-<script>
-    $('#jumlah_keluarga').on('input', function() {
-        let jiwa = $(this).val();
-        let harga = {{ $hargaPerJiwa }};
-        let total = jiwa * harga;
-        $('#total_bayar').val(total);
-        $('#text_total').text(new Intl.NumberFormat('id-ID').format(total));
-    });
-</script>
-@endpush
