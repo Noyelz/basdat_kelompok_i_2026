@@ -24,7 +24,24 @@ class MaalCheckoutController extends Controller
             ->where('jumlah_mustahik_layak', '>', 0)
             ->orderBy('provinsi')
             ->orderBy('kota_kabupaten')
-            ->get(['id', 'nama', 'kota_kabupaten', 'provinsi', 'jumlah_mustahik_layak']);
+            ->get(['id', 'nama', 'kota_kabupaten', 'provinsi', 'jumlah_mustahik_layak', 'kebutuhan_saat_ini']);
+
+        $maalMasuk = DB::table('transaksi_zakat')
+            ->where('jenis_zakat', 'mal')
+            ->where('status_pembayaran', 'simulated_paid')
+            ->selectRaw('yayasan_id, SUM(total_nominal) AS jumlah')
+            ->groupBy('yayasan_id')
+            ->pluck('jumlah', 'yayasan_id');
+        $maalSelesai = DB::table('penyaluran')
+            ->where('jenis_zakat', 'mal')
+            ->where('status', 'selesai')
+            ->selectRaw('yayasan_id, SUM(jumlah) AS jumlah')
+            ->groupBy('yayasan_id')
+            ->pluck('jumlah', 'yayasan_id');
+        $panti->each(function ($item) use ($maalMasuk, $maalSelesai): void {
+            $item->maal_masuk = $maalMasuk[$item->id] ?? '0.00';
+            $item->maal_selesai = $maalSelesai[$item->id] ?? '0.00';
+        });
 
         $draftSubjects = DB::table('subjek_zakat_maal')
             ->where('user_id', $request->user()->id)

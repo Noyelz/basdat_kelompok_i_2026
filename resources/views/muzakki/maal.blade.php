@@ -45,9 +45,27 @@
             </div>
             <button type="button" id="tambah-subjek" class="btn btn-outline-primary mb-4">Tambah istri / anak</button>
             <div class="card border-0 shadow-sm mb-4"><div class="card-body">
-                <label class="form-label" for="yayasan_id">Panti tujuan</label>
-                <select id="yayasan_id" name="yayasan_id" class="form-select"><option value="">Pilih otomatis secara acak di antara panti yang belum menerima maal</option>@foreach ($panti as $item)<option value="{{ $item->id }}" @selected(old('yayasan_id') == $item->id)>{{ $item->nama }} · {{ $item->kota_kabupaten }}, {{ $item->provinsi }}</option>@endforeach</select>
-                <p class="small text-muted mt-2">Jika semua panti pernah menerima maal, pilihan otomatis tetap acak di antara panti layak. Kalkulasi dan panti pilihan disimpan sebagai snapshot.</p>
+                <fieldset>
+                    <legend class="h5">Panti tujuan</legend>
+                    <p class="small text-muted">Panti terverifikasi dapat dipilih langsung atau sistem memilih acak dari panti layak yang belum menerima maal. Bila semuanya pernah menerima, pilihan tetap diacak. Angka berikut adalah simulasi sejak database pengembangan digunakan.</p>
+                    <div class="choice-grid mb-3">
+                        <label class="choice-card">
+                            <input type="radio" name="yayasan_id" value="" @checked(old('yayasan_id', '') === '')>
+                            <span><strong>Pilih otomatis</strong><small class="d-block">Acak di antara panti layak yang belum menerima maal simulasi.</small></span>
+                        </label>
+                        @foreach ($panti as $item)
+                            @php($persen = (float) $item->maal_masuk > 0 ? (float) $item->maal_selesai / (float) $item->maal_masuk * 100 : null)
+                            <label class="choice-card">
+                                <input type="radio" name="yayasan_id" value="{{ $item->id }}" @checked(old('yayasan_id') == $item->id)>
+                                <span>
+                                    <strong>{{ $item->nama }}</strong><small class="d-block">Terverifikasi · {{ $item->kota_kabupaten }}, {{ $item->provinsi }} · {{ $item->jumlah_mustahik_layak }} penerima layak</small>
+                                    @if ($item->kebutuhan_saat_ini)<small class="d-block">Kebutuhan: {{ $item->kebutuhan_saat_ini }}</small>@endif
+                                    <small class="d-block">Maal terkumpul Rp{{ number_format($item->maal_masuk, 2, ',', '.') }} · selesai Rp{{ number_format($item->maal_selesai, 2, ',', '.') }} · {{ $persen === null ? 'persentase belum ada data' : number_format($persen, 1, ',', '.') . '% selesai' }}</small>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
                 <button type="submit" class="btn btn-success w-100 mb-2" @disabled(! $hargaBerlaku || $panti->isEmpty())>Hitung dan buat pesanan maal jika wajib</button>
                 <button type="submit" class="btn btn-outline-primary w-100" formaction="{{ route('muzakki.maal.draft') }}">Simpan draft keluarga tanpa membuat pesanan</button>
             </div></div>
