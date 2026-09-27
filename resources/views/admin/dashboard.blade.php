@@ -23,6 +23,7 @@
     <main class="app-container">
         <h1>Kelola panitia</h1>
         <p>Akun panitia dibuat oleh admin dan tidak tersedia melalui pendaftaran umum.</p>
+        <p><a class="btn-app btn-app-outline" href="{{ route('admin.audit.index') }}">Lihat riwayat perubahan</a></p>
 
         @if (session('success'))
             <div class="app-alert app-alert-success">{{ session('success') }}</div>

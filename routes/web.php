@@ -112,6 +112,7 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+        Route::get('/audit', [AdminController::class, 'auditLog'])->name('audit.index');
         Route::post('/panitia', [AdminController::class, 'storePanitia'])->name('panitia.store');
         Route::patch('/panitia/{user}/aktif', [AdminController::class, 'setPanitiaActive'])->name('panitia.active');
         Route::post('/bank', [AdminController::class, 'storeBank'])->name('bank.store');

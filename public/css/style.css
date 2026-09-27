@@ -891,6 +891,14 @@ main a:not(.btn):not(.btn-app):not(.nav-link):hover {
     color: #fffdf5;
 }
 
+.app-pagination {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+}
+
 @media (max-width: 850px) {
     .landing-hero,
     .landing-calculator,

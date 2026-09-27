@@ -43,6 +43,17 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('panitia', 'bank', 'wilayah', 'pengaturan', 'hargaEmas', 'kontenPublik'));
     }
 
+    public function auditLog(): View
+    {
+        $riwayat = DB::table('audit_log')
+            ->leftJoin('user as pelaku', 'pelaku.id', '=', 'audit_log.actor_user_id')
+            ->orderByDesc('audit_log.id')
+            ->select('audit_log.id', 'audit_log.aksi', 'audit_log.jenis_objek', 'audit_log.objek_id', 'audit_log.created_at', 'pelaku.nama as nama_pelaku', 'pelaku.role as peran_pelaku')
+            ->paginate(30);
+
+        return view('admin.audit', compact('riwayat'));
+    }
+
     public function setLandingContent(Request $request): RedirectResponse
     {
         $data = $request->validate([
