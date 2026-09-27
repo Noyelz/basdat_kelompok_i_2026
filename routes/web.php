@@ -28,6 +28,14 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register.post');
 });
 
+Route::get('/muzakki/bayar-uji/{token}', [SimulationPaymentController::class, 'scan'])
+    ->where('token', '[A-Za-z0-9]{64}')
+    ->name('muzakki.payment.scan');
+Route::post('/muzakki/bayar-uji/{token}', [SimulationPaymentController::class, 'pay'])
+    ->where('token', '[A-Za-z0-9]{64}')
+    ->middleware('throttle:5,1')
+    ->name('muzakki.payment.pay');
+
 Route::middleware('auth')->group(function () {
     Route::get('/home', function () {
         if (Auth::user()->must_change_password) {
@@ -62,8 +70,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/zakat-maal', [MaalCheckoutController::class, 'store'])->name('maal.store');
         Route::get('/pembayaran/{id}', [SimulationPaymentController::class, 'show'])->whereNumber('id')->name('payment.show');
         Route::post('/pembayaran/{id}/batalkan', [SimulationPaymentController::class, 'cancel'])->whereNumber('id')->name('payment.cancel');
-        Route::get('/bayar-uji/{token}', [SimulationPaymentController::class, 'scan'])->name('payment.scan');
-        Route::post('/bayar-uji/{token}', [SimulationPaymentController::class, 'pay'])->middleware('throttle:5,1')->name('payment.pay');
         Route::get('/riwayat', [MuzakkiController::class, 'riwayat'])->name('riwayat');
         Route::get('/profil', [MuzakkiController::class, 'profil'])->name('profil');
         Route::post('/profil', [MuzakkiController::class, 'updateProfil'])->name('profil.update');

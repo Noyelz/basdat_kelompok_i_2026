@@ -8,8 +8,10 @@ use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SimulationPaymentController extends Controller
@@ -36,32 +38,58 @@ class SimulationPaymentController extends Controller
         return view('muzakki.payment', compact('pesanan', 'qrDataUri', 'scanUrl', 'bukti'));
     }
 
-    public function scan(Request $request, string $token): View
+    public function scan(string $token): Response
     {
-        TransaksiZakat::expirePending();
-        $percobaan = DB::table('percobaan_pembayaran')->where('token_hash', hash('sha256', $token))->first();
-        abort_unless($percobaan, 404);
-        $pesanan = $this->pesananMilikUser($request, $percobaan->transaksi_id);
+        $pesanan = DB::table('percobaan_pembayaran')
+            ->join('transaksi_zakat', 'transaksi_zakat.id', '=', 'percobaan_pembayaran.transaksi_id')
+            ->join('yayasan', 'yayasan.id', '=', 'transaksi_zakat.yayasan_id')
+            ->where('percobaan_pembayaran.token_hash', hash('sha256', $token))
+            ->where('transaksi_zakat.mode_pembayaran', 'simulation')
+            ->first([
+                'transaksi_zakat.kode_transaksi',
+                'transaksi_zakat.total_nominal',
+                'transaksi_zakat.status_pembayaran',
+                'transaksi_zakat.expired_at',
+                'yayasan.nama as nama_panti',
+                'percobaan_pembayaran.status as status_percobaan',
+                'percobaan_pembayaran.expired_at as qr_expired_at',
+            ]);
+        abort_unless($pesanan, 404);
 
-        return view('muzakki.payment-scan', compact('pesanan', 'token'));
+        $bisaDibayar = $pesanan->status_pembayaran === 'pending'
+            && $pesanan->status_percobaan === 'pending'
+            && CarbonImmutable::parse($pesanan->expired_at)->isFuture()
+            && CarbonImmutable::parse($pesanan->qr_expired_at)->isFuture();
+        $sudahDibayar = $pesanan->status_pembayaran === 'simulated_paid'
+            && $pesanan->status_percobaan === 'simulated_paid';
+
+        return response()->view('muzakki.payment-scan', compact('pesanan', 'token', 'bisaDibayar', 'sudahDibayar'))
+            ->header('Cache-Control', 'private, no-store')
+            ->header('Referrer-Policy', 'no-referrer');
     }
 
-    public function pay(Request $request, string $token): RedirectResponse
+    public function pay(string $token): RedirectResponse
     {
         $tokenHash = hash('sha256', $token);
         $percobaan = DB::table('percobaan_pembayaran')->where('token_hash', $tokenHash)->first();
         abort_unless($percobaan, 404);
 
-        DB::transaction(function () use ($request, $percobaan, $tokenHash): void {
+        $baruDibayar = DB::transaction(function () use ($percobaan): bool {
             $pesanan = DB::table('transaksi_zakat')->where('id', $percobaan->transaksi_id)->lockForUpdate()->first();
-            abort_unless($pesanan && $pesanan->user_id === $request->user()->id, 403);
-            if ($pesanan->status_pembayaran === 'simulated_paid') {
-                return;
+            abort_unless($pesanan && $pesanan->mode_pembayaran === 'simulation', 404);
+            $attempt = DB::table('percobaan_pembayaran')->where('id', $percobaan->id)->lockForUpdate()->first();
+            abort_unless($attempt && (int) $attempt->transaksi_id === (int) $pesanan->id, 404);
+
+            if ($pesanan->status_pembayaran === 'simulated_paid' && $attempt->status === 'simulated_paid') {
+                return false;
             }
 
-            abort_unless($pesanan->status_pembayaran === 'pending' && CarbonImmutable::parse($pesanan->expired_at)->isFuture(), 422, 'Pesanan tidak lagi dapat dibayar.');
-            $attempt = DB::table('percobaan_pembayaran')->where('token_hash', $tokenHash)->lockForUpdate()->first();
-            abort_unless($attempt && $attempt->status === 'pending', 422);
+            if ($pesanan->status_pembayaran !== 'pending'
+                || $attempt->status !== 'pending'
+                || ! CarbonImmutable::parse($pesanan->expired_at)->isFuture()
+                || ! CarbonImmutable::parse($attempt->expired_at)->isFuture()) {
+                throw ValidationException::withMessages(['qr' => 'QR sudah kedaluwarsa atau pesanan telah dibatalkan. Minta pemilik pesanan membuat QR baru.']);
+            }
 
             DB::table('transaksi_zakat')->where('id', $pesanan->id)->update([
                 'status_pembayaran' => 'simulated_paid',
@@ -73,10 +101,14 @@ class SimulationPaymentController extends Controller
                 'completed_at' => now(),
                 'updated_at' => now(),
             ]);
-        });
 
-        return redirect()->route('muzakki.payment.show', $percobaan->transaksi_id)
-            ->with('success', 'Pembayaran simulasi berhasil dicatat. Penyaluran tetap menunggu proses panitia.');
+            return true;
+        }, attempts: 3);
+
+        return redirect()->route('muzakki.payment.scan', $token)
+            ->with('success', $baruDibayar
+                ? 'Pembayaran simulasi berhasil dicatat. Penyaluran tetap menunggu proses panitia.'
+                : 'Pembayaran simulasi untuk QR ini sudah tercatat.');
     }
 
     public function cancel(Request $request, int $id): RedirectResponse
