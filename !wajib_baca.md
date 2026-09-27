@@ -693,9 +693,9 @@ Buka `http://localhost:8020` di browser, atau gunakan port forwarding IDE pada p
 - [ ] Form fitrah tidak meminta ulang umur, tanggal lahir, atau pekerjaan. Umur bila perlu dihitung dari profil; jumlah jiwa tetap diisi pengguna. Nama tampilan boleh **Hamba Allah**, tetapi `user_id` pembayar tetap tercatat.
 - [x] Checkout fitrah memakai berat per jiwa dari pengaturan admin; server menghitung HPP lot FIFO, margin, biaya admin, ongkir wilayah/jarak, dan total. Browser tidak mengirim `total_bayar`. Keputusan berat per tahun tetap tanggung jawab admin.
 - [ ] Pop-up panti menampilkan foto, lokasi, status verifikasi, kebutuhan, jumlah diterima, dan persentase tersalurkan tanpa mengumumkan identitas donor. Hanya panti terverifikasi dan aktif yang dapat dipilih.
-- [x] Setelah checkout fitrah, buat pesanan `pending` dan halaman pembayaran tersendiri dengan rincian biaya serta QR SVG lokal menuju URL situs ini. Halaman hasil scan menampilkan pesanan dan tombol **Bayar simulasi** tanpa unggahan bukti transfer. Zakat maal belum memakai alur ini.
+- [x] Setelah checkout fitrah atau maal, buat pesanan `pending` dan halaman pembayaran tersendiri dengan rincian biaya serta QR SVG lokal menuju URL situs ini. Halaman hasil scan menampilkan pesanan dan tombol **Bayar simulasi** tanpa unggahan bukti transfer.
 - [x] QR fitrah memakai token acak 64 karakter yang tersimpan sebagai hash pada percobaan pembayaran dan ciphertext pada pesanan, berlaku 30 menit, serta tombol bayar uji idempoten. Kedaluwarsa/pembatalan melepas reservasi. **Pemindaian dari ponsel tidak memerlukan login**; siapa pun yang memiliki token QR yang masih berlaku dapat mencatat `simulated_paid`. Halaman rincian pesanan dan bukti tetap hanya milik akun pembayar.
-- [ ] Pembatalan/kedaluwarsa kini tidak menghapus riwayat dan melepas reservasi fitrah. Penyimpanan draft untuk tahun berikutnya belum dibuat; harga/nisab wajib dihitung ulang saat checkout baru.
+- [ ] Pembatalan/kedaluwarsa tidak menghapus riwayat dan melepas reservasi fitrah. Draft **maal keluarga** kini dapat disimpan terpisah dari transaksi, dengan nisab/harga dihitung ulang saat checkout; draft fitrah untuk tahun berikutnya belum dibuat.
 - [ ] Form maal tidak meminta ulang umur, tanggal lahir, atau pekerjaan; `0` awal dibersihkan saat fokus. Format ribuan dalam input saat mengetik belum dibuat, sedangkan server menerima angka desimal bersih dan hasil ditampilkan dengan format Rupiah.
 - [x] Form maal memisahkan tabungan, emas gram, investasi, dagang, piutang, utang, dan pemilik diri/istri/anak. Pengguna dapat menambah baris anak hingga total 10 pemilik; nama tampilan default **Hamba Allah** dan akun pembayar tetap dicatat. Setiap pemilik diperiksa terpisah terhadap nisab serta pernyataan haul sebelum zakat wajibnya dijumlahkan.
 - [ ] Admin memasukkan harga emas acuan bertanggal dan sumber; form menampilkan harga/nisab 85 gram. Checkout ditolak bila sumber lebih dari 7 hari, dan tiap pemilik menyatakan sendiri apakah haul terpenuhi. Sumber, harga, nisab, aset, dan hasil kalkulasi kini disimpan sebagai snapshot. Validasi sumber resmi dan peninjauan haul untuk penggunaan nyata masih diperlukan.
@@ -705,7 +705,7 @@ Buka `http://localhost:8020` di browser, atau gunakan port forwarding IDE pada p
 - [x] Pembayaran maal memakai alur QR simulasi dan halaman status fitrah yang sama; total berasal dari jumlah zakat wajib tiap pemilik yang dihitung server.
 - [ ] Riwayat zakat hanya milik akun yang login. Tampilkan detail fitrah (jiwa, beras, bobot, harga snapshot, biaya, panti, total), detail maal (aset, harga emas snapshot, nisab, total), dan status pembayaran **terpisah** dari status penyaluran.
 - [ ] Hapus menu daftar yayasan penerima dari riwayat jika tidak diperlukan; pemilihan dan informasi panti tersedia pada alur bayar serta detail transaksi.
-- [ ] Bukti penyaluran/penerimaan panti dapat dilihat dari detail riwayat dengan akses yang sesuai. Siapkan data/antrean notifikasi email; pengiriman email bukti ditunda ke tahap berikutnya.
+- [ ] Bukti penyaluran/penerimaan panti dapat dilihat oleh pihak berwenang melalui route foto privat. Notifikasi penyaluran selesai sudah tercatat dan tampil di dashboard muzakki/PJ. Integrasi ke detail riwayat dan antrean email belum dibuat; pengiriman email ditunda.
 - [ ] Tinjau halaman profil: data akun, alamat, pilihan privasi nama tampilan, perubahan kata sandi, dan preferensi pengingat; perubahan identitas sensitif perlu alur pemeriksaan.
 
 ### 11.6 Tahap E — Penyaluran, peran panitia, dan admin
@@ -721,11 +721,11 @@ Buka `http://localhost:8020` di browser, atau gunakan port forwarding IDE pada p
 
 ### 11.7 Tahap F — Statistik publik, pengingat, dan halaman depan
 
-- [ ] Dashboard muzakki kini menampilkan tiga panti teratas/terbawah menurut fitrah dan maal terkumpul serta panti di provinsi pengguna, dengan jumlah selesai, jumlah penerima layak, dan periode seluruh data pengembangan. Rasio bantuan per penerima serta peringkat berdasarkan kebutuhan masih perlu dibuat agar panti besar/kecil tidak dibandingkan hanya dengan total mentah.
+- [ ] Dashboard muzakki menampilkan tiga panti teratas/terbawah menurut fitrah dan maal **per penerima layak**, serta panti di provinsi pengguna, dengan jumlah selesai dan periode seluruh data pengembangan. Rasio per penerima sudah ada; bobot berdasarkan rincian kebutuhan panti masih perlu dirancang.
 - [ ] Peringkat dan pilihan acak memakai data panti terverifikasi/aktif serta periode yang jelas. Jangan membuka identitas donor atau anak di statistik publik.
 - [ ] Dashboard muzakki kini menampilkan hitung mundur Idulfitri dari tanggal admin serta menjelaskan tenggat fitrah berbeda menurut wilayah. Pengingat maal berdasarkan tanggal haul per pemilik belum dibuat.
-- [ ] Buat halaman publik sebelum login berisi informasi platform, cara kerja, mitra panti, kalkulator, dampak yang benar-benar berasal dari data, artikel/FAQ, dan tombol daftar/masuk. Konten dapat diedit admin; warna mengikuti tema halaman login yang sekarang.
-- [ ] Simpan preferensi dan log/antrean email untuk pengingat serta bukti penyaluran, walaupun pengiriman email otomatis belum diaktifkan pada tahap pertama.
+- [ ] Halaman publik sebelum login kini berisi informasi platform, cara kerja, mitra panti, kalkulator berat fitrah, dampak simulasi dari database, FAQ, dan tombol daftar/masuk. Teks utama dapat diedit admin dan warna mengikuti login. Artikel terpisah dan daftar lengkap panti publik belum dibuat.
+- [ ] Log pemberitahuan penyaluran di aplikasi sudah tersedia. Preferensi pengguna, pengingat maal/fitrah, antrean email, dan pengiriman email otomatis belum dibuat.
 
 ### 11.8 Perubahan skema yang diperkirakan
 
@@ -836,7 +836,7 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 | Tahap | Status | Catatan |
 | :--- | :--- | :--- |
 | Setup agent Laravel Boost | Selesai | Paket dan panduan proyek diperbarui; tidak mengubah tabel atau data aplikasi. |
-| Skema database pengembangan | Selesai | Seluruh 7 migration berstatus `Ran` pada `zakat_db`; 41 tabel tersedia, termasuk tabel Laravel. Kesesuaian seluruh controller dengan skema baru masih dikerjakan. |
+| Skema database pengembangan | Selesai | Seluruh 8 migration berstatus `Ran` pada `zakat_db`; 41 tabel tersedia, termasuk tabel Laravel. Kesesuaian seluruh controller dengan skema baru masih dikerjakan. |
 | Migrasi ke `zakat_db` | Selesai dengan pemulihan | Saat MariaDB pulih, `zakat_db` hanya memiliki `migrations` dan `user` kosong. `migrate:fresh` gagal karena user MySQL `keli` tidak memiliki hak `DROP` pada `zakat_db`. Migration pertama diperbaiki agar hanya menerima tabel `user` parsial kosong dengan kolom dan foreign key yang diharapkan, lalu melengkapi indeks NIK/email. `php artisan migrate` dan `OperationalSeeder` selesai. Gudang Surabaya, 7 bank awal, 6 zona Jawa nonaktif, tarif simulasi, dan pengaturan awal tersedia. Database lama `zakat` tidak disentuh. Rollback skema tetap memerlukan hak `DROP` atau bantuan admin database. |
 | Autentikasi dan peran | Kode dasar selesai, belum diuji dengan MySQL | Register hanya membuka muzakki/PJ; login menolak akun nonaktif; route dipisah menurut peran; admin dapat membuat/nonaktifkan panitia; sandi sementara wajib diganti; seeder kata sandi tetap dihapus. |
 | Pendaftaran panti | Kode dasar selesai, belum diuji dengan MySQL | PJ mengisi data panti dan foto privat, lalu menunggu verifikasi. Panti tidak lagi dibuat otomatis atau langsung dianggap terverifikasi. |
@@ -867,15 +867,15 @@ Setiap tahap yang selesai disimpan dalam commit lokal. Commit Git dapat memulihk
 
 ### 11.15 Menjalankan Versi Pengembangan
 
-Status saat pemeriksaan 2026-09-27: koneksi MariaDB berfungsi, seluruh migration pada `zakat_db` berstatus `Ran`, dan partisi LXC memiliki sekitar 2,8 GB ruang kosong. Fondasi dan alur utama prototipe diperkirakan sekitar **60%** selesai. Angka ini perkiraan pekerjaan, bukan hasil uji kualitas. Alur akun → panti → stok → checkout → penyaluran **belum diuji ujung ke ujung** dengan data contoh.
+Status saat pemeriksaan 2026-09-27: koneksi MariaDB berfungsi, seluruh 8 migration pada `zakat_db` berstatus `Ran`, dan partisi LXC memiliki sekitar 2,8 GB ruang kosong. Banyak alur inti prototipe sudah dikodekan, tetapi persentase penyelesaian belum dapat dinilai ulang secara jujur sebelum pemeriksaan alur penuh. Alur akun → panti → stok → checkout → penyaluran **belum diuji ujung ke ujung** dengan data contoh.
 
 1. Pastikan `.env` lokal tetap menunjuk ke `zakat_db`; jangan commit atau membagikan isi `.env`. Database lama `zakat` tetap sebagai pembanding.
-2. Jalankan `php artisan app:create-initial-admin` di terminal interaktif dan isi nama, email, serta kata sandi admin yang Anda pilih sendiri. Perintah hanya bekerja bila belum ada akun admin. Jangan tulis kata sandi di repository atau percakapan.
+2. Jika belum ada akun admin, jalankan `php artisan app:create-initial-admin` di terminal interaktif dan isi nama, email, serta kata sandi admin yang Anda pilih sendiri. Perintah hanya bekerja bila belum ada akun admin. Jangan tulis kata sandi di repository atau percakapan.
 3. Jalankan aplikasi dengan `php artisan serve --host=0.0.0.0 --port=8020`. Untuk pemeriksaan dari komputer lain, pakai alamat server yang memang dapat diakses dari jaringan Anda.
 4. Masuk sebagai admin; **simpan tanggal Idulfitri pada Pengaturan simulasi lebih dulu**. Sistem menghitung tenggat Jawa Timur H-5, Jawa Tengah/DI Yogyakarta H-7, dan Jawa Barat/DKI Jakarta/Banten H-10 pada akhir hari WIB. Jika tanggal contoh terlalu dekat sehingga tenggat sudah lewat, zona tidak bisa diaktifkan. Setelah itu atur biaya, harga emas beserta sumbernya, lalu aktifkan hanya zona Jawa yang alurnya siap. Panitia mencatat vendor dan penerimaan lot beras. PJ mendaftar akun lalu panti dan menunggu verifikasi panitia. Muzakki mendaftar terpisah dan membuat pesanan uji.
 5. Untuk melepaskan reservasi pesanan belum dibayar tepat setelah 30 menit, jalankan scheduler Laravel (`php artisan schedule:work`) di proses terpisah. Tanpa scheduler, pelepasan juga terjadi ketika halaman terkait dibuka, tetapi tidak selalu tepat waktu.
 6. Jangan gunakan data simulasi sebagai bukti uang sungguhan atau perintah pengiriman fisik. `git push` ke GitHub tetap keputusan terpisah; seluruh commit pada tahap ini masih lokal.
 
-Prioritas berikutnya: pemeriksaan alur penuh dengan akun/data contoh yang dipilih pemilik proyek, peningkatan statistik berdasarkan kebutuhan per penerima, halaman publik, draft maal keluarga, serta peninjauan keputusan syariah dan operasional sebelum pembayaran nyata.
+Prioritas berikutnya: pemeriksaan alur penuh dengan akun/data contoh, perapian tampilan di browser dan ponsel, daftar panti yang lebih informatif, preferensi pengingat, penanganan selisih bukti, serta peninjauan syariah dan operasional sebelum pembayaran nyata. Komit lokal menyimpan kode, tetapi belum menggantikan cadangan database atau hasil pemeriksaan alur.
 
 **Catatan error aktivasi Jawa Timur (2026-09-27):** permintaan sebelumnya ditolak dengan HTTP 422 karena `tanggal_idulfitri` dan `batas_checkout_at` Jawa Timur masih `NULL`, bukan karena MariaDB mati. Pada saat itu `is_active` Jawa Timur tetap `0`; tidak ada perubahan status parsial. Halaman admin sekarang menjelaskan urutan pengisian dan menampilkan pesan validasi. Situs diakses melalui domain publik dengan `APP_DEBUG=true`, sehingga detail kode terlihat di browser; nilai lokal `.env` telah diubah menjadi `APP_DEBUG=false` dan cache konfigurasi dibersihkan. `.env` tetap tidak masuk Git.
