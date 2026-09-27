@@ -21,6 +21,13 @@ class YayasanController extends Controller
         $catatanVerifikasi = $yayasan
             ? DB::table('verifikasi_panti')->where('yayasan_id', $yayasan->id)->latest('id')->value('catatan')
             : null;
+        $permohonanRekening = $yayasan
+            ? DB::table('permohonan_perubahan_rekening as permohonan')
+                ->join('bank', 'bank.id', '=', 'permohonan.bank_id')
+                ->where('permohonan.yayasan_id', $yayasan->id)
+                ->orderByDesc('permohonan.id')
+                ->first(['permohonan.*', 'bank.nama as nama_bank'])
+            : null;
         $alokasi = $yayasan
             ? DB::table('alokasi_transaksi')
                 ->join('transaksi_zakat', 'transaksi_zakat.id', '=', 'alokasi_transaksi.transaksi_id')
@@ -36,7 +43,7 @@ class YayasanController extends Controller
                 ->get(['alokasi_transaksi.*', 'transaksi_zakat.kode_transaksi', 'transaksi_zakat.jenis_zakat', 'bukti_panitia.id as bukti_panitia_id', 'bukti_pj.id as bukti_pj_id'])
             : collect();
 
-        return view('yayasan.dashboard', compact('yayasan', 'bank', 'catatanVerifikasi', 'alokasi'));
+        return view('yayasan.dashboard', compact('yayasan', 'bank', 'catatanVerifikasi', 'permohonanRekening', 'alokasi'));
     }
 
     public function storePanti(Request $request): RedirectResponse

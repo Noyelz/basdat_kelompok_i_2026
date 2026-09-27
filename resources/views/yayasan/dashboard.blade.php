@@ -54,6 +54,25 @@
                     @endif
                 </div>
             </section>
+            <section class="card border-0 shadow-sm mt-4"><div class="card-body">
+                <h2 class="h5">Rekening panti</h2>
+                <p class="mb-2">Rekening aktif: <strong>{{ $yayasan->nama_bank }} · {{ $yayasan->no_rek }} · {{ $yayasan->atas_nama_rek }}</strong></p>
+                @if ($permohonanRekening)
+                    <p class="mb-2">Usulan terakhir: {{ $permohonanRekening->nama_bank }} · {{ $permohonanRekening->no_rek }} · {{ $permohonanRekening->atas_nama_rek }} · <strong>{{ $permohonanRekening->status }}</strong></p>
+                    @if ($permohonanRekening->catatan)<p class="mb-2">Catatan panitia: {{ $permohonanRekening->catatan }}</p>@endif
+                @endif
+                @if (! $permohonanRekening || $permohonanRekening->status !== 'pending')
+                    <form method="POST" action="{{ route('yayasan.rekening.store') }}" class="row g-2">
+                        @csrf
+                        <div class="col-md-4"><label class="form-label">Bank baru</label><select name="bank_id" class="form-select" required><option value="">Pilih bank</option>@foreach ($bank as $item)<option value="{{ $item->id }}" @selected(old('bank_id') == $item->id)>{{ $item->nama }}</option>@endforeach</select></div>
+                        <div class="col-md-4"><label class="form-label">Nomor rekening baru</label><input name="no_rek" class="form-control" inputmode="numeric" pattern="[0-9]{6,30}" maxlength="30" value="{{ old('no_rek') }}" required></div>
+                        <div class="col-md-4"><label class="form-label">Nama pemilik rekening</label><input name="atas_nama_rek" class="form-control" maxlength="255" value="{{ old('atas_nama_rek') }}" required></div>
+                        <div class="col-12"><button class="btn btn-outline-primary" type="submit">Ajukan perubahan rekening</button></div>
+                    </form>
+                @else
+                    <p class="text-muted mb-0">Permohonan sedang diperiksa. Rekening aktif tetap dapat digunakan sesuai proses yang berlaku.</p>
+                @endif
+            </div></section>
             @if ($yayasan->status_verif === 'rejected')
                 <section class="card border-0 shadow-sm mt-4"><div class="card-body">
                     <h2 class="h5">Perbaiki dan kirim ulang panti</h2>

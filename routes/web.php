@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BankChangeRequestController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\FitrahCheckoutController;
 use App\Http\Controllers\HandoverEvidenceController;
@@ -73,6 +74,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [PanitiaController::class, 'index'])->name('dashboard');
         Route::get('/panti', [PantiVerificationController::class, 'index'])->name('panti.index');
         Route::patch('/panti/{id}', [PantiVerificationController::class, 'update'])->whereNumber('id')->name('panti.update');
+        Route::get('/rekening', [BankChangeRequestController::class, 'index'])->name('rekening.index');
+        Route::patch('/rekening/{id}', [BankChangeRequestController::class, 'review'])->whereNumber('id')->name('rekening.review');
         Route::get('/gudang', [InventoryController::class, 'index'])->name('gudang.index');
         Route::post('/vendor', [InventoryController::class, 'storeVendor'])->name('vendor.store');
         Route::post('/katalog', [InventoryController::class, 'storeKatalog'])->name('katalog.store');
@@ -94,6 +97,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [YayasanController::class, 'dashboard'])->name('dashboard');
         Route::post('/daftar-panti', [YayasanController::class, 'storePanti'])->name('panti.store');
         Route::patch('/daftar-panti', [YayasanController::class, 'resubmitPanti'])->name('panti.resubmit');
+        Route::post('/rekening', [BankChangeRequestController::class, 'store'])->name('rekening.store');
         Route::post('/bukti/{id}', [HandoverEvidenceController::class, 'submitPj'])->whereNumber('id')->name('bukti.store');
     });
 

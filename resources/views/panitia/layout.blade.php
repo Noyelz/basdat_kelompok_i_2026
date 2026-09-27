@@ -31,6 +31,9 @@
                 <a class="nav-link {{ request()->routeIs('panitia.panti.*') ? 'active' : '' }}" href="{{ route('panitia.panti.index') }}">Panti & Verifikasi</a>
             </li>
             <li>
+                <a class="nav-link {{ request()->routeIs('panitia.rekening.*') ? 'active' : '' }}" href="{{ route('panitia.rekening.index') }}">Rekening Panti</a>
+            </li>
+            <li>
                 <a class="nav-link {{ request()->routeIs('panitia.gudang.*') ? 'active' : '' }}" href="{{ route('panitia.gudang.index') }}">Vendor & Gudang</a>
             </li>
             <li>
