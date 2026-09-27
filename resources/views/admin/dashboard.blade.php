@@ -9,7 +9,10 @@
 <body>
     <header class="app-navbar">
         <div class="navbar-container">
-            <strong class="brand-text">Portal Zakat · Admin</strong>
+            <a class="brand-wrapper" href="{{ route('admin.dashboard') }}">
+                <span class="brand-icon" aria-hidden="true">PZ</span>
+                <span><strong class="brand-text">Portal Zakat</strong> <span class="brand-badge">Admin</span></span>
+            </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="btn-app-logout">Keluar</button>

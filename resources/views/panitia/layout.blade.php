@@ -12,14 +12,14 @@
 <header class="app-navbar">
     <div class="navbar-container">
         <a class="brand-wrapper" href="{{ route('panitia.dashboard') }}">
-            <div class="brand-icon" style="background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24;">
+            <div class="brand-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
             </div>
             <div>
                 <span class="brand-text">Portal Zakat</span>
-                <span class="brand-badge ms-2" style="background: rgba(245, 158, 11, 0.25); color: #fef08a;">Panitia</span>
+                <span class="brand-badge ms-2">Panitia</span>
             </div>
         </a>
 

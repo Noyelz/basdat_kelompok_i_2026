@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 </head>
 <body>
-    <header class="app-navbar"><div class="navbar-container"><strong class="brand-text">Portal Zakat · QR simulasi</strong></div></header>
+    <header class="app-navbar"><div class="navbar-container"><a class="brand-wrapper" href="{{ route('login') }}"><span class="brand-icon" aria-hidden="true">PZ</span><span><strong class="brand-text">Portal Zakat</strong> <span class="brand-badge">QR simulasi</span></span></a></div></header>
     <main class="app-container" style="max-width: 640px; padding-top: 2rem;">
         <section class="app-card" style="padding: 1.5rem;">
             <h1 class="app-card-title">Konfirmasi pembayaran simulasi</h1>

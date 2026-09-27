@@ -10,7 +10,10 @@
 <body>
     <header class="app-navbar">
         <div class="navbar-container">
-            <strong class="brand-text">Portal Zakat · Penanggung jawab panti</strong>
+            <a class="brand-wrapper" href="{{ route('yayasan.dashboard') }}">
+                <span class="brand-icon" aria-hidden="true">PZ</span>
+                <span><strong class="brand-text">Portal Zakat</strong> <span class="brand-badge">PJ panti</span></span>
+            </a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="btn-app-logout">Keluar</button>

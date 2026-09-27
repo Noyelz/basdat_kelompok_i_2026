@@ -9,7 +9,7 @@
                 <h3 class="fw-bold mb-1" style="color: var(--dark);">Profil Saya</h3>
                 <p class="text-muted mb-0">Kelola informasi data diri dan riwayat pembaruan akun Anda.</p>
             </div>
-            <span class="badge px-3 py-2" style="background: rgba(5, 150, 105, 0.15); color: var(--primary); font-size: 0.85rem; font-weight: 700; border-radius: 8px;">
+            <span class="badge px-3 py-2" style="background: var(--primary-light); color: var(--primary); font-size: 0.85rem; font-weight: 700; border-radius: var(--radius-md);">
                 Muzakki (Pemberi Zakat)
             </span>
         </div>
@@ -39,9 +39,9 @@
         <div class="row g-4">
             <!-- Kolom Kiri: Ringkasan Akun & Catatan Waktu (created_at & updated_at) -->
             <div class="col-lg-4">
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 14px;">
+                <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body text-center p-4">
-                        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, #047857 100%); font-size: 1.85rem;">
+                        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); font-size: 1.85rem;">
                             {{ strtoupper(substr($user->nama, 0, 1)) }}
                         </div>
                         <h5 class="fw-bold mb-1" style="color: var(--slate-800);">{{ $user->nama }}</h5>
@@ -63,7 +63,7 @@
                 </div>
 
                 <!-- Card Catatan Waktu (created_at & updated_at) -->
-                <div class="card shadow-sm border-0" style="border-radius: 14px; background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);">
+                <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #fffdf7 0%, #f4f3e8 100%);">
                     <div class="card-body p-4">
                         <h6 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: var(--slate-800);">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--primary);">
@@ -102,7 +102,7 @@
 
             <!-- Kolom Kanan: Formulir Pembaruan Profil -->
             <div class="col-lg-8">
-                <div class="card shadow-sm border-0" style="border-radius: 14px;">
+                <div class="card shadow-sm border-0">
                     <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h5 class="mb-0 fw-bold" style="color: var(--slate-800);">Formulir Perbarui Data Profil</h5>
                         <span class="small text-muted"><span class="text-danger fw-bold">*</span> Menandakan kolom wajib</span>
@@ -182,7 +182,7 @@
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                                <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm" style="border-radius: 8px;">
+                                <button type="submit" class="btn btn-success px-4 py-2 fw-bold shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="me-1 d-inline-block">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                     </svg>
