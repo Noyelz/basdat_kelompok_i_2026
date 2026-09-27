@@ -8,6 +8,7 @@ use App\Http\Controllers\HandoverEvidenceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MaalCheckoutController;
 use App\Http\Controllers\MuzakkiController;
+use App\Http\Controllers\OperationalReportController;
 use App\Http\Controllers\PanitiaController;
 use App\Http\Controllers\PantiVerificationController;
 use App\Http\Controllers\SimulationPaymentController;
@@ -85,6 +86,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/maal/{id}/alokasi', [DistributionController::class, 'allocateMaal'])->whereNumber('id')->name('maal.allocate');
         Route::get('/bukti', [HandoverEvidenceController::class, 'index'])->name('bukti.index');
         Route::post('/bukti/{id}', [HandoverEvidenceController::class, 'submitPanitia'])->whereNumber('id')->name('bukti.store');
+        Route::get('/laporan', [OperationalReportController::class, 'index'])->name('laporan.index');
     });
 
     // Group Route Yayasan
