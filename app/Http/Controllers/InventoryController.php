@@ -35,7 +35,15 @@ class InventoryController extends Controller
             ->limit(30)
             ->get(['lot_beras.*', 'katalog_beras.nama_beras', 'vendor.nama as nama_vendor']);
 
-        return view('panitia.gudang', compact('vendor', 'gudang', 'katalog', 'lot'));
+        $koreksi = DB::table('mutasi_stok')
+            ->join('lot_beras', 'lot_beras.id', '=', 'mutasi_stok.lot_beras_id')
+            ->join('user', 'user.id', '=', 'mutasi_stok.dicatat_oleh')
+            ->where('mutasi_stok.jenis', 'koreksi_stok')
+            ->orderByDesc('mutasi_stok.id')
+            ->limit(20)
+            ->get(['mutasi_stok.*', 'lot_beras.kode_lot', 'user.nama as nama_panitia']);
+
+        return view('panitia.gudang', compact('vendor', 'gudang', 'katalog', 'lot', 'koreksi'));
     }
 
     public function storeVendor(Request $request): RedirectResponse
@@ -132,38 +140,94 @@ class InventoryController extends Controller
                 'updated_at' => now(),
             ]);
 
-            $lotFifo = DB::table('lot_beras')
-                ->where('katalog_beras_id', $produk->id)
-                ->where('sisa_kg', '>', 0)
-                ->orderBy('tanggal_masuk')
-                ->orderBy('id')
-                ->first(['harga_beli_per_kg']);
-            $margin = DB::table('pengaturan_operasional')->where('kunci', 'persen_keuntungan_beras')->value('nilai');
-            abort_unless($lotFifo && $margin !== null, 503, 'Harga katalog belum dapat dihitung.');
-
-            $pengali = bcadd('1', bcdiv((string) $margin, '100', 6), 6);
-            $hargaPenawaran = bcadd(bcmul($lotFifo->harga_beli_per_kg, $pengali, 3), '0.005', 2);
-
             DB::table('katalog_beras')->where('id', $produk->id)->update([
                 'stock' => bcadd($produk->stock, $data['jumlah_kg'], 2),
-                'harga_per_kg' => $hargaPenawaran,
                 'updated_at' => now(),
             ]);
-
-            if (bccomp($produk->harga_per_kg, $hargaPenawaran, 2) !== 0) {
-                DB::table('riwayat_harga_katalog')->insert([
-                    'katalog_beras_id' => $produk->id,
-                    'harga_pokok_per_kg' => $lotFifo->harga_beli_per_kg,
-                    'persen_keuntungan' => $margin,
-                    'harga_penawaran_per_kg' => $hargaPenawaran,
-                    'berlaku_mulai' => now(),
-                    'ditetapkan_oleh' => $request->user()->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            $this->refreshCatalogPrice($produk, $request->user()->id);
         });
 
         return back()->with('success', 'Beras diterima dan lot, stok, mutasi, serta harga katalog diperbarui.');
+    }
+
+    public function adjust(Request $request, int $id): RedirectResponse
+    {
+        $data = $request->validate([
+            'perubahan_kg' => ['required', 'numeric', 'decimal:0,2', 'between:-9999999999.99,9999999999.99'],
+            'alasan' => ['required', 'string', 'max:2000'],
+        ]);
+        abort_if(bccomp($data['perubahan_kg'], '0', 2) === 0, 422, 'Koreksi tidak boleh nol.');
+
+        DB::transaction(function () use ($request, $id, $data): void {
+            $lotAwal = DB::table('lot_beras')->where('id', $id)->first(['katalog_beras_id']);
+            abort_unless($lotAwal, 404);
+            $produk = DB::table('katalog_beras')->where('id', $lotAwal->katalog_beras_id)->lockForUpdate()->first();
+            $lot = DB::table('lot_beras')->where('id', $id)->lockForUpdate()->first();
+            abort_unless($produk && $lot && $lot->katalog_beras_id === $produk->id, 404);
+
+            $terpesan = DB::table('reservasi_stok')
+                ->where('lot_beras_id', $lot->id)
+                ->where('status', 'active')
+                ->selectRaw('COALESCE(SUM(jumlah_kg), 0) as jumlah')
+                ->value('jumlah');
+            $sisaBaru = bcadd($lot->sisa_kg, $data['perubahan_kg'], 2);
+            $stokBaru = bcadd($produk->stock, $data['perubahan_kg'], 2);
+            abort_if(bccomp($sisaBaru, (string) $terpesan, 2) < 0, 422, 'Koreksi akan mengurangi stok di bawah jumlah yang sudah dipesan.');
+            abort_if(bccomp($sisaBaru, '9999999999.99', 2) > 0 || bccomp($stokBaru, '9999999999.99', 2) > 0, 422, 'Koreksi melampaui kapasitas angka stok.');
+            abort_if(bccomp($stokBaru, '0', 2) < 0, 422, 'Stok katalog tidak boleh negatif.');
+
+            DB::table('lot_beras')->where('id', $id)->update(['sisa_kg' => $sisaBaru, 'updated_at' => now()]);
+            DB::table('katalog_beras')->where('id', $produk->id)->update(['stock' => $stokBaru, 'updated_at' => now()]);
+            DB::table('mutasi_stok')->insert([
+                'lot_beras_id' => $id,
+                'dicatat_oleh' => $request->user()->id,
+                'jenis' => 'koreksi_stok',
+                'perubahan_kg' => $data['perubahan_kg'],
+                'saldo_setelah_kg' => $sisaBaru,
+                'alasan' => $data['alasan'],
+                'referensi' => 'lot_beras:'.$id,
+                'is_simulation' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $this->refreshCatalogPrice($produk, $request->user()->id);
+        }, attempts: 3);
+
+        return back()->with('success', 'Koreksi lot dan katalog tersimpan bersama alasan dan mutasi stok.');
+    }
+
+    private function refreshCatalogPrice(object $produk, int $userId): void
+    {
+        $lotFifo = DB::table('lot_beras')
+            ->where('katalog_beras_id', $produk->id)
+            ->where('sisa_kg', '>', 0)
+            ->orderBy('tanggal_masuk')
+            ->orderBy('id')
+            ->first(['harga_beli_per_kg']);
+        if (! $lotFifo) {
+            DB::table('katalog_beras')->where('id', $produk->id)->update(['harga_per_kg' => 0, 'updated_at' => now()]);
+
+            return;
+        }
+
+        $margin = DB::table('pengaturan_operasional')->where('kunci', 'persen_keuntungan_beras')->value('nilai');
+        abort_unless($margin !== null, 503, 'Persentase keuntungan beras belum tersedia.');
+        $pengali = bcadd('1', bcdiv((string) $margin, '100', 6), 6);
+        $hargaPenawaran = bcadd(bcmul($lotFifo->harga_beli_per_kg, $pengali, 3), '0.005', 2);
+
+        if (bccomp($produk->harga_per_kg, $hargaPenawaran, 2) !== 0) {
+            DB::table('katalog_beras')->where('id', $produk->id)->update(['harga_per_kg' => $hargaPenawaran, 'updated_at' => now()]);
+            DB::table('riwayat_harga_katalog')->insert([
+                'katalog_beras_id' => $produk->id,
+                'harga_pokok_per_kg' => $lotFifo->harga_beli_per_kg,
+                'persen_keuntungan' => $margin,
+                'harga_penawaran_per_kg' => $hargaPenawaran,
+                'berlaku_mulai' => now(),
+                'ditetapkan_oleh' => $userId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }

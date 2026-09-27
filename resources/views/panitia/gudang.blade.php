@@ -61,11 +61,31 @@
 
 <section class="card border-0 shadow-sm"><div class="card-body">
     <h2 class="h5">Lot terbaru</h2>
-    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Lot</th><th>Vendor</th><th>Beras</th><th>Masuk</th><th>Sisa fisik</th><th>Harga beli/kg</th></tr></thead><tbody>
+    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Lot</th><th>Vendor</th><th>Beras</th><th>Masuk awal</th><th>Sisa fisik</th><th>Harga beli/kg</th><th>Koreksi</th></tr></thead><tbody>
         @forelse ($lot as $item)
-            <tr><td>{{ $item->kode_lot }}</td><td>{{ $item->nama_vendor }}</td><td>{{ $item->nama_beras }}</td><td>{{ $item->jumlah_masuk_kg }} kg</td><td>{{ $item->sisa_kg }} kg</td><td>Rp{{ number_format($item->harga_beli_per_kg, 2, ',', '.') }}</td></tr>
+            <tr><td>{{ $item->kode_lot }}</td><td>{{ $item->nama_vendor }}</td><td>{{ $item->nama_beras }}</td><td>{{ $item->jumlah_masuk_kg }} kg</td><td>{{ $item->sisa_kg }} kg</td><td>Rp{{ number_format($item->harga_beli_per_kg, 2, ',', '.') }}</td><td>
+                <form method="POST" action="{{ route('panitia.lot.adjust', $item->id) }}" class="d-flex flex-column gap-1" style="min-width: 220px">
+                    @csrf
+                    @method('PATCH')
+                    <input type="number" step="0.01" name="perubahan_kg" class="form-control form-control-sm" placeholder="+ / − kg" required>
+                    <input name="alasan" class="form-control form-control-sm" maxlength="2000" placeholder="Alasan wajib" required>
+                    <button class="btn btn-sm btn-outline-warning" type="submit">Simpan koreksi</button>
+                </form>
+            </td></tr>
         @empty
-            <tr><td colspan="6" class="text-muted">Belum ada lot yang diterima.</td></tr>
+            <tr><td colspan="7" class="text-muted">Belum ada lot yang diterima.</td></tr>
+        @endforelse
+    </tbody></table></div>
+</div></section>
+
+<section class="card border-0 shadow-sm mt-4"><div class="card-body">
+    <h2 class="h5">Riwayat koreksi stok</h2>
+    <p class="small text-muted">Koreksi mengubah stok fisik simulasi dan tidak boleh mengurangi jumlah yang sudah dipesan.</p>
+    <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Waktu</th><th>Lot</th><th>Perubahan</th><th>Sisa setelah</th><th>Alasan</th><th>Panitia</th></tr></thead><tbody>
+        @forelse ($koreksi as $item)
+            <tr><td>{{ $item->created_at }}</td><td>{{ $item->kode_lot }}</td><td>{{ $item->perubahan_kg }} kg</td><td>{{ $item->saldo_setelah_kg }} kg</td><td>{{ $item->alasan }}</td><td>{{ $item->nama_panitia }}</td></tr>
+        @empty
+            <tr><td colspan="6" class="text-muted">Belum ada koreksi stok.</td></tr>
         @endforelse
     </tbody></table></div>
 </div></section>

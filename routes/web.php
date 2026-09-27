@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/vendor', [InventoryController::class, 'storeVendor'])->name('vendor.store');
         Route::post('/katalog', [InventoryController::class, 'storeKatalog'])->name('katalog.store');
         Route::post('/pembelian/terima', [InventoryController::class, 'receive'])->name('pembelian.receive');
+        Route::patch('/lot/{id}/koreksi', [InventoryController::class, 'adjust'])->whereNumber('id')->name('lot.adjust');
         Route::get('/distribusi', [DistributionController::class, 'index'])->name('distribusi.index');
         Route::post('/perjalanan', [DistributionController::class, 'createTrip'])->name('perjalanan.store');
         Route::post('/perjalanan/{id}/berangkat', [DistributionController::class, 'dispatch'])->whereNumber('id')->name('perjalanan.dispatch');
