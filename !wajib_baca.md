@@ -13,7 +13,7 @@
 
 Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pengelolaan & Pembayaran Zakat (Fitrah & Maal)**. Database ini dirancang dengan standar industri (menggunakan MySQL/MariaDB Engine: `InnoDB`, Charset: `utf8mb4`) agar **anti-banting, aman dari selisih pembulatan uang, konsisten secara audit finansial, dan sesuai prinsip syariah**.
 
-> **Arah pengembangan terbaru:** Lihat [Bagian 11: Rencana perubahan dan checklist](#11-rencana-perubahan-dan-checklist-2026-09-27), khususnya [Bagian 11.10: Keputusan operasional](#1110-keputusan-operasional-lanjutan), [Bagian 11.11: Rancangan database](#1111-rancangan-database-lanjutan), dan [Bagian 11.13: Keputusan teknis](#1113-keputusan-teknis-sebelum-implementasi-2026-09-27). Bagian 1–9 menggambarkan skema dan alur lama, **bukan spesifikasi implementasi baru**. Khususnya, uraian QRIS/payment gateway nyata, harga tetap, pemotongan stok langsung saat pembayaran, dan akun panitia sebagai pengelola seluruh situs sudah perlu direvisi. Checklist baru masih berupa rencana; kotak kosong berarti belum dikerjakan.
+> **Arah pengembangan terbaru:** Lihat [Bagian 11: Rencana perubahan dan checklist](#11-rencana-perubahan-dan-checklist-2026-09-27), khususnya [Bagian 11.14: Catatan implementasi](#1114-catatan-implementasi-bertahap) dan [Bagian 11.15: Menjalankan versi pengembangan](#1115-menjalankan-versi-pengembangan). Bagian 1–9 menggambarkan skema dan alur lama, **bukan spesifikasi implementasi baru**. Khususnya, uraian QRIS/payment gateway nyata, harga tetap, pemotongan stok langsung saat pembayaran, dan akun panitia sebagai pengelola seluruh situs sudah perlu direvisi. Banyak bagian checklist telah diimplementasikan sebagian; kotak kosong berarti pekerjaan atau pemeriksaan masih tersisa, bukan berarti semua kode pada bagian itu belum ada.
 
 ---
 
@@ -661,7 +661,7 @@ Buka `http://localhost:8020` di browser, atau gunakan port forwarding IDE pada p
 - [ ] Pasang otorisasi **per peran dan per objek** pada seluruh route/controller; kepemilikan transaksi/panti selalu diperiksa di server. `/admin` tersembunyi dari menu bukan pengaman akses.
 - [ ] Batasi akses panitia ke data pengguna yang diperlukan saja; NIK, NPWP, alamat, rekening, dan data anak tidak ditampilkan di daftar umum. Foto/bukti privat hanya dapat dibuka pihak berwenang.
 - [ ] Catat audit perubahan penting: verifikasi panti, perubahan rekening, koreksi stok, harga, admin/panitia, pembayaran simulasi, dan penyaluran.
-- [x] Hapus kredensial tetap di seeder; akun admin pertama dibuat melalui perintah interaktif `php artisan app:create-initial-admin` sesudah migration berhasil, dengan kata sandi hash di `pass_hash`. Perintah belum dijalankan karena MariaDB belum pulih.
+- [x] Hapus kredensial tetap di seeder; akun admin pertama dibuat melalui perintah interaktif `php artisan app:create-initial-admin` sesudah migration berhasil, dengan kata sandi hash di `pass_hash`. MariaDB dan migration sudah pulih; perintah belum dijalankan karena pemilik proyek perlu menentukan nama, email, dan kata sandi admin pertama.
 - [ ] Hilangkan data contoh yang dibuat otomatis di jalur pendaftaran/transaksi. Jangan otomatis membuat yayasan terverifikasi atau memilih baris yayasan/beras pertama sebagai pengganti pilihan pengguna.
 
 ### 11.3 Tahap B — Pendaftaran, login, dan PJ panti
@@ -855,3 +855,16 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 | Penyesuaian transaksi dan stok | Kode dasar selesai | Checkout baru memakai reservasi lot dan harga snapshot, QR uji, alokasi manual, serta penyaluran dua bukti. Halaman lama yang tidak digunakan masih ada di repository dan perlu ditinjau/dihapus setelah alur baru diperiksa menyeluruh. |
 
 Setiap tahap yang selesai disimpan dalam commit lokal. Commit Git dapat memulihkan kode, sedangkan pemulihan isi MySQL memerlukan cadangan database tersendiri.
+
+### 11.15 Menjalankan Versi Pengembangan
+
+Status saat pemeriksaan 2026-09-27: koneksi MariaDB berfungsi, seluruh migration pada `zakat_db` berstatus `Ran`, dan partisi LXC memiliki sekitar 2,8 GB ruang kosong. Fondasi dan alur utama prototipe diperkirakan sekitar **60%** selesai. Angka ini perkiraan pekerjaan, bukan hasil uji kualitas. Alur akun → panti → stok → checkout → penyaluran **belum diuji ujung ke ujung** dengan data contoh.
+
+1. Pastikan `.env` lokal tetap menunjuk ke `zakat_db`; jangan commit atau membagikan isi `.env`. Database lama `zakat` tetap sebagai pembanding.
+2. Jalankan `php artisan app:create-initial-admin` di terminal interaktif dan isi nama, email, serta kata sandi admin yang Anda pilih sendiri. Perintah hanya bekerja bila belum ada akun admin. Jangan tulis kata sandi di repository atau percakapan.
+3. Jalankan aplikasi dengan `php artisan serve --host=0.0.0.0 --port=8020`. Untuk pemeriksaan dari komputer lain, pakai alamat server yang memang dapat diakses dari jaringan Anda.
+4. Masuk sebagai admin; buat akun panitia, atur tanggal Idulfitri, biaya, harga emas dan sumbernya, serta aktifkan hanya zona Jawa yang alurnya siap. Panitia mencatat vendor dan penerimaan lot beras. PJ mendaftar akun lalu panti dan menunggu verifikasi panitia. Muzakki mendaftar terpisah dan membuat pesanan uji.
+5. Untuk melepaskan reservasi pesanan belum dibayar tepat setelah 30 menit, jalankan scheduler Laravel (`php artisan schedule:work`) di proses terpisah. Tanpa scheduler, pelepasan juga terjadi ketika halaman terkait dibuka, tetapi tidak selalu tepat waktu.
+6. Jangan gunakan data simulasi sebagai bukti uang sungguhan atau perintah pengiriman fisik. `git push` ke GitHub tetap keputusan terpisah; seluruh commit pada tahap ini masih lokal.
+
+Prioritas berikutnya: pemeriksaan alur penuh dengan akun/data contoh yang dipilih pemilik proyek, penyelesaian bukti faktur vendor, peningkatan statistik berdasarkan kebutuhan per penerima, halaman publik, draft maal keluarga, serta peninjauan keputusan syariah dan operasional sebelum pembayaran nyata.
