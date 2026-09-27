@@ -57,15 +57,22 @@ class MuzakkiController extends Controller
                 $item->maal_masuk = $maalMasuk[$item->id] ?? '0.00';
                 $item->fitrah_selesai = $fitrahSelesai[$item->id] ?? '0.00';
                 $item->maal_selesai = $maalSelesai[$item->id] ?? '0.00';
+                $item->fitrah_per_penerima = $item->jumlah_mustahik_layak > 0
+                    ? (float) $item->fitrah_masuk / $item->jumlah_mustahik_layak
+                    : null;
+                $item->maal_per_penerima = $item->jumlah_mustahik_layak > 0
+                    ? (float) $item->maal_masuk / $item->jumlah_mustahik_layak
+                    : null;
 
                 return $item;
             });
 
-        $pantiFitrah = $panti->sortByDesc('fitrah_masuk', SORT_NUMERIC)->take(3);
-        $pantiFitrahRendah = $panti->sortBy('fitrah_masuk', SORT_NUMERIC)->take(3);
-        $pantiMaal = $panti->sortByDesc('maal_masuk', SORT_NUMERIC)->take(3);
-        $pantiMaalRendah = $panti->sortBy('maal_masuk', SORT_NUMERIC)->take(3);
-        $pantiSekitar = $panti->where('provinsi', $request->user()->provinsi)->sortByDesc('fitrah_masuk', SORT_NUMERIC)->take(3);
+        $pantiDenganPenerima = $panti->filter(fn ($item): bool => $item->jumlah_mustahik_layak > 0);
+        $pantiFitrah = $pantiDenganPenerima->sortByDesc('fitrah_per_penerima', SORT_NUMERIC)->take(3);
+        $pantiFitrahRendah = $pantiDenganPenerima->sortBy('fitrah_per_penerima', SORT_NUMERIC)->take(3);
+        $pantiMaal = $pantiDenganPenerima->sortByDesc('maal_per_penerima', SORT_NUMERIC)->take(3);
+        $pantiMaalRendah = $pantiDenganPenerima->sortBy('maal_per_penerima', SORT_NUMERIC)->take(3);
+        $pantiSekitar = $pantiDenganPenerima->where('provinsi', $request->user()->provinsi)->sortBy('fitrah_per_penerima', SORT_NUMERIC)->take(3);
         $tanggalIdulfitri = DB::table('pengaturan_operasional')->where('kunci', 'tanggal_idulfitri')->value('nilai');
         $sisaHari = $tanggalIdulfitri
             ? (int) now('Asia/Jakarta')->startOfDay()->diffInDays(CarbonImmutable::parse($tanggalIdulfitri, 'Asia/Jakarta')->startOfDay(), false)

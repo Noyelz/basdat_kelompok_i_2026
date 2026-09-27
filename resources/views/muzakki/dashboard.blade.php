@@ -53,18 +53,20 @@
 </div></section>
 
 <h3 class="h5">Dampak panti terverifikasi</h3>
-<p class="text-muted">Seluruh periode database pengembangan. Fitrah dihitung dalam kg, maal dalam Rupiah. “Selesai” berarti ada foto panitia dan PJ dengan jumlah cocok; daftar ini tidak membuka identitas donor.</p>
+<p class="text-muted">Seluruh periode database pengembangan. Urutan memakai bantuan simulasi terkumpul per penerima layak yang tercatat panitia, sehingga ukuran panti ikut diperhitungkan. Panti tanpa jumlah penerima terverifikasi belum masuk peringkat. Fitrah dalam kg, maal dalam Rupiah. “Selesai” berarti ada foto panitia dan PJ dengan jumlah cocok; identitas donor tidak ditampilkan.</p>
 <div class="row g-3">
-    @foreach ([['judul' => 'Fitrah paling banyak terkumpul', 'data' => $pantiFitrah, 'jenis' => 'fitrah'], ['judul' => 'Fitrah paling sedikit terkumpul', 'data' => $pantiFitrahRendah, 'jenis' => 'fitrah'], ['judul' => 'Maal paling banyak terkumpul', 'data' => $pantiMaal, 'jenis' => 'maal'], ['judul' => 'Maal paling sedikit terkumpul', 'data' => $pantiMaalRendah, 'jenis' => 'maal'], ['judul' => 'Di provinsi Anda', 'data' => $pantiSekitar, 'jenis' => 'fitrah']] as $kelompok)
+    @foreach ([['judul' => 'Fitrah per penerima tertinggi', 'data' => $pantiFitrah, 'jenis' => 'fitrah'], ['judul' => 'Fitrah per penerima terendah', 'data' => $pantiFitrahRendah, 'jenis' => 'fitrah'], ['judul' => 'Maal per penerima tertinggi', 'data' => $pantiMaal, 'jenis' => 'maal'], ['judul' => 'Maal per penerima terendah', 'data' => $pantiMaalRendah, 'jenis' => 'maal'], ['judul' => 'Di provinsi Anda · fitrah per penerima terendah', 'data' => $pantiSekitar, 'jenis' => 'fitrah']] as $kelompok)
         <div class="col-lg-6"><section class="card border-0 shadow-sm h-100"><div class="card-body">
             <h4 class="h6">{{ $kelompok['judul'] }}</h4>
             @forelse ($kelompok['data'] as $item)
                 @php($masuk = $kelompok['jenis'] === 'fitrah' ? $item->fitrah_masuk : $item->maal_masuk)
                 @php($selesai = $kelompok['jenis'] === 'fitrah' ? $item->fitrah_selesai : $item->maal_selesai)
+                @php($perPenerima = $kelompok['jenis'] === 'fitrah' ? $item->fitrah_per_penerima : $item->maal_per_penerima)
                 <div class="border-top py-2">
                     <strong>{{ $item->nama }}</strong><br>
                     <small class="text-muted">{{ $item->kota_kabupaten }}, {{ $item->provinsi }} · {{ $item->jumlah_mustahik_layak }} penerima layak</small><br>
                     {{ $kelompok['jenis'] === 'fitrah' ? '' : 'Rp' }}{{ number_format($masuk, 2, ',', '.') }} {{ $kelompok['jenis'] === 'fitrah' ? 'kg' : '' }} terkumpul · {{ $kelompok['jenis'] === 'fitrah' ? '' : 'Rp' }}{{ number_format($selesai, 2, ',', '.') }} {{ $kelompok['jenis'] === 'fitrah' ? 'kg' : '' }} selesai
+                    <small class="d-block">{{ $kelompok['jenis'] === 'fitrah' ? '' : 'Rp' }}{{ number_format($perPenerima, 2, ',', '.') }} {{ $kelompok['jenis'] === 'fitrah' ? 'kg' : '' }} terkumpul per penerima layak</small>
                     <small class="d-block text-muted">{{ (float) $masuk > 0 ? number_format((float) $selesai / (float) $masuk * 100, 1, ',', '.') . '% selesai' : 'Belum ada data persentase' }}</small>
                 </div>
             @empty
