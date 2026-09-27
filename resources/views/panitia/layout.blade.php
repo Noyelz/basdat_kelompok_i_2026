@@ -28,13 +28,7 @@
                 <a class="nav-link {{ request()->routeIs('panitia.dashboard') ? 'active' : '' }}" href="{{ route('panitia.dashboard') }}">Dashboard</a>
             </li>
             <li>
-                <a class="nav-link {{ request()->routeIs('panitia.transaksi') ? 'active' : '' }}" href="{{ route('panitia.transaksi') }}">Verifikasi Muzakki</a>
-            </li>
-            <li>
-                <a class="nav-link {{ request()->routeIs('panitia.pengajuan') ? 'active' : '' }}" href="{{ route('panitia.pengajuan') }}">Penyaluran Yayasan</a>
-            </li>
-            <li>
-                <a class="nav-link {{ request()->routeIs('panitia.pengguna') ? 'active' : '' }}" href="{{ route('panitia.pengguna') }}">Data Pengguna</a>
+                <a class="nav-link {{ request()->routeIs('panitia.panti.*') ? 'active' : '' }}" href="{{ route('panitia.panti.index') }}">Panti & Verifikasi</a>
             </li>
         </ul>
 
@@ -64,6 +58,9 @@
             </svg>
             <span>{{ session('error') }}</span>
         </div>
+    @endif
+    @if($errors->any())
+        <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
 
     @yield('content')

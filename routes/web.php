@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MuzakkiController;
 use App\Http\Controllers\PanitiaController;
+use App\Http\Controllers\PantiVerificationController;
 use App\Http\Controllers\YayasanController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -41,6 +42,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/ganti-kata-sandi', [AuthController::class, 'showChangePassword'])->name('password.change');
     Route::post('/ganti-kata-sandi', [AuthController::class, 'changePassword'])->name('password.change.store');
+    Route::get('/panti/foto/{id}', [PantiVerificationController::class, 'foto'])->whereNumber('id')->name('panti.foto');
 
     // Group Route Muzakki
     Route::prefix('muzakki')->name('muzakki.')->middleware('role:pemberi')->group(function () {
@@ -56,12 +58,8 @@ Route::middleware('auth')->group(function () {
     // Group Route Panitia
     Route::prefix('panitia')->name('panitia.')->middleware('role:panitia')->group(function () {
         Route::get('/dashboard', [PanitiaController::class, 'index'])->name('dashboard');
-        Route::get('/transaksi', [PanitiaController::class, 'transaksiMuzakki'])->name('transaksi');
-        Route::post('/verifikasi/{id}', [PanitiaController::class, 'verifikasiTransaksi'])->name('verifikasi');
-        Route::post('/konversi', [PanitiaController::class, 'konversiBeras'])->name('konversi');
-        Route::get('/pengajuan', [PanitiaController::class, 'pengajuanYayasan'])->name('pengajuan');
-        Route::post('/proses-pengajuan/{id}', [PanitiaController::class, 'prosesPengajuan'])->name('prosesPengajuan');
-        Route::get('/pengguna', [PanitiaController::class, 'dataPengguna'])->name('pengguna');
+        Route::get('/panti', [PantiVerificationController::class, 'index'])->name('panti.index');
+        Route::patch('/panti/{id}', [PantiVerificationController::class, 'update'])->whereNumber('id')->name('panti.update');
     });
 
     // Group Route Yayasan
