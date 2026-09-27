@@ -156,9 +156,40 @@ class AdminController extends Controller
                     'updated_at' => now(),
                 ]);
             }
+
+            $pengali = bcadd('1', bcdiv($data['persen_keuntungan_beras'], '100', 6), 6);
+            $produk = DB::table('katalog_beras')->orderBy('id')->lockForUpdate()->get(['id', 'harga_per_kg']);
+            foreach ($produk as $item) {
+                $lotFifo = DB::table('lot_beras')
+                    ->where('katalog_beras_id', $item->id)
+                    ->where('sisa_kg', '>', 0)
+                    ->orderBy('tanggal_masuk')
+                    ->orderBy('id')
+                    ->first(['harga_beli_per_kg']);
+                if (! $lotFifo) {
+                    continue;
+                }
+
+                $hargaPenawaran = bcadd(bcmul($lotFifo->harga_beli_per_kg, $pengali, 3), '0.005', 2);
+                if (bccomp($item->harga_per_kg, $hargaPenawaran, 2) === 0) {
+                    continue;
+                }
+
+                DB::table('katalog_beras')->where('id', $item->id)->update(['harga_per_kg' => $hargaPenawaran, 'updated_at' => now()]);
+                DB::table('riwayat_harga_katalog')->insert([
+                    'katalog_beras_id' => $item->id,
+                    'harga_pokok_per_kg' => $lotFifo->harga_beli_per_kg,
+                    'persen_keuntungan' => $data['persen_keuntungan_beras'],
+                    'harga_penawaran_per_kg' => $hargaPenawaran,
+                    'berlaku_mulai' => now(),
+                    'ditetapkan_oleh' => $request->user()->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         });
 
-        return back()->with('success', 'Pengaturan tersimpan. Tenggat tiap wilayah dihitung ulang dari tanggal Idulfitri.');
+        return back()->with('success', 'Pengaturan tersimpan. Tenggat dan harga katalog untuk pesanan baru dihitung ulang.');
     }
 
     public function setRegion(Request $request, int $id): RedirectResponse
