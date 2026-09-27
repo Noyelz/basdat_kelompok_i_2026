@@ -77,13 +77,13 @@ class SimulationPaymentController extends Controller
             ->header('Referrer-Policy', 'no-referrer');
     }
 
-    public function pay(string $token): RedirectResponse
+    public function pay(Request $request, string $token): RedirectResponse
     {
         $tokenHash = hash('sha256', $token);
         $percobaan = DB::table('percobaan_pembayaran')->where('token_hash', $tokenHash)->first();
         abort_unless($percobaan, 404);
 
-        $baruDibayar = DB::transaction(function () use ($percobaan): bool {
+        $baruDibayar = DB::transaction(function () use ($percobaan, $request): bool {
             $pesanan = DB::table('transaksi_zakat')->where('id', $percobaan->transaksi_id)->lockForUpdate()->first();
             abort_unless($pesanan && $pesanan->mode_pembayaran === 'simulation', 404);
             $attempt = DB::table('percobaan_pembayaran')->where('id', $percobaan->id)->lockForUpdate()->first();
@@ -111,6 +111,16 @@ class SimulationPaymentController extends Controller
                 'updated_at' => now(),
             ]);
 
+            DB::table('audit_log')->insert([
+                'actor_user_id' => null,
+                'aksi' => 'pembayaran.simulasi_dibayar',
+                'jenis_objek' => 'transaksi_zakat',
+                'objek_id' => $pesanan->id,
+                'detail' => json_encode(['percobaan_pembayaran_id' => $attempt->id], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+
             return true;
         }, attempts: 3);
 
@@ -130,6 +140,16 @@ class SimulationPaymentController extends Controller
             DB::table('transaksi_zakat')->where('id', $id)->update(['status_pembayaran' => 'cancelled', 'updated_at' => now()]);
             DB::table('percobaan_pembayaran')->where('transaksi_id', $id)->where('status', 'pending')->update(['status' => 'cancelled', 'updated_at' => now()]);
             DB::table('reservasi_stok')->where('transaksi_id', $id)->where('status', 'active')->update(['status' => 'cancelled', 'released_at' => now(), 'updated_at' => now()]);
+
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => 'pesanan.dibatalkan',
+                'jenis_objek' => 'transaksi_zakat',
+                'objek_id' => $id,
+                'detail' => json_encode(['jenis_zakat' => $pesanan->jenis_zakat], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
         });
 
         return redirect()->route('muzakki.payment.show', $id)->with('success', 'Pesanan dibatalkan dan reservasi stok dilepas.');
