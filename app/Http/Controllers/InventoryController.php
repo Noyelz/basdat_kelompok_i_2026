@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class InventoryController extends Controller
 {
@@ -43,7 +47,14 @@ class InventoryController extends Controller
             ->limit(20)
             ->get(['mutasi_stok.*', 'lot_beras.kode_lot', 'user.nama as nama_panitia']);
 
-        return view('panitia.gudang', compact('vendor', 'gudang', 'katalog', 'lot', 'koreksi'));
+        $pembelian = DB::table('pembelian_beras')
+            ->join('vendor', 'vendor.id', '=', 'pembelian_beras.vendor_id')
+            ->join('gudang', 'gudang.id', '=', 'pembelian_beras.gudang_id')
+            ->orderByDesc('pembelian_beras.id')
+            ->limit(30)
+            ->get(['pembelian_beras.id', 'pembelian_beras.kode_pembelian', 'pembelian_beras.nomor_faktur', 'pembelian_beras.bukti_path', 'pembelian_beras.tanggal_pembelian', 'vendor.nama as nama_vendor', 'gudang.nama as nama_gudang']);
+
+        return view('panitia.gudang', compact('vendor', 'gudang', 'katalog', 'lot', 'koreksi', 'pembelian'));
     }
 
     public function storeVendor(Request $request): RedirectResponse
@@ -94,60 +105,122 @@ class InventoryController extends Controller
             'tanggal_masuk' => ['required', 'date'],
             'tanggal_kedaluwarsa' => ['nullable', 'date', 'after:tanggal_masuk'],
             'nomor_faktur' => ['nullable', 'string', 'max:100'],
+            'bukti_faktur' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
-        DB::transaction(function () use ($request, $data): void {
-            $produk = DB::table('katalog_beras')->where('id', $data['katalog_beras_id'])->lockForUpdate()->first();
-            abort_unless($produk && $produk->is_active, 422);
-            abort_unless(DB::table('vendor')->where('id', $data['vendor_id'])->where('is_active', true)->exists(), 422);
-            abort_unless(DB::table('gudang')->where('id', $data['gudang_id'])->where('is_active', true)->exists(), 422);
+        $buktiPath = $request->hasFile('bukti_faktur')
+            ? $request->file('bukti_faktur')->store('faktur-vendor', 'local')
+            : null;
+        if ($request->hasFile('bukti_faktur') && ! $buktiPath) {
+            throw new RuntimeException('Bukti faktur gagal disimpan.');
+        }
 
-            $pembelianId = DB::table('pembelian_beras')->insertGetId([
-                'kode_pembelian' => 'BELI-'.Str::ulid(),
-                'vendor_id' => $data['vendor_id'],
-                'gudang_id' => $data['gudang_id'],
-                'dicatat_oleh' => $request->user()->id,
-                'tanggal_pembelian' => $data['tanggal_masuk'],
-                'nomor_faktur' => $data['nomor_faktur'] ?? null,
-                'status' => 'diterima',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        try {
+            DB::transaction(function () use ($request, $data, $buktiPath): void {
+                $produk = DB::table('katalog_beras')->where('id', $data['katalog_beras_id'])->lockForUpdate()->first();
+                abort_unless($produk && $produk->is_active, 422);
+                abort_unless(DB::table('vendor')->where('id', $data['vendor_id'])->where('is_active', true)->exists(), 422);
+                abort_unless(DB::table('gudang')->where('id', $data['gudang_id'])->where('is_active', true)->exists(), 422);
 
-            $lotId = DB::table('lot_beras')->insertGetId([
-                'kode_lot' => 'LOT-'.Str::ulid(),
-                'pembelian_beras_id' => $pembelianId,
-                'katalog_beras_id' => $produk->id,
-                'jumlah_masuk_kg' => $data['jumlah_kg'],
-                'sisa_kg' => $data['jumlah_kg'],
-                'harga_beli_per_kg' => $data['harga_beli_per_kg'],
-                'tanggal_masuk' => $data['tanggal_masuk'],
-                'tanggal_kedaluwarsa' => $data['tanggal_kedaluwarsa'] ?? null,
-                'is_simulation' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                $pembelianId = DB::table('pembelian_beras')->insertGetId([
+                    'kode_pembelian' => 'BELI-'.Str::ulid(),
+                    'vendor_id' => $data['vendor_id'],
+                    'gudang_id' => $data['gudang_id'],
+                    'dicatat_oleh' => $request->user()->id,
+                    'tanggal_pembelian' => $data['tanggal_masuk'],
+                    'nomor_faktur' => $data['nomor_faktur'] ?? null,
+                    'bukti_path' => $buktiPath,
+                    'status' => 'diterima',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
-            DB::table('mutasi_stok')->insert([
-                'lot_beras_id' => $lotId,
-                'dicatat_oleh' => $request->user()->id,
-                'jenis' => 'masuk_pembelian',
-                'perubahan_kg' => $data['jumlah_kg'],
-                'saldo_setelah_kg' => $data['jumlah_kg'],
-                'referensi' => 'pembelian_beras:'.$pembelianId,
-                'is_simulation' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                $lotId = DB::table('lot_beras')->insertGetId([
+                    'kode_lot' => 'LOT-'.Str::ulid(),
+                    'pembelian_beras_id' => $pembelianId,
+                    'katalog_beras_id' => $produk->id,
+                    'jumlah_masuk_kg' => $data['jumlah_kg'],
+                    'sisa_kg' => $data['jumlah_kg'],
+                    'harga_beli_per_kg' => $data['harga_beli_per_kg'],
+                    'tanggal_masuk' => $data['tanggal_masuk'],
+                    'tanggal_kedaluwarsa' => $data['tanggal_kedaluwarsa'] ?? null,
+                    'is_simulation' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
-            DB::table('katalog_beras')->where('id', $produk->id)->update([
-                'stock' => bcadd($produk->stock, $data['jumlah_kg'], 2),
-                'updated_at' => now(),
-            ]);
-            $this->refreshCatalogPrice($produk, $request->user()->id);
-        });
+                DB::table('mutasi_stok')->insert([
+                    'lot_beras_id' => $lotId,
+                    'dicatat_oleh' => $request->user()->id,
+                    'jenis' => 'masuk_pembelian',
+                    'perubahan_kg' => $data['jumlah_kg'],
+                    'saldo_setelah_kg' => $data['jumlah_kg'],
+                    'referensi' => 'pembelian_beras:'.$pembelianId,
+                    'is_simulation' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                DB::table('katalog_beras')->where('id', $produk->id)->update([
+                    'stock' => bcadd($produk->stock, $data['jumlah_kg'], 2),
+                    'updated_at' => now(),
+                ]);
+                $this->refreshCatalogPrice($produk, $request->user()->id);
+            });
+        } catch (Throwable $exception) {
+            if ($buktiPath) {
+                Storage::disk('local')->delete($buktiPath);
+            }
+
+            throw $exception;
+        }
 
         return back()->with('success', 'Beras diterima dan lot, stok, mutasi, serta harga katalog diperbarui.');
+    }
+
+    public function uploadInvoice(Request $request, int $id): RedirectResponse
+    {
+        $request->validate([
+            'bukti_faktur' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $path = $request->file('bukti_faktur')->store('faktur-vendor', 'local');
+        if (! $path) {
+            throw new RuntimeException('Bukti faktur gagal disimpan.');
+        }
+
+        try {
+            DB::transaction(function () use ($request, $id, $path): void {
+                $pembelian = DB::table('pembelian_beras')->where('id', $id)->lockForUpdate()->first();
+                abort_unless($pembelian, 404);
+                abort_if($pembelian->bukti_path, 409, 'Bukti faktur untuk pembelian ini sudah ada.');
+
+                DB::table('pembelian_beras')->where('id', $id)->update(['bukti_path' => $path, 'updated_at' => now()]);
+                DB::table('audit_log')->insert([
+                    'actor_user_id' => $request->user()->id,
+                    'aksi' => 'pembelian.faktur_diunggah',
+                    'jenis_objek' => 'pembelian_beras',
+                    'objek_id' => $id,
+                    'detail' => json_encode(['nomor_faktur' => $pembelian->nomor_faktur], JSON_THROW_ON_ERROR),
+                    'ip_address' => $request->ip(),
+                    'created_at' => now(),
+                ]);
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('local')->delete($path);
+
+            throw $exception;
+        }
+
+        return back()->with('success', 'Bukti faktur tersimpan secara privat.');
+    }
+
+    public function invoice(int $id): StreamedResponse
+    {
+        $path = DB::table('pembelian_beras')->where('id', $id)->value('bukti_path');
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, null, ['Cache-Control' => 'private, no-store']);
     }
 
     public function adjust(Request $request, int $id): RedirectResponse

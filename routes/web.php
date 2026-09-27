@@ -86,6 +86,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/vendor', [InventoryController::class, 'storeVendor'])->name('vendor.store');
         Route::post('/katalog', [InventoryController::class, 'storeKatalog'])->name('katalog.store');
         Route::post('/pembelian/terima', [InventoryController::class, 'receive'])->name('pembelian.receive');
+        Route::post('/pembelian/{id}/faktur', [InventoryController::class, 'uploadInvoice'])->whereNumber('id')->name('pembelian.faktur.store');
+        Route::get('/pembelian/{id}/faktur', [InventoryController::class, 'invoice'])->whereNumber('id')->name('pembelian.faktur.show');
         Route::patch('/lot/{id}/koreksi', [InventoryController::class, 'adjust'])->whereNumber('id')->name('lot.adjust');
         Route::get('/distribusi', [DistributionController::class, 'index'])->name('distribusi.index');
         Route::post('/perjalanan', [DistributionController::class, 'createTrip'])->name('perjalanan.store');

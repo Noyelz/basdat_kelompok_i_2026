@@ -34,7 +34,7 @@
 <section class="card border-0 shadow-sm mb-4"><div class="card-body">
     <h2 class="h5">Catat beras diterima di gudang</h2>
     <p class="small text-muted">Gunakan hanya setelah barang benar-benar tiba. Data pada tahap pengembangan ini diberi tanda simulasi.</p>
-    <form method="POST" action="{{ route('panitia.pembelian.receive') }}" class="row g-3">
+    <form method="POST" action="{{ route('panitia.pembelian.receive') }}" enctype="multipart/form-data" class="row g-3">
         @csrf
         <div class="col-md-4"><label class="form-label">Vendor</label><select name="vendor_id" class="form-select" required><option value="">Pilih vendor</option>@foreach ($vendor->where('is_active', true) as $item)<option value="{{ $item->id }}" @selected(old('vendor_id') == $item->id)>{{ $item->nama }}</option>@endforeach</select></div>
         <div class="col-md-4"><label class="form-label">Gudang</label><select name="gudang_id" class="form-select" required><option value="">Pilih gudang</option>@foreach ($gudang as $item)<option value="{{ $item->id }}" @selected(old('gudang_id') == $item->id)>{{ $item->nama }}</option>@endforeach</select></div>
@@ -44,8 +44,34 @@
         <div class="col-md-3"><label class="form-label">Tanggal masuk</label><input type="date" name="tanggal_masuk" class="form-control" value="{{ old('tanggal_masuk', now()->toDateString()) }}" required></div>
         <div class="col-md-3"><label class="form-label">Kedaluwarsa (jika ada)</label><input type="date" name="tanggal_kedaluwarsa" class="form-control" value="{{ old('tanggal_kedaluwarsa') }}"></div>
         <div class="col-md-6"><label class="form-label">Nomor faktur (jika ada)</label><input name="nomor_faktur" class="form-control" value="{{ old('nomor_faktur') }}"></div>
+        <div class="col-md-6"><label class="form-label">Bukti faktur (PDF/foto, opsional, maksimal 5 MB)</label><input type="file" name="bukti_faktur" accept="application/pdf,image/jpeg,image/png,image/webp" class="form-control"></div>
         <div class="col-md-6 d-flex align-items-end"><button class="btn btn-success w-100" type="submit" @disabled($vendor->where('is_active', true)->isEmpty() || $gudang->isEmpty() || $katalog->where('is_active', true)->isEmpty())>Catat penerimaan</button></div>
     </form>
+</div></section>
+
+<section class="card border-0 shadow-sm mb-4"><div class="card-body">
+    <h2 class="h5">Pembelian & bukti faktur</h2>
+    <p class="small text-muted">Dokumen tersimpan privat dan hanya bisa dibuka akun panitia. Faktur yang belum ada dapat dilengkapi setelah penerimaan.</p>
+    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Pembelian</th><th>Vendor</th><th>Gudang</th><th>Tanggal</th><th>Nomor faktur</th><th>Bukti</th></tr></thead><tbody>
+        @forelse ($pembelian as $item)
+            <tr>
+                <td>{{ $item->kode_pembelian }}</td><td>{{ $item->nama_vendor }}</td><td>{{ $item->nama_gudang }}</td><td>{{ $item->tanggal_pembelian }}</td><td>{{ $item->nomor_faktur ?? '—' }}</td>
+                <td>
+                    @if ($item->bukti_path)
+                        <a href="{{ route('panitia.pembelian.faktur.show', $item->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">Lihat faktur</a>
+                    @else
+                        <form method="POST" action="{{ route('panitia.pembelian.faktur.store', $item->id) }}" enctype="multipart/form-data" class="d-flex flex-column gap-1" style="min-width: 210px;">
+                            @csrf
+                            <input type="file" name="bukti_faktur" accept="application/pdf,image/jpeg,image/png,image/webp" class="form-control form-control-sm" required>
+                            <button class="btn btn-sm btn-outline-primary" type="submit">Unggah faktur</button>
+                        </form>
+                    @endif
+                </td>
+            </tr>
+        @empty
+            <tr><td colspan="6" class="text-muted">Belum ada pembelian beras.</td></tr>
+        @endforelse
+    </tbody></table></div>
 </div></section>
 
 <section class="card border-0 shadow-sm mb-4"><div class="card-body">
