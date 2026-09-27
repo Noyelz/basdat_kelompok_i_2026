@@ -37,7 +37,46 @@ class AdminController extends Controller
         $pengaturan = DB::table('pengaturan_operasional')->pluck('nilai', 'kunci');
         $hargaEmas = DB::table('harga_emas')->latest('tanggal_sumber')->first();
 
-        return view('admin.dashboard', compact('panitia', 'bank', 'wilayah', 'pengaturan', 'hargaEmas'));
+        $kontenPublik = collect(LandingController::DEFAULT_CONTENT)
+            ->mapWithKeys(fn (string $nilai, string $kunci): array => [$kunci => $pengaturan[$kunci] ?? $nilai]);
+
+        return view('admin.dashboard', compact('panitia', 'bank', 'wilayah', 'pengaturan', 'hargaEmas', 'kontenPublik'));
+    }
+
+    public function setLandingContent(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'landing_judul' => ['required', 'string', 'max:140'],
+            'landing_pengantar' => ['required', 'string', 'max:600'],
+            'landing_tentang' => ['required', 'string', 'max:1200'],
+            'landing_faq_judul' => ['required', 'string', 'max:180'],
+            'landing_faq_jawaban' => ['required', 'string', 'max:800'],
+        ]);
+
+        DB::transaction(function () use ($request, $data): void {
+            foreach ($data as $kunci => $nilai) {
+                DB::table('pengaturan_operasional')->upsert([[
+                    'kunci' => $kunci,
+                    'nilai' => $nilai,
+                    'satuan' => null,
+                    'diubah_oleh' => $request->user()->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]], ['kunci'], ['nilai', 'diubah_oleh', 'updated_at']);
+            }
+
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => 'konten_publik.diubah',
+                'jenis_objek' => 'pengaturan_operasional',
+                'objek_id' => null,
+                'detail' => json_encode(['kunci' => array_keys($data)], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        });
+
+        return redirect()->route('admin.dashboard')->with('success', 'Konten halaman depan diperbarui.');
     }
 
     public function storePanitia(Request $request): RedirectResponse

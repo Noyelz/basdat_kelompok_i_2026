@@ -7,6 +7,7 @@ use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\FitrahCheckoutController;
 use App\Http\Controllers\HandoverEvidenceController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\MaalCheckoutController;
 use App\Http\Controllers\MuzakkiController;
 use App\Http\Controllers\OperationalReportController;
@@ -17,9 +18,7 @@ use App\Http\Controllers\YayasanController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -118,6 +117,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/pengaturan', [AdminController::class, 'setOperationalSettings'])->name('pengaturan.update');
         Route::put('/wilayah/{id}', [AdminController::class, 'setRegion'])->whereNumber('id')->name('wilayah.update');
         Route::post('/harga-emas', [AdminController::class, 'storeGoldPrice'])->name('harga-emas.store');
+        Route::put('/konten-publik', [AdminController::class, 'setLandingContent'])->name('konten.update');
     });
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

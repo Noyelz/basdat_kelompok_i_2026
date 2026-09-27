@@ -169,6 +169,20 @@
                 <button type="submit" class="btn-app btn-app-primary">Catat harga emas</button>
             </form>
         </section>
+        <section class="app-card" style="padding: 1.5rem; margin-top: 1.5rem;">
+            <h2 class="app-card-title">Konten halaman depan</h2>
+            <p>Teks ini dapat dilihat publik sebelum login. Angka dampak dan daftar panti diambil langsung dari data simulasi dan tidak dapat diubah lewat formulir ini. <a href="{{ route('landing') }}">Lihat halaman depan</a>.</p>
+            <form method="POST" action="{{ route('admin.konten.update') }}">
+                @csrf
+                @method('PUT')
+                <div class="app-form-group"><label class="app-form-label" for="landing-judul">Judul utama</label><input class="app-form-control" id="landing-judul" name="landing_judul" maxlength="140" value="{{ old('landing_judul', $kontenPublik['landing_judul']) }}" required></div>
+                <div class="app-form-group"><label class="app-form-label" for="landing-pengantar">Pengantar</label><textarea class="app-form-control" id="landing-pengantar" name="landing_pengantar" rows="3" maxlength="600" required>{{ old('landing_pengantar', $kontenPublik['landing_pengantar']) }}</textarea></div>
+                <div class="app-form-group"><label class="app-form-label" for="landing-tentang">Tentang platform</label><textarea class="app-form-control" id="landing-tentang" name="landing_tentang" rows="4" maxlength="1200" required>{{ old('landing_tentang', $kontenPublik['landing_tentang']) }}</textarea></div>
+                <div class="app-form-group"><label class="app-form-label" for="landing-faq-judul">Pertanyaan umum</label><input class="app-form-control" id="landing-faq-judul" name="landing_faq_judul" maxlength="180" value="{{ old('landing_faq_judul', $kontenPublik['landing_faq_judul']) }}" required></div>
+                <div class="app-form-group"><label class="app-form-label" for="landing-faq-jawaban">Jawaban</label><textarea class="app-form-control" id="landing-faq-jawaban" name="landing_faq_jawaban" rows="3" maxlength="800" required>{{ old('landing_faq_jawaban', $kontenPublik['landing_faq_jawaban']) }}</textarea></div>
+                <button type="submit" class="btn-app btn-app-primary">Simpan konten publik</button>
+            </form>
+        </section>
     </main>
 </body>
 </html>

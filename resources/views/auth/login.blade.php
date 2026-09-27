@@ -495,6 +495,7 @@
 
         <div class="auth-footer">
             Belum punya akun? <a href="{{ route('register', [], false) }}" class="auth-link">Daftar Akun Baru</a>
+            <br><a href="{{ route('landing') }}" class="auth-link">Lihat halaman depan</a>
         </div>
     </div>
 
