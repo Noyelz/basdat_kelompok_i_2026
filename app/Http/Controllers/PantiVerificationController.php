@@ -42,9 +42,10 @@ class PantiVerificationController extends Controller
         $data = $request->validate([
             'hasil' => ['required', Rule::in(['verified', 'rejected'])],
             'jumlah_mustahik_layak' => ['required_if:hasil,verified', 'nullable', 'integer', 'min:1'],
-            'wilayah_layanan_id' => ['required_if:hasil,verified', 'nullable', 'integer', Rule::exists('wilayah_layanan', 'id')],
-            'jarak_jalan_km' => ['required_if:hasil,verified', 'nullable', 'numeric', 'min:0.01', 'max:99999999.99'],
-            'kapasitas_penerimaan_kg' => ['required_if:hasil,verified', 'nullable', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
+            'fitrah_aktif' => ['required_if:hasil,verified', 'nullable', 'boolean'],
+            'wilayah_layanan_id' => ['required_if:fitrah_aktif,1', 'nullable', 'integer', Rule::exists('wilayah_layanan', 'id')],
+            'jarak_jalan_km' => ['required_if:fitrah_aktif,1', 'nullable', 'numeric', 'min:0.01', 'max:99999999.99'],
+            'kapasitas_penerimaan_kg' => ['required_if:fitrah_aktif,1', 'nullable', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
             'catatan' => ['required_if:hasil,rejected', 'nullable', 'string', 'max:2000'],
         ]);
 
@@ -53,6 +54,7 @@ class PantiVerificationController extends Controller
             abort_unless($panti, 404);
 
             $terverifikasi = $data['hasil'] === 'verified';
+            $fitrah = $terverifikasi && (bool) ($data['fitrah_aktif'] ?? false);
             if (! $terverifikasi) {
                 $pesananTerbuka = DB::table('transaksi_zakat')
                     ->where('yayasan_id', $id)
@@ -63,6 +65,8 @@ class PantiVerificationController extends Controller
             }
             if ($terverifikasi) {
                 abort_if($data['jumlah_mustahik_layak'] > $panti->jumlah_mustahik_diajukan || ! $panti->kebutuhan_saat_ini, 422, 'Jumlah yang disetujui tidak boleh melebihi yang diajukan dan kebutuhan PJ harus terisi.');
+            }
+            if ($fitrah) {
                 $wilayah = DB::table('wilayah_layanan')
                     ->join('gudang', 'gudang.id', '=', 'wilayah_layanan.gudang_id')
                     ->where('wilayah_layanan.id', $data['wilayah_layanan_id'])
@@ -76,9 +80,9 @@ class PantiVerificationController extends Controller
                 'status_verif' => $data['hasil'],
                 'is_active' => $terverifikasi,
                 'jumlah_mustahik_layak' => $terverifikasi ? $data['jumlah_mustahik_layak'] : 0,
-                'wilayah_layanan_id' => $terverifikasi ? $data['wilayah_layanan_id'] : null,
-                'jarak_jalan_km' => $terverifikasi ? $data['jarak_jalan_km'] : null,
-                'kapasitas_penerimaan_kg' => $terverifikasi ? $data['kapasitas_penerimaan_kg'] : null,
+                'wilayah_layanan_id' => $fitrah ? $data['wilayah_layanan_id'] : null,
+                'jarak_jalan_km' => $fitrah ? $data['jarak_jalan_km'] : null,
+                'kapasitas_penerimaan_kg' => $fitrah ? $data['kapasitas_penerimaan_kg'] : null,
                 'updated_at' => now(),
             ]);
 
@@ -88,7 +92,7 @@ class PantiVerificationController extends Controller
                 'hasil' => $data['hasil'],
                 'jumlah_mustahik_layak' => $terverifikasi ? $data['jumlah_mustahik_layak'] : 0,
                 'catatan' => $data['catatan'] ?? null,
-                'kapasitas_penerimaan_kg' => $terverifikasi ? $data['kapasitas_penerimaan_kg'] : null,
+                'kapasitas_penerimaan_kg' => $fitrah ? $data['kapasitas_penerimaan_kg'] : null,
                 'kebutuhan_snapshot' => $panti->kebutuhan_saat_ini,
                 'diperiksa_at' => now(),
                 'created_at' => now(),

@@ -27,20 +27,21 @@
             </div>
 
             @if ($item->status_verif === 'verified')
-                <p class="small text-muted">Wilayah: {{ $item->nama_wilayah ?? 'belum ada' }}. {{ $item->wilayah_aktif ? 'Zona layanan aktif.' : 'Zona layanan belum aktif; panti belum tersedia untuk pesanan fitrah.' }}</p>
+                <p class="small text-muted">{{ $item->wilayah_layanan_id ? 'Fitrah dan maal · wilayah ' . $item->nama_wilayah . '. ' . ($item->wilayah_aktif ? 'Zona layanan aktif.' : 'Zona layanan belum aktif untuk fitrah.') : 'Maal saja; panti tidak tampil untuk pesanan beras fitrah.' }}</p>
             @endif
 
             <form method="POST" action="{{ route('panitia.panti.update', $item->id) }}" class="row g-3 mb-3">
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="hasil" value="verified">
+                <div class="col-12"><input type="hidden" name="fitrah_aktif" value="0"><label><input type="checkbox" name="fitrah_aktif" value="1" @checked($item->wilayah_layanan_id)> Layani fitrah beras dari gudang Surabaya juga; kosongkan untuk panti maal saja</label></div>
                 <div class="col-md-4">
                     <label class="form-label">Penerima zakat yang layak</label>
                     <input type="number" min="1" name="jumlah_mustahik_layak" class="form-control" value="{{ $item->jumlah_mustahik_layak ?: '' }}" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Wilayah layanan</label>
-                    <select name="wilayah_layanan_id" class="form-select" required>
+                    <select name="wilayah_layanan_id" class="form-select">
                         <option value="">Pilih wilayah</option>
                         @foreach ($wilayah->where('provinsi', $item->provinsi) as $zona)
                             <option value="{{ $zona->id }}" @selected($item->wilayah_layanan_id == $zona->id)>{{ $zona->provinsi }} {{ $zona->is_active ? '(aktif)' : '(belum aktif)' }}</option>
@@ -49,9 +50,9 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Jarak jalan gudang → panti (km)</label>
-                    <input type="number" min="0.01" step="0.01" name="jarak_jalan_km" class="form-control" value="{{ $item->jarak_jalan_km }}" required>
+                    <input type="number" min="0.01" step="0.01" name="jarak_jalan_km" class="form-control" value="{{ $item->jarak_jalan_km }}">
                 </div>
-                <div class="col-md-4"><label class="form-label">Kapasitas penerimaan per kunjungan (kg)</label><input type="number" min="0.01" step="0.01" name="kapasitas_penerimaan_kg" class="form-control" value="{{ $item->kapasitas_penerimaan_kg }}" required></div>
+                <div class="col-md-4"><label class="form-label">Kapasitas penerimaan per kunjungan (kg)</label><input type="number" min="0.01" step="0.01" name="kapasitas_penerimaan_kg" class="form-control" value="{{ $item->kapasitas_penerimaan_kg }}"></div>
                 <div class="col-md-9"><label class="form-label">Catatan pemeriksaan</label><textarea name="catatan" class="form-control" rows="2" maxlength="2000"></textarea></div>
                 <div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-success w-100">Simpan verifikasi</button></div>
             </form>
