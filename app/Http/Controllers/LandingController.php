@@ -37,8 +37,11 @@ class LandingController extends Controller
 
         $selesai = DB::table('penyaluran')
             ->join('yayasan', 'yayasan.id', '=', 'penyaluran.yayasan_id')
+            ->join('alokasi_transaksi', 'alokasi_transaksi.id', '=', 'penyaluran.alokasi_transaksi_id')
+            ->join('transaksi_zakat', 'transaksi_zakat.id', '=', 'alokasi_transaksi.transaksi_id')
             ->where('penyaluran.status', 'selesai')
-            ->where('penyaluran.is_simulation', true)
+            ->where('transaksi_zakat.mode_pembayaran', 'simulation')
+            ->where('transaksi_zakat.status_pembayaran', 'simulated_paid')
             ->where('yayasan.status_verif', 'verified')
             ->where('yayasan.is_active', true)
             ->selectRaw("SUM(CASE WHEN penyaluran.jenis_zakat = 'fitrah' THEN penyaluran.jumlah ELSE 0 END) AS fitrah_kg")
