@@ -35,7 +35,16 @@ class SimulationPaymentController extends Controller
             ->orderBy('bukti_serah_terima.id')
             ->get(['bukti_serah_terima.id', 'bukti_serah_terima.pihak']);
 
-        return view('muzakki.payment', compact('pesanan', 'qrDataUri', 'scanUrl', 'bukti'));
+        $pemilikMaal = $pesanan->jenis_zakat === 'mal'
+            ? DB::table('subjek_zakat_maal')
+                ->where('transaksi_id', $id)
+                ->where('user_id', $request->user()->id)
+                ->where('is_snapshot', true)
+                ->orderBy('id')
+                ->get(['hubungan', 'nama_tampilan', 'tabungan', 'emas_gram', 'investasi', 'aset_dagang', 'piutang', 'utang', 'tanggal_haul', 'sudah_haul', 'harta_bersih', 'nisab_snapshot', 'zakat_wajib'])
+            : collect();
+
+        return view('muzakki.payment', compact('pesanan', 'qrDataUri', 'scanUrl', 'bukti', 'pemilikMaal'));
     }
 
     public function scan(string $token): Response
@@ -134,7 +143,7 @@ class SimulationPaymentController extends Controller
             ->leftJoin('transaksi_mal', 'transaksi_mal.transaksi_id', '=', 'transaksi_zakat.id')
             ->where('transaksi_zakat.id', $id)
             ->where('transaksi_zakat.user_id', $request->user()->id)
-            ->select('transaksi_zakat.*', 'yayasan.nama as nama_panti', 'transaksi_fitrah.nama_beras_snapshot', 'transaksi_fitrah.jumlah_jiwa', 'transaksi_fitrah.total_beras_kg', 'transaksi_mal.nilai_nisab', 'transaksi_mal.total_zakat_wajib', 'transaksi_mal.harga_emas_per_gram_snapshot')
+            ->select('transaksi_zakat.*', 'yayasan.nama as nama_panti', 'transaksi_fitrah.nama_beras_snapshot', 'transaksi_fitrah.jumlah_jiwa', 'transaksi_fitrah.total_beras_kg', 'transaksi_fitrah.harga_per_kg_snapshot', 'transaksi_mal.nilai_nisab', 'transaksi_mal.total_zakat_wajib', 'transaksi_mal.harga_emas_per_gram_snapshot', 'transaksi_mal.sumber_harga_emas_snapshot')
             ->first();
         abort_unless($pesanan, 404);
 
