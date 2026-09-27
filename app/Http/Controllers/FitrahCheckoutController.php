@@ -21,8 +21,23 @@ class FitrahCheckoutController extends Controller
         $beras = DB::table('katalog_beras')
             ->where('is_active', true)
             ->where('stock', '>', 0)
-            ->orderBy('nama_beras')
-            ->get(['id', 'nama_beras', 'harga_per_kg', 'stock']);
+            ->select('katalog_beras.id', 'katalog_beras.nama_beras', 'katalog_beras.harga_per_kg', 'katalog_beras.stock')
+            ->selectSub(function ($query): void {
+                $query->from('reservasi_stok')
+                    ->join('lot_beras', 'lot_beras.id', '=', 'reservasi_stok.lot_beras_id')
+                    ->whereColumn('lot_beras.katalog_beras_id', 'katalog_beras.id')
+                    ->where('reservasi_stok.status', 'active')
+                    ->selectRaw('COALESCE(SUM(reservasi_stok.jumlah_kg), 0)');
+            }, 'reservasi_kg')
+            ->get()
+            ->map(function ($item) {
+                $item->tersedia_kg = bcsub($item->stock, $item->reservasi_kg, 2);
+
+                return $item;
+            })
+            ->filter(fn ($item) => bccomp($item->tersedia_kg, '0', 2) > 0)
+            ->sortBy('harga_per_kg', SORT_NUMERIC)
+            ->values();
 
         $panti = DB::table('yayasan')
             ->join('wilayah_layanan', 'wilayah_layanan.id', '=', 'yayasan.wilayah_layanan_id')
