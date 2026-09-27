@@ -4,6 +4,9 @@
 <div class="row justify-content-center"><div class="col-lg-10">
     <h1 class="h3 mb-2">Kalkulator zakat maal keluarga</h1>
     <p class="text-muted">Harta setiap pemilik dihitung sendiri terhadap nisab dan pernyataan haul. Satu akun dapat membayar jumlah kewajiban yang dihasilkan bersama.</p>
+    @if (session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
     @if ($hargaEmas)
         <div class="alert {{ $hargaBerlaku ? 'alert-info' : 'alert-warning' }}">Harga emas acuan: Rp{{ number_format($hargaEmas->harga_per_gram, 2, ',', '.') }}/gram, sumber {{ $hargaEmas->sumber }}, tanggal {{ \Carbon\Carbon::parse($hargaEmas->tanggal_sumber)->timezone('Asia/Jakarta')->format('d M Y') }}. Nisab: 85 gram = Rp{{ number_format($hargaEmas->harga_per_gram * 85, 2, ',', '.') }}. {{ $hargaBerlaku ? '' : 'Harga lebih dari tujuh hari; admin perlu memperbaruinya sebelum checkout.' }}</div>
     @else
@@ -14,8 +17,10 @@
         <div class="alert alert-danger"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
 
-    @if ($hargaBerlaku && $panti->isNotEmpty())
-        @php($subjekAwal = old('subjek', [['hubungan' => 'diri', 'nama_tampilan' => 'Hamba Allah', 'tabungan' => '0', 'emas_gram' => '0', 'investasi' => '0', 'aset_dagang' => '0', 'piutang' => '0', 'utang' => '0', 'sudah_haul' => '0']]))
+    @php($subjekAwal = old('subjek', $draftSubjects ?: [['hubungan' => 'diri', 'nama_tampilan' => 'Hamba Allah', 'tabungan' => '0', 'emas_gram' => '0', 'investasi' => '0', 'aset_dagang' => '0', 'piutang' => '0', 'utang' => '0', 'sudah_haul' => '0']]))
+    @if ($draftSubjects)
+        <p class="small text-muted">Draft keluarga tersimpan. Isian ini dapat diubah dan disimpan kembali. Pernyataan haul perlu dicentang ulang; harga emas, nisab, dan zakat wajib dihitung ulang saat checkout.</p>
+    @endif
         <form method="POST" action="{{ route('muzakki.maal.store') }}">
             @csrf
             <div id="daftar-subjek">
@@ -43,10 +48,11 @@
                 <label class="form-label" for="yayasan_id">Panti tujuan</label>
                 <select id="yayasan_id" name="yayasan_id" class="form-select"><option value="">Pilih otomatis secara acak di antara panti yang belum menerima maal</option>@foreach ($panti as $item)<option value="{{ $item->id }}" @selected(old('yayasan_id') == $item->id)>{{ $item->nama }} · {{ $item->kota_kabupaten }}, {{ $item->provinsi }}</option>@endforeach</select>
                 <p class="small text-muted mt-2">Jika semua panti pernah menerima maal, pilihan otomatis tetap acak di antara panti layak. Kalkulasi dan panti pilihan disimpan sebagai snapshot.</p>
-                <button type="submit" class="btn btn-success w-100">Hitung dan buat pesanan maal jika wajib</button>
+                <button type="submit" class="btn btn-success w-100 mb-2" @disabled(! $hargaBerlaku || $panti->isEmpty())>Hitung dan buat pesanan maal jika wajib</button>
+                <button type="submit" class="btn btn-outline-primary w-100" formaction="{{ route('muzakki.maal.draft') }}">Simpan draft keluarga tanpa membuat pesanan</button>
             </div></div>
         </form>
-    @elseif ($panti->isEmpty())
+    @if ($panti->isEmpty())
         <div class="alert alert-warning">Belum ada panti terverifikasi yang aktif untuk menerima zakat maal.</div>
     @endif
 </div></div>

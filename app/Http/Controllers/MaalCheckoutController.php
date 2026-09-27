@@ -14,7 +14,7 @@ use Illuminate\View\View;
 
 class MaalCheckoutController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $hargaEmas = DB::table('harga_emas')->latest('tanggal_sumber')->first();
         $hargaBerlaku = $hargaEmas && CarbonImmutable::parse($hargaEmas->tanggal_sumber)->greaterThanOrEqualTo(now()->subDays(7));
@@ -26,31 +26,24 @@ class MaalCheckoutController extends Controller
             ->orderBy('kota_kabupaten')
             ->get(['id', 'nama', 'kota_kabupaten', 'provinsi', 'jumlah_mustahik_layak']);
 
-        return view('muzakki.maal', compact('hargaEmas', 'hargaBerlaku', 'panti'));
+        $draftSubjects = DB::table('subjek_zakat_maal')
+            ->where('user_id', $request->user()->id)
+            ->whereNull('transaksi_id')
+            ->where('is_snapshot', false)
+            ->orderBy('id')
+            ->get(['hubungan', 'nama_tampilan', 'tabungan', 'emas_gram', 'investasi', 'aset_dagang', 'piutang', 'utang', 'tanggal_haul', 'sudah_haul'])
+            ->map(fn ($item): array => [...(array) $item, 'sudah_haul' => false])
+            ->all();
+
+        return view('muzakki.maal', compact('hargaEmas', 'hargaBerlaku', 'panti', 'draftSubjects'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $uang = ['required', 'decimal:0,2', 'min:0', 'max:999999999999.99'];
-        $data = $request->validate([
+        $data = $this->validateSubjects($request);
+        $data['yayasan_id'] = $request->validate([
             'yayasan_id' => ['nullable', 'integer', Rule::exists('yayasan', 'id')],
-            'subjek' => ['required', 'array', 'min:1', 'max:10'],
-            'subjek.*.hubungan' => ['required', Rule::in(['diri', 'istri', 'anak'])],
-            'subjek.*.nama_tampilan' => ['nullable', 'string', 'max:255'],
-            'subjek.*.tabungan' => $uang,
-            'subjek.*.emas_gram' => ['required', 'decimal:0,2', 'min:0', 'max:100000'],
-            'subjek.*.investasi' => $uang,
-            'subjek.*.aset_dagang' => $uang,
-            'subjek.*.piutang' => $uang,
-            'subjek.*.utang' => $uang,
-            'subjek.*.tanggal_haul' => ['nullable', 'date', 'before_or_equal:today'],
-            'subjek.*.sudah_haul' => ['nullable', 'boolean'],
-        ]);
-
-        $hubungan = collect($data['subjek'])->pluck('hubungan');
-        if ($hubungan->filter(fn ($value) => $value === 'diri')->count() !== 1 || $hubungan->filter(fn ($value) => $value === 'istri')->count() > 1) {
-            throw ValidationException::withMessages(['subjek' => 'Masukkan tepat satu pemilik diri sendiri dan paling banyak satu istri.']);
-        }
+        ])['yayasan_id'] ?? null;
 
         $id = DB::transaction(function () use ($request, $data): int {
             $hargaEmas = DB::table('harga_emas')->latest('tanggal_sumber')->first();
@@ -195,5 +188,67 @@ class MaalCheckoutController extends Controller
         });
 
         return redirect()->route('muzakki.payment.show', $id);
+    }
+
+    public function saveDraft(Request $request): RedirectResponse
+    {
+        $data = $this->validateSubjects($request);
+
+        DB::transaction(function () use ($request, $data): void {
+            DB::table('user')->where('id', $request->user()->id)->lockForUpdate()->first(['id']);
+            DB::table('subjek_zakat_maal')
+                ->where('user_id', $request->user()->id)
+                ->whereNull('transaksi_id')
+                ->where('is_snapshot', false)
+                ->delete();
+
+            foreach ($data['subjek'] as $subjek) {
+                DB::table('subjek_zakat_maal')->insert([
+                    'user_id' => $request->user()->id,
+                    'transaksi_id' => null,
+                    'hubungan' => $subjek['hubungan'],
+                    'nama_tampilan' => trim($subjek['nama_tampilan'] ?? '') !== '' ? $subjek['nama_tampilan'] : 'Hamba Allah',
+                    'tabungan' => $subjek['tabungan'],
+                    'emas_gram' => $subjek['emas_gram'],
+                    'investasi' => $subjek['investasi'],
+                    'aset_dagang' => $subjek['aset_dagang'],
+                    'piutang' => $subjek['piutang'],
+                    'utang' => $subjek['utang'],
+                    'tanggal_haul' => $subjek['tanggal_haul'] ?? null,
+                    'sudah_haul' => (bool) ($subjek['sudah_haul'] ?? false),
+                    'is_snapshot' => false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        return redirect()->route('muzakki.maal')->with('success', 'Draft keluarga disimpan. Harga emas, nisab, dan kewajiban akan dihitung ulang saat checkout.');
+    }
+
+    /** @return array{subjek: array<int|string, array<string, mixed>>} */
+    private function validateSubjects(Request $request): array
+    {
+        $uang = ['required', 'decimal:0,2', 'min:0', 'max:999999999999.99'];
+        $data = $request->validate([
+            'subjek' => ['required', 'array', 'min:1', 'max:10'],
+            'subjek.*.hubungan' => ['required', Rule::in(['diri', 'istri', 'anak'])],
+            'subjek.*.nama_tampilan' => ['nullable', 'string', 'max:255'],
+            'subjek.*.tabungan' => $uang,
+            'subjek.*.emas_gram' => ['required', 'decimal:0,2', 'min:0', 'max:100000'],
+            'subjek.*.investasi' => $uang,
+            'subjek.*.aset_dagang' => $uang,
+            'subjek.*.piutang' => $uang,
+            'subjek.*.utang' => $uang,
+            'subjek.*.tanggal_haul' => ['nullable', 'date', 'before_or_equal:today'],
+            'subjek.*.sudah_haul' => ['nullable', 'boolean'],
+        ]);
+
+        $hubungan = collect($data['subjek'])->pluck('hubungan');
+        if ($hubungan->filter(fn ($value) => $value === 'diri')->count() !== 1 || $hubungan->filter(fn ($value) => $value === 'istri')->count() > 1) {
+            throw ValidationException::withMessages(['subjek' => 'Masukkan tepat satu pemilik diri sendiri dan paling banyak satu istri.']);
+        }
+
+        return $data;
     }
 }
