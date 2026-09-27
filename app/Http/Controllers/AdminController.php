@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AdminController extends Controller
@@ -28,6 +29,8 @@ class AdminController extends Controller
                     ->whereNull('berlaku_sampai')
                     ->latest('id')
                     ->first();
+                $item->dapat_diaktifkan = $item->batas_checkout_at
+                    && CarbonImmutable::parse($item->batas_checkout_at)->isFuture();
 
                 return $item;
             });
@@ -203,7 +206,11 @@ class AdminController extends Controller
         DB::transaction(function () use ($request, $data, $id): void {
             $wilayah = DB::table('wilayah_layanan')->where('id', $id)->lockForUpdate()->first();
             abort_unless($wilayah, 404);
-            abort_if($data['is_active'] && (! $wilayah->batas_checkout_at || CarbonImmutable::parse($wilayah->batas_checkout_at)->isPast()), 422, 'Tenggat wilayah sudah lewat atau belum ditetapkan.');
+            if ($data['is_active'] && (! $wilayah->batas_checkout_at || CarbonImmutable::parse($wilayah->batas_checkout_at)->isPast())) {
+                throw ValidationException::withMessages([
+                    'is_active' => 'Simpan tanggal Idulfitri di Pengaturan simulasi terlebih dahulu, lalu pastikan batas checkout '.$wilayah->nama.' belum lewat.',
+                ]);
+            }
 
             DB::table('wilayah_layanan')->where('id', $id)->update([
                 'is_active' => (bool) $data['is_active'],

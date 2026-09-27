@@ -114,9 +114,9 @@
                 </table>
             </div>
         </section>
-        <section class="app-card" style="padding: 1.5rem; margin-top: 1.5rem;">
+        <section id="pengaturan-simulasi" class="app-card" style="padding: 1.5rem; margin-top: 1.5rem;">
             <h2 class="app-card-title">Pengaturan simulasi</h2>
-            <p>Tanggal Idulfitri menentukan batas checkout H-5, H-7, atau H-10 sesuai wilayah. Wilayah yang tenggatnya lewat otomatis ditutup.</p>
+            <p><strong>Isi dan simpan tanggal Idulfitri sebelum mengaktifkan wilayah.</strong> Tanggal ini menentukan batas checkout H-5, H-7, atau H-10 sesuai wilayah. Wilayah yang tenggatnya lewat otomatis ditutup.</p>
             <form method="POST" action="{{ route('admin.pengaturan.update') }}">
                 @csrf
                 @method('PUT')
@@ -131,14 +131,20 @@
         <section class="app-card" style="padding: 1.5rem; margin-top: 1.5rem;">
             <h2 class="app-card-title">Wilayah layanan & tarif ongkir simulasi</h2>
             <p>Aktifkan zona hanya ketika rute, kapasitas, dan waktu kirim siap. Biaya kirim dihitung dari biaya tetap + tarif × jarak jalan × berat.</p>
+            @if (! ($pengaturan['tanggal_idulfitri'] ?? null))
+                <div class="app-alert app-alert-error">Tanggal Idulfitri belum disimpan. <a href="#pengaturan-simulasi">Simpan pengaturan simulasi</a> terlebih dahulu agar tenggat setiap wilayah dihitung.</div>
+            @endif
             @foreach ($wilayah as $zona)
                 <form method="POST" action="{{ route('admin.wilayah.update', $zona->id) }}" style="padding: 1rem 0; border-top: 1px solid #ddd;">
                     @csrf
                     @method('PUT')
                     <h3 style="font-size: 1.1rem;">{{ $zona->nama }} · H-{{ $zona->hari_batas_fitrah }}</h3>
                     <p>Batas checkout: {{ $zona->batas_checkout_at ? \Carbon\Carbon::parse($zona->batas_checkout_at)->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB' : 'belum ditetapkan' }}</p>
+                    @unless ($zona->dapat_diaktifkan)
+                        <p>Zona belum bisa diaktifkan: tenggat checkout belum ditetapkan atau sudah lewat. Perbarui <a href="#pengaturan-simulasi">tanggal Idulfitri</a> terlebih dahulu.</p>
+                    @endunless
                     <input type="hidden" name="is_active" value="0">
-                    <div class="app-form-group"><label><input type="checkbox" name="is_active" value="1" @checked($zona->is_active)> Zona aktif</label></div>
+                    <div class="app-form-group"><label><input type="checkbox" name="is_active" value="1" @checked($zona->is_active) @disabled(! $zona->dapat_diaktifkan)> Zona aktif</label></div>
                     <div class="app-form-group"><label class="app-form-label">Biaya tetap (Rp)</label><input class="app-form-control" type="number" min="0" step="0.01" name="biaya_tetap" value="{{ $zona->tarif->biaya_tetap ?? 3000 }}" required></div>
                     <div class="app-form-group"><label class="app-form-label">Biaya per km per kg (Rp)</label><input class="app-form-control" type="number" min="0" step="0.01" name="biaya_per_km_kg" value="{{ $zona->tarif->biaya_per_km_kg ?? 8 }}" required></div>
                     <button type="submit" class="btn-app btn-app-primary">Simpan wilayah</button>
