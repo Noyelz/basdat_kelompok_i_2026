@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FitrahCheckoutController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\MaalCheckoutController;
 use App\Http\Controllers\MuzakkiController;
 use App\Http\Controllers\PanitiaController;
 use App\Http\Controllers\PantiVerificationController;
@@ -52,7 +53,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [MuzakkiController::class, 'index'])->name('dashboard');
         Route::get('/zakat-fitrah', [FitrahCheckoutController::class, 'index'])->name('fitrah');
         Route::post('/zakat-fitrah', [FitrahCheckoutController::class, 'store'])->name('fitrah.store');
-        Route::get('/zakat-maal', [MuzakkiController::class, 'showMaal'])->name('maal');
+        Route::get('/zakat-maal', [MaalCheckoutController::class, 'index'])->name('maal');
+        Route::post('/zakat-maal', [MaalCheckoutController::class, 'store'])->name('maal.store');
         Route::get('/pembayaran/{id}', [SimulationPaymentController::class, 'show'])->whereNumber('id')->name('payment.show');
         Route::post('/pembayaran/{id}/batalkan', [SimulationPaymentController::class, 'cancel'])->whereNumber('id')->name('payment.cancel');
         Route::get('/bayar-uji/{token}', [SimulationPaymentController::class, 'scan'])->name('payment.scan');

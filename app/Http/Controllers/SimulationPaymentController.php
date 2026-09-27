@@ -93,9 +93,10 @@ class SimulationPaymentController extends Controller
         $pesanan = DB::table('transaksi_zakat')
             ->join('yayasan', 'yayasan.id', '=', 'transaksi_zakat.yayasan_id')
             ->leftJoin('transaksi_fitrah', 'transaksi_fitrah.transaksi_id', '=', 'transaksi_zakat.id')
+            ->leftJoin('transaksi_mal', 'transaksi_mal.transaksi_id', '=', 'transaksi_zakat.id')
             ->where('transaksi_zakat.id', $id)
             ->where('transaksi_zakat.user_id', $request->user()->id)
-            ->select('transaksi_zakat.*', 'yayasan.nama as nama_panti', 'transaksi_fitrah.nama_beras_snapshot', 'transaksi_fitrah.jumlah_jiwa', 'transaksi_fitrah.total_beras_kg')
+            ->select('transaksi_zakat.*', 'yayasan.nama as nama_panti', 'transaksi_fitrah.nama_beras_snapshot', 'transaksi_fitrah.jumlah_jiwa', 'transaksi_fitrah.total_beras_kg', 'transaksi_mal.nilai_nisab', 'transaksi_mal.total_zakat_wajib', 'transaksi_mal.harga_emas_per_gram_snapshot')
             ->first();
         abort_unless($pesanan, 404);
 

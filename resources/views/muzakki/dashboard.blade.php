@@ -28,7 +28,7 @@
                 <p class="card-text">
                     Zakat harta yang dikeluarkan dari hasil simpanan/aset (Emas, Investasi, Perdagangan, Piutang dikurangi Utang) yang telah mencapai nisab dengan besaran 2,5%.
                 </p>
-                <a href="{{ route('muzakki.maal') }}" class="btn btn-outline-success w-100 mt-3">Lihat status pengembangan maal</a>
+                <a href="{{ route('muzakki.maal') }}" class="btn btn-success w-100 mt-3">Hitung & bayar simulasi maal</a>
             </div>
         </div>
     </div>

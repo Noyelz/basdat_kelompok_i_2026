@@ -9,13 +9,17 @@
         <p>Tujuan: <strong>{{ $pesanan->nama_panti }}</strong></p>
         @if ($pesanan->jenis_zakat === 'fitrah')
             <p>Beras: {{ $pesanan->nama_beras_snapshot }} · {{ $pesanan->jumlah_jiwa }} jiwa · {{ $pesanan->total_beras_kg }} kg</p>
+        @else
+            <p>Harga emas acuan: Rp{{ number_format($pesanan->harga_emas_per_gram_snapshot, 2, ',', '.') }}/gram · Nisab: Rp{{ number_format($pesanan->nilai_nisab, 2, ',', '.') }}</p>
         @endif
         <table class="table"><tbody>
-            <tr><td>Harga pokok beras / zakat maal</td><td class="text-end">Rp{{ number_format($pesanan->harga_pokok_snapshot, 2, ',', '.') }}</td></tr>
             @if ($pesanan->jenis_zakat === 'fitrah')
+                <tr><td>Harga pokok beras</td><td class="text-end">Rp{{ number_format($pesanan->harga_pokok_snapshot, 2, ',', '.') }}</td></tr>
                 <tr><td>Keuntungan beras</td><td class="text-end">Rp{{ number_format($pesanan->keuntungan_snapshot, 2, ',', '.') }}</td></tr>
                 <tr><td>Biaya admin</td><td class="text-end">Rp{{ number_format($pesanan->biaya_admin_snapshot, 2, ',', '.') }}</td></tr>
                 <tr><td>Ongkos kirim</td><td class="text-end">Rp{{ number_format($pesanan->ongkir_snapshot, 2, ',', '.') }}</td></tr>
+            @else
+                <tr><td>Zakat maal wajib seluruh pemilik yang memenuhi syarat</td><td class="text-end">Rp{{ number_format($pesanan->total_zakat_wajib, 2, ',', '.') }}</td></tr>
             @endif
             <tr class="fw-bold"><td>Total tagihan simulasi</td><td class="text-end">Rp{{ number_format($pesanan->total_nominal, 2, ',', '.') }}</td></tr>
         </tbody></table>
