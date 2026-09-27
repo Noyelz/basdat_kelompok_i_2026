@@ -836,7 +836,8 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 | Tahap | Status | Catatan |
 | :--- | :--- | :--- |
 | Setup agent Laravel Boost | Selesai | Paket dan panduan proyek diperbarui; tidak mengubah tabel atau data aplikasi. |
-| Skema database pengembangan | Berjalan | Inventarisasi tabel lama dan kebutuhan model sebelum menulis migration lengkap untuk `zakat_db`. |
-| Migrasi dan penyesuaian aplikasi | Belum | Hanya dijalankan pada `zakat_db` setelah koneksi dan nama database dipastikan. |
+| Skema database pengembangan | Migration ditulis | Migration untuk akun `user`, panti, gudang/vendor/lot, transaksi, reservasi, pembayaran simulasi, alokasi, bukti, dan audit sudah disusun. Kesesuaian dengan aplikasi masih dikerjakan. |
+| Migrasi ke `zakat_db` | Tertunda | `.env` sudah diarahkan ke `zakat_db` dan Laravel mengonfirmasi nama koneksi. Migration pertama terhenti ketika layanan MariaDB di host lokal putus; `zakat_db` mungkin berisi tabel parsial. Jangan menjalankan migration ulang sebelum layanan pulih dan kondisi tabel baru diperiksa. Database lama `zakat` tidak disentuh. |
+| Penyesuaian aplikasi | Belum | Controller, route, dan tampilan lama masih perlu disesuaikan dengan skema dan alur simulasi. |
 
 Setiap tahap yang selesai disimpan dalam commit lokal. Commit Git dapat memulihkan kode, sedangkan pemulihan isi MySQL memerlukan cadangan database tersendiri.
