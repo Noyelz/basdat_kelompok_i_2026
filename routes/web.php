@@ -79,7 +79,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/distribusi', [DistributionController::class, 'index'])->name('distribusi.index');
         Route::post('/perjalanan', [DistributionController::class, 'createTrip'])->name('perjalanan.store');
         Route::post('/perjalanan/{id}/berangkat', [DistributionController::class, 'dispatch'])->whereNumber('id')->name('perjalanan.dispatch');
+        Route::get('/perjalanan/{id}/manifest', [DistributionController::class, 'manifest'])->whereNumber('id')->name('perjalanan.manifest');
         Route::post('/titik', [DistributionController::class, 'addStop'])->name('titik.store');
+        Route::patch('/titik/{id}/ongkir', [DistributionController::class, 'setActualShipping'])->whereNumber('id')->name('titik.ongkir');
         Route::post('/maal/{id}/alokasi', [DistributionController::class, 'allocateMaal'])->whereNumber('id')->name('maal.allocate');
         Route::get('/bukti', [HandoverEvidenceController::class, 'index'])->name('bukti.index');
         Route::post('/bukti/{id}', [HandoverEvidenceController::class, 'submitPanitia'])->whereNumber('id')->name('bukti.store');

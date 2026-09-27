@@ -246,4 +246,51 @@ class DistributionController extends Controller
 
         return back()->with('success', 'Perjalanan dicatat berangkat. Stok lot berkurang dan reservasi pesanan dilepas dalam satu transaksi database.');
     }
+
+    public function setActualShipping(Request $request, int $id): RedirectResponse
+    {
+        $data = $request->validate([
+            'ongkir_aktual' => ['required', 'decimal:0,2', 'min:0', 'max:9999999999999.99'],
+        ]);
+
+        DB::transaction(function () use ($id, $data): void {
+            $titikAwal = DB::table('titik_pengiriman')->where('id', $id)->first(['perjalanan_pengiriman_id']);
+            abort_unless($titikAwal, 404);
+
+            $perjalanan = DB::table('perjalanan_pengiriman')->where('id', $titikAwal->perjalanan_pengiriman_id)->lockForUpdate()->first();
+            abort_unless(in_array($perjalanan->status, ['dikirim', 'selesai'], true), 422, 'Ongkir aktual dicatat setelah perjalanan berangkat.');
+            DB::table('titik_pengiriman')->where('id', $id)->update(['ongkir_aktual' => $data['ongkir_aktual'], 'updated_at' => now()]);
+
+            $titik = DB::table('titik_pengiriman')->where('perjalanan_pengiriman_id', $perjalanan->id)->get(['ongkir_aktual']);
+            $total = $titik->contains(fn ($item) => $item->ongkir_aktual === null)
+                ? null
+                : $titik->reduce(fn ($jumlah, $item) => bcadd($jumlah, $item->ongkir_aktual, 2), '0.00');
+            DB::table('perjalanan_pengiriman')->where('id', $perjalanan->id)->update(['ongkir_aktual' => $total, 'updated_at' => now()]);
+        });
+
+        return back()->with('success', 'Ongkir aktual titik tersimpan. Nilai tagihan pesanan lama tidak berubah.');
+    }
+
+    public function manifest(int $id): View
+    {
+        $perjalanan = DB::table('perjalanan_pengiriman')
+            ->join('gudang', 'gudang.id', '=', 'perjalanan_pengiriman.gudang_id')
+            ->where('perjalanan_pengiriman.id', $id)
+            ->first(['perjalanan_pengiriman.*', 'gudang.nama as nama_gudang']);
+        abort_unless($perjalanan, 404);
+
+        $titik = DB::table('titik_pengiriman')
+            ->join('yayasan', 'yayasan.id', '=', 'titik_pengiriman.yayasan_id')
+            ->where('titik_pengiriman.perjalanan_pengiriman_id', $id)
+            ->orderBy('titik_pengiriman.urutan')
+            ->get(['titik_pengiriman.*', 'yayasan.nama as nama_panti', 'yayasan.kota_kabupaten', 'yayasan.provinsi']);
+        $alokasi = DB::table('alokasi_transaksi')
+            ->join('transaksi_zakat', 'transaksi_zakat.id', '=', 'alokasi_transaksi.transaksi_id')
+            ->whereIn('alokasi_transaksi.titik_pengiriman_id', $titik->pluck('id'))
+            ->orderBy('alokasi_transaksi.id')
+            ->get(['alokasi_transaksi.titik_pengiriman_id', 'alokasi_transaksi.jumlah_kg', 'transaksi_zakat.kode_transaksi'])
+            ->groupBy('titik_pengiriman_id');
+
+        return view('panitia.manifest', compact('perjalanan', 'titik', 'alokasi'));
+    }
 }

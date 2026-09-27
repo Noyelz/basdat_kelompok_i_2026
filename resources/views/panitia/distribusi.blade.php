@@ -42,7 +42,25 @@
         <div class="border rounded p-3 mb-3">
             <div class="d-flex justify-content-between"><strong>{{ $trip->kode_perjalanan }} · {{ $trip->kendaraan }}</strong><span class="badge bg-secondary">{{ $trip->status }}</span></div>
             <p class="mb-1">Kapasitas {{ $trip->kapasitas_kg }} kg · berangkat {{ \Carbon\Carbon::parse($trip->jadwal_berangkat)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB</p>
-            <ol class="mb-2">@forelse ($titik->get($trip->id, collect()) as $stop)<li>{{ $stop->nama_panti }} · {{ $stop->jumlah_kg }} kg · {{ $stop->status }}</li>@empty<li class="text-muted">Belum ada titik pengiriman.</li>@endforelse</ol>
+            <ol class="mb-2">
+                @forelse ($titik->get($trip->id, collect()) as $stop)
+                    <li class="mb-2">
+                        {{ $stop->nama_panti }} · {{ $stop->jumlah_kg }} kg · {{ $stop->status }}
+                        @if (in_array($trip->status, ['dikirim', 'selesai'], true))
+                            <form method="POST" action="{{ route('panitia.titik.ongkir', $stop->id) }}" class="d-flex gap-2 align-items-center mt-1">
+                                @csrf
+                                @method('PATCH')
+                                <label class="small">Ongkir aktual titik (Rp)</label>
+                                <input type="number" name="ongkir_aktual" min="0" step="0.01" value="{{ $stop->ongkir_aktual }}" class="form-control form-control-sm" style="max-width: 180px" required>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Simpan</button>
+                            </form>
+                        @endif
+                    </li>
+                @empty
+                    <li class="text-muted">Belum ada titik pengiriman.</li>
+                @endforelse
+            </ol>
+            @if ($titik->has($trip->id))<a href="{{ route('panitia.perjalanan.manifest', $trip->id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary mb-2">Manifest cetak</a>@endif
             @if ($trip->status === 'direncanakan' && $titik->has($trip->id))
                 <form method="POST" action="{{ route('panitia.perjalanan.dispatch', $trip->id) }}">@csrf<button class="btn btn-warning" type="submit">Catat berangkat & keluarkan stok lot</button></form>
             @endif
