@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,8 +21,20 @@ class AdminController extends Controller
             ->orderBy('nama')
             ->get(['id', 'nama', 'email', 'is_active', 'created_at']);
         $bank = DB::table('bank')->orderBy('nama')->get(['id', 'kode', 'nama', 'is_active']);
+        $wilayah = DB::table('wilayah_layanan')->orderBy('hari_batas_fitrah')->get()
+            ->map(function ($item) {
+                $item->tarif = DB::table('tarif_pengiriman')
+                    ->where('wilayah_layanan_id', $item->id)
+                    ->whereNull('berlaku_sampai')
+                    ->latest('id')
+                    ->first();
 
-        return view('admin.dashboard', compact('panitia', 'bank'));
+                return $item;
+            });
+        $pengaturan = DB::table('pengaturan_operasional')->pluck('nilai', 'kunci');
+        $hargaEmas = DB::table('harga_emas')->latest('tanggal_sumber')->first();
+
+        return view('admin.dashboard', compact('panitia', 'bank', 'wilayah', 'pengaturan', 'hargaEmas'));
     }
 
     public function storePanitia(Request $request): RedirectResponse
@@ -108,5 +121,104 @@ class AdminController extends Controller
         });
 
         return back()->with('success', 'Bank ditambahkan.');
+    }
+
+    public function setOperationalSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'tanggal_idulfitri' => ['required', 'date_format:Y-m-d'],
+            'biaya_admin_rupiah' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'persen_keuntungan_beras' => ['required', 'decimal:0,2', 'min:0', 'max:100'],
+            'bobot_fitrah_per_jiwa_kg' => ['required', 'decimal:0,2', 'gt:0', 'max:10'],
+        ]);
+
+        DB::transaction(function () use ($request, $data): void {
+            foreach ($data as $key => $value) {
+                DB::table('pengaturan_operasional')->upsert([[
+                    'kunci' => $key,
+                    'nilai' => (string) $value,
+                    'satuan' => $key === 'tanggal_idulfitri' ? 'tanggal' : null,
+                    'diubah_oleh' => $request->user()->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]], ['kunci'], ['nilai', 'satuan', 'diubah_oleh', 'updated_at']);
+            }
+
+            foreach (DB::table('wilayah_layanan')->get(['id', 'hari_batas_fitrah', 'is_active']) as $wilayah) {
+                $batas = CarbonImmutable::parse($data['tanggal_idulfitri'].' 00:00:00', 'Asia/Jakarta')
+                    ->subDays($wilayah->hari_batas_fitrah)
+                    ->endOfDay()
+                    ->utc();
+
+                DB::table('wilayah_layanan')->where('id', $wilayah->id)->update([
+                    'batas_checkout_at' => $batas,
+                    'is_active' => $batas->isPast() ? false : $wilayah->is_active,
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        return back()->with('success', 'Pengaturan tersimpan. Tenggat tiap wilayah dihitung ulang dari tanggal Idulfitri.');
+    }
+
+    public function setRegion(Request $request, int $id): RedirectResponse
+    {
+        $data = $request->validate([
+            'is_active' => ['required', 'boolean'],
+            'biaya_tetap' => ['required', 'decimal:0,2', 'min:0', 'max:100000000'],
+            'biaya_per_km_kg' => ['required', 'decimal:0,2', 'min:0', 'max:1000000'],
+        ]);
+
+        DB::transaction(function () use ($request, $data, $id): void {
+            $wilayah = DB::table('wilayah_layanan')->where('id', $id)->lockForUpdate()->first();
+            abort_unless($wilayah, 404);
+            abort_if($data['is_active'] && (! $wilayah->batas_checkout_at || CarbonImmutable::parse($wilayah->batas_checkout_at)->isPast()), 422, 'Tenggat wilayah sudah lewat atau belum ditetapkan.');
+
+            DB::table('wilayah_layanan')->where('id', $id)->update([
+                'is_active' => (bool) $data['is_active'],
+                'updated_at' => now(),
+            ]);
+
+            $tarifAktif = DB::table('tarif_pengiriman')
+                ->where('wilayah_layanan_id', $id)
+                ->whereNull('berlaku_sampai')
+                ->latest('id')
+                ->first();
+
+            if (! $tarifAktif || bccomp($tarifAktif->biaya_tetap, $data['biaya_tetap'], 2) !== 0 || bccomp($tarifAktif->biaya_per_km_kg, $data['biaya_per_km_kg'], 2) !== 0) {
+                DB::table('tarif_pengiriman')->where('wilayah_layanan_id', $id)->whereNull('berlaku_sampai')->update(['berlaku_sampai' => now(), 'updated_at' => now()]);
+                DB::table('tarif_pengiriman')->insert([
+                    'wilayah_layanan_id' => $id,
+                    'biaya_tetap' => $data['biaya_tetap'],
+                    'biaya_per_km_kg' => $data['biaya_per_km_kg'],
+                    'berlaku_mulai' => now(),
+                    'ditetapkan_oleh' => $request->user()->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        return back()->with('success', 'Status wilayah dan tarif diperbarui.');
+    }
+
+    public function storeGoldPrice(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'harga_per_gram' => ['required', 'decimal:0,2', 'gt:0', 'max:9999999999999.99'],
+            'sumber' => ['required', 'string', 'max:255'],
+            'tanggal_sumber' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+        ]);
+
+        DB::table('harga_emas')->insert([
+            'harga_per_gram' => $data['harga_per_gram'],
+            'sumber' => $data['sumber'],
+            'tanggal_sumber' => CarbonImmutable::parse($data['tanggal_sumber'].' 12:00:00', 'Asia/Jakarta')->utc(),
+            'dicatat_oleh' => $request->user()->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Harga emas acuan dicatat untuk transaksi baru.');
     }
 }

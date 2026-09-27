@@ -78,6 +78,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/panitia', [AdminController::class, 'storePanitia'])->name('panitia.store');
         Route::patch('/panitia/{user}/aktif', [AdminController::class, 'setPanitiaActive'])->name('panitia.active');
         Route::post('/bank', [AdminController::class, 'storeBank'])->name('bank.store');
+        Route::put('/pengaturan', [AdminController::class, 'setOperationalSettings'])->name('pengaturan.update');
+        Route::put('/wilayah/{id}', [AdminController::class, 'setRegion'])->whereNumber('id')->name('wilayah.update');
+        Route::post('/harga-emas', [AdminController::class, 'storeGoldPrice'])->name('harga-emas.store');
     });
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
