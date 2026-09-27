@@ -27,7 +27,13 @@ class SimulationPaymentController extends Controller
             $qrDataUri = (new SvgWriter)->write(new QrCode($scanUrl))->getDataUri();
         }
 
-        return view('muzakki.payment', compact('pesanan', 'qrDataUri', 'scanUrl'));
+        $bukti = DB::table('bukti_serah_terima')
+            ->join('alokasi_transaksi', 'alokasi_transaksi.id', '=', 'bukti_serah_terima.alokasi_transaksi_id')
+            ->where('alokasi_transaksi.transaksi_id', $id)
+            ->orderBy('bukti_serah_terima.id')
+            ->get(['bukti_serah_terima.id', 'bukti_serah_terima.pihak']);
+
+        return view('muzakki.payment', compact('pesanan', 'qrDataUri', 'scanUrl', 'bukti'));
     }
 
     public function scan(Request $request, string $token): View

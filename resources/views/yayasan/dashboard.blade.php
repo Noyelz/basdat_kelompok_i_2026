@@ -51,6 +51,29 @@
                     @endif
                 </div>
             </section>
+            <section class="card border-0 shadow-sm mt-4"><div class="card-body">
+                <h2 class="h5">Alokasi dan konfirmasi penerimaan</h2>
+                <p class="text-muted">Periksa jumlah yang diterima. Foto panitia dan foto PJ diperlukan sebelum penyaluran dianggap selesai dalam tugas ini.</p>
+                @forelse ($alokasi as $item)
+                    <div class="border rounded p-3 mb-3">
+                        <strong>{{ $item->kode_transaksi }}</strong> · {{ $item->jenis_zakat === 'fitrah' ? $item->jumlah_kg . ' kg beras' : 'Rp' . number_format($item->nominal, 2, ',', '.') . ' dana maal' }}
+                        <p class="mb-1">Status: {{ $item->status }} · Foto panitia: {{ $item->bukti_panitia_id ? 'ada' : 'belum' }} · Foto PJ: {{ $item->bukti_pj_id ? 'ada' : 'belum' }}</p>
+                        @if ($item->bukti_panitia_id)<a href="{{ route('bukti.foto', $item->bukti_panitia_id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">Lihat foto panitia</a>@endif
+                        @if ($item->bukti_pj_id)<a href="{{ route('bukti.foto', $item->bukti_pj_id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">Lihat foto PJ</a>@endif
+                        @if (in_array($item->status, ['dikirim', 'menunggu_bukti', 'perlu_tinjauan'], true))
+                            <form method="POST" action="{{ route('yayasan.bukti.store', $item->id) }}" enctype="multipart/form-data" class="row g-2 mt-2">
+                                @csrf
+                                <div class="col-md-3"><label class="form-label">Jumlah diterima ({{ $item->jenis_zakat === 'fitrah' ? 'kg' : 'Rp' }})</label><input type="number" step="0.01" min="0.01" name="{{ $item->jenis_zakat === 'fitrah' ? 'jumlah_kg' : 'nominal' }}" class="form-control" value="{{ $item->jenis_zakat === 'fitrah' ? $item->jumlah_kg : $item->nominal }}" required></div>
+                                <div class="col-md-4"><label class="form-label">Foto penerimaan</label><input type="file" name="foto" accept="image/jpeg,image/png,image/webp" class="form-control" required></div>
+                                <div class="col-md-3"><label class="form-label">Catatan (opsional)</label><input name="catatan" class="form-control"></div>
+                                <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-success w-100">Konfirmasi</button></div>
+                            </form>
+                        @endif
+                    </div>
+                @empty
+                    <p class="text-muted mb-0">Belum ada alokasi untuk panti ini.</p>
+                @endforelse
+            </div></section>
         @else
             <section class="card border-0 shadow-sm">
                 <div class="card-body p-4">

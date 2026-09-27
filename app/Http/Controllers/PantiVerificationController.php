@@ -92,6 +92,7 @@ class PantiVerificationController extends Controller
         abort_unless($foto, 404);
 
         $role = $request->user()->role;
+        abort_unless($request->user()->is_active, 403);
         $milikPj = $role === 'pj' && DB::table('yayasan')
             ->where('id', $foto->yayasan_id)
             ->where('pj_user_id', $request->user()->id)

@@ -25,6 +25,12 @@
         </tbody></table>
         <p class="mb-1">Status pembayaran: <strong>{{ $pesanan->status_pembayaran }}</strong></p>
         <p>Status penyaluran: <strong>{{ $pesanan->status_penyaluran }}</strong></p>
+        @if ($bukti->isNotEmpty())
+            <p class="mb-1">Bukti serah terima:</p>
+            @foreach ($bukti as $foto)
+                <a href="{{ route('bukti.foto', $foto->id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary me-1 mb-2">Foto {{ $foto->pihak === 'panitia' ? 'panitia' : 'panti' }}</a>
+            @endforeach
+        @endif
         @if ($pesanan->status_pembayaran === 'pending')
             <p>Berlaku sampai {{ \Carbon\Carbon::parse($pesanan->expired_at)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB.</p>
             <div class="text-center"><img src="{{ $qrDataUri }}" width="300" height="300" alt="QR menuju halaman pembayaran simulasi"><p><a href="{{ $scanUrl }}" rel="noreferrer">Buka halaman QR simulasi</a></p></div>

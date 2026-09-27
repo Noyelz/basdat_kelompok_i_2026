@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\FitrahCheckoutController;
+use App\Http\Controllers\HandoverEvidenceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MaalCheckoutController;
 use App\Http\Controllers\MuzakkiController;
@@ -48,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/ganti-kata-sandi', [AuthController::class, 'showChangePassword'])->name('password.change');
     Route::post('/ganti-kata-sandi', [AuthController::class, 'changePassword'])->name('password.change.store');
     Route::get('/panti/foto/{id}', [PantiVerificationController::class, 'foto'])->whereNumber('id')->name('panti.foto');
+    Route::get('/bukti/foto/{id}', [HandoverEvidenceController::class, 'foto'])->whereNumber('id')->name('bukti.foto');
 
     // Group Route Muzakki
     Route::prefix('muzakki')->name('muzakki.')->middleware('role:pemberi')->group(function () {
@@ -79,12 +81,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/perjalanan/{id}/berangkat', [DistributionController::class, 'dispatch'])->whereNumber('id')->name('perjalanan.dispatch');
         Route::post('/titik', [DistributionController::class, 'addStop'])->name('titik.store');
         Route::post('/maal/{id}/alokasi', [DistributionController::class, 'allocateMaal'])->whereNumber('id')->name('maal.allocate');
+        Route::get('/bukti', [HandoverEvidenceController::class, 'index'])->name('bukti.index');
+        Route::post('/bukti/{id}', [HandoverEvidenceController::class, 'submitPanitia'])->whereNumber('id')->name('bukti.store');
     });
 
     // Group Route Yayasan
     Route::prefix('yayasan')->name('yayasan.')->middleware('role:pj')->group(function () {
         Route::get('/dashboard', [YayasanController::class, 'dashboard'])->name('dashboard');
         Route::post('/daftar-panti', [YayasanController::class, 'storePanti'])->name('panti.store');
+        Route::post('/bukti/{id}', [HandoverEvidenceController::class, 'submitPj'])->whereNumber('id')->name('bukti.store');
     });
 
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
