@@ -10,4 +10,5 @@
     <div class="col-md-4"><div class="card shadow-sm border-0"><div class="card-body"><h2 class="h6">Titik pengiriman tertunda</h2><strong class="fs-3">{{ $ringkasan['pengiriman_tertunda'] }}</strong><p class="small text-muted mb-0">Menunggu pengiriman atau konfirmasi.</p></div></div></div>
 </div>
 <div class="alert alert-info">Stok tercatat: {{ number_format($ringkasan['stok_kg'], 2, ',', '.') }} kg · Reservasi aktif: {{ number_format($ringkasan['reservasi_kg'], 2, ',', '.') }} kg · Tersedia: {{ number_format(max(0, $ringkasan['stok_kg'] - $ringkasan['reservasi_kg']), 2, ',', '.') }} kg.</div>
+<p><a href="{{ route('panitia.gudang.index') }}" class="btn btn-outline-primary">Kelola vendor & gudang</a></p>
 @endsection

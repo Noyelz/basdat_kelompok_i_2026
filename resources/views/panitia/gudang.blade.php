@@ -1,0 +1,72 @@
+@extends('panitia.layout')
+
+@section('content')
+<h1 class="h3 mb-2">Vendor & gudang Surabaya</h1>
+<p class="text-muted mb-4">Setiap penerimaan beras membuat lot dengan harga beli tetap. Stok tersedia adalah stok gudang dikurangi pesanan yang masih reservasi.</p>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <section class="card border-0 shadow-sm h-100"><div class="card-body">
+            <h2 class="h5">Tambah vendor</h2>
+            <form method="POST" action="{{ route('panitia.vendor.store') }}" class="row g-2">
+                @csrf
+                <div class="col-12"><label class="form-label">Nama vendor</label><input name="nama" class="form-control" value="{{ old('nama') }}" required></div>
+                <div class="col-md-6"><label class="form-label">Telepon</label><input name="telp" class="form-control" value="{{ old('telp') }}"></div>
+                <div class="col-md-6"><label class="form-label">Email</label><input name="email" type="email" class="form-control" value="{{ old('email') }}"></div>
+                <div class="col-12"><label class="form-label">Alamat</label><textarea name="alamat" class="form-control" rows="2">{{ old('alamat') }}</textarea></div>
+                <div class="col-12"><button class="btn btn-primary" type="submit">Simpan vendor</button></div>
+            </form>
+        </div></section>
+    </div>
+    <div class="col-lg-6">
+        <section class="card border-0 shadow-sm h-100"><div class="card-body">
+            <h2 class="h5">Tambah jenis beras</h2>
+            <form method="POST" action="{{ route('panitia.katalog.store') }}" class="row g-2">
+                @csrf
+                <div class="col-12"><label class="form-label">Jenis / merek beras</label><input name="nama_beras" class="form-control" value="{{ old('nama_beras') }}" required></div>
+                <div class="col-12"><button class="btn btn-primary" type="submit">Simpan jenis beras</button></div>
+            </form>
+            <p class="small text-muted mt-3 mb-0">Harga katalog mengikuti harga beli lot terlama yang masih tersedia ditambah persentase keuntungan yang diatur admin.</p>
+        </div></section>
+    </div>
+</div>
+
+<section class="card border-0 shadow-sm mb-4"><div class="card-body">
+    <h2 class="h5">Catat beras diterima di gudang</h2>
+    <p class="small text-muted">Gunakan hanya setelah barang benar-benar tiba. Data pada tahap pengembangan ini diberi tanda simulasi.</p>
+    <form method="POST" action="{{ route('panitia.pembelian.receive') }}" class="row g-3">
+        @csrf
+        <div class="col-md-4"><label class="form-label">Vendor</label><select name="vendor_id" class="form-select" required><option value="">Pilih vendor</option>@foreach ($vendor->where('is_active', true) as $item)<option value="{{ $item->id }}" @selected(old('vendor_id') == $item->id)>{{ $item->nama }}</option>@endforeach</select></div>
+        <div class="col-md-4"><label class="form-label">Gudang</label><select name="gudang_id" class="form-select" required><option value="">Pilih gudang</option>@foreach ($gudang as $item)<option value="{{ $item->id }}" @selected(old('gudang_id') == $item->id)>{{ $item->nama }}</option>@endforeach</select></div>
+        <div class="col-md-4"><label class="form-label">Jenis beras</label><select name="katalog_beras_id" class="form-select" required><option value="">Pilih beras</option>@foreach ($katalog->where('is_active', true) as $item)<option value="{{ $item->id }}" @selected(old('katalog_beras_id') == $item->id)>{{ $item->nama_beras }}</option>@endforeach</select></div>
+        <div class="col-md-3"><label class="form-label">Jumlah masuk (kg)</label><input type="number" name="jumlah_kg" min="0.01" step="0.01" class="form-control" value="{{ old('jumlah_kg') }}" required></div>
+        <div class="col-md-3"><label class="form-label">Harga beli per kg (Rp)</label><input type="number" name="harga_beli_per_kg" min="0.01" step="0.01" class="form-control" value="{{ old('harga_beli_per_kg') }}" required></div>
+        <div class="col-md-3"><label class="form-label">Tanggal masuk</label><input type="date" name="tanggal_masuk" class="form-control" value="{{ old('tanggal_masuk', now()->toDateString()) }}" required></div>
+        <div class="col-md-3"><label class="form-label">Kedaluwarsa (jika ada)</label><input type="date" name="tanggal_kedaluwarsa" class="form-control" value="{{ old('tanggal_kedaluwarsa') }}"></div>
+        <div class="col-md-6"><label class="form-label">Nomor faktur (jika ada)</label><input name="nomor_faktur" class="form-control" value="{{ old('nomor_faktur') }}"></div>
+        <div class="col-md-6 d-flex align-items-end"><button class="btn btn-success w-100" type="submit" @disabled($vendor->where('is_active', true)->isEmpty() || $gudang->isEmpty() || $katalog->where('is_active', true)->isEmpty())>Catat penerimaan</button></div>
+    </form>
+</div></section>
+
+<section class="card border-0 shadow-sm mb-4"><div class="card-body">
+    <h2 class="h5">Katalog & ketersediaan</h2>
+    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Beras</th><th>Harga penawaran/kg</th><th>Stok gudang</th><th>Reservasi aktif</th><th>Tersedia</th></tr></thead><tbody>
+        @forelse ($katalog as $item)
+            <tr><td>{{ $item->nama_beras }}</td><td>Rp{{ number_format($item->harga_per_kg, 2, ',', '.') }}</td><td>{{ number_format($item->stock, 2, ',', '.') }} kg</td><td>{{ number_format($item->reservasi_kg, 2, ',', '.') }} kg</td><td>{{ number_format(max(0, $item->stock - $item->reservasi_kg), 2, ',', '.') }} kg</td></tr>
+        @empty
+            <tr><td colspan="5" class="text-muted">Belum ada jenis beras.</td></tr>
+        @endforelse
+    </tbody></table></div>
+</div></section>
+
+<section class="card border-0 shadow-sm"><div class="card-body">
+    <h2 class="h5">Lot terbaru</h2>
+    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Lot</th><th>Vendor</th><th>Beras</th><th>Masuk</th><th>Sisa fisik</th><th>Harga beli/kg</th></tr></thead><tbody>
+        @forelse ($lot as $item)
+            <tr><td>{{ $item->kode_lot }}</td><td>{{ $item->nama_vendor }}</td><td>{{ $item->nama_beras }}</td><td>{{ $item->jumlah_masuk_kg }} kg</td><td>{{ $item->sisa_kg }} kg</td><td>Rp{{ number_format($item->harga_beli_per_kg, 2, ',', '.') }}</td></tr>
+        @empty
+            <tr><td colspan="6" class="text-muted">Belum ada lot yang diterima.</td></tr>
+        @endforelse
+    </tbody></table></div>
+</div></section>
+@endsection

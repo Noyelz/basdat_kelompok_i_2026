@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MuzakkiController;
 use App\Http\Controllers\PanitiaController;
 use App\Http\Controllers\PantiVerificationController;
@@ -60,6 +61,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [PanitiaController::class, 'index'])->name('dashboard');
         Route::get('/panti', [PantiVerificationController::class, 'index'])->name('panti.index');
         Route::patch('/panti/{id}', [PantiVerificationController::class, 'update'])->whereNumber('id')->name('panti.update');
+        Route::get('/gudang', [InventoryController::class, 'index'])->name('gudang.index');
+        Route::post('/vendor', [InventoryController::class, 'storeVendor'])->name('vendor.store');
+        Route::post('/katalog', [InventoryController::class, 'storeKatalog'])->name('katalog.store');
+        Route::post('/pembelian/terima', [InventoryController::class, 'receive'])->name('pembelian.receive');
     });
 
     // Group Route Yayasan
