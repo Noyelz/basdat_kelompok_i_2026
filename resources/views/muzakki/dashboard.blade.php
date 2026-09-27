@@ -17,13 +17,16 @@
 
 @if ($notifikasi->isNotEmpty())
     <section class="card border-0 shadow-sm mb-4"><div class="card-body">
-        <h3 class="h5">Pemberitahuan penyaluran</h3>
-        <p class="small text-muted">Pemberitahuan di aplikasi ini belum dikirim melalui email.</p>
+        <h3 class="h5">Pemberitahuan saya</h3>
+        <p class="small text-muted">Pemberitahuan ini tampil di aplikasi; email belum dikirim otomatis.</p>
         @foreach ($notifikasi as $pesan)
             <div class="border-top py-3">
-                <strong>{{ $pesan->dibaca_at ? 'Sudah dibaca' : 'Baru' }}</strong> · Penyaluran pesanan
-                <a href="{{ route('muzakki.payment.show', $pesan->detail['transaksi_id'] ?? 0) }}">{{ $pesan->detail['kode_transaksi'] ?? 'lihat riwayat' }}</a>
-                ke {{ $pesan->detail['nama_panti'] ?? 'panti' }} selesai.
+                <strong>{{ $pesan->dibaca_at ? 'Sudah dibaca' : 'Baru' }}</strong> ·
+                @if ($pesan->jenis === 'penyaluran_selesai')
+                    Penyaluran pesanan <a href="{{ route('muzakki.payment.show', $pesan->detail['transaksi_id'] ?? 0) }}">{{ $pesan->detail['kode_transaksi'] ?? 'lihat riwayat' }}</a> ke {{ $pesan->detail['nama_panti'] ?? 'panti' }} selesai.
+                @else
+                    {{ $pesan->detail['pesan'] ?? 'Ada pemberitahuan baru untuk Anda.' }}
+                @endif
                 @if (! $pesan->dibaca_at)
                     <form method="POST" action="{{ route('notifikasi.read', $pesan->id) }}" class="mt-2">@csrf<button type="submit" class="btn btn-sm btn-outline-primary">Tandai dibaca</button></form>
                 @endif

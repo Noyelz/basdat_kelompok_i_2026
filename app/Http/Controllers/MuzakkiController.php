@@ -24,10 +24,9 @@ class MuzakkiController extends Controller
         $terbaru = TransaksiZakat::with('yayasan')->where('user_id', $userId)->latest()->limit(5)->get();
         $notifikasi = DB::table('notifikasi_aplikasi')
             ->where('user_id', $userId)
-            ->where('jenis', 'penyaluran_selesai')
             ->orderByDesc('id')
             ->limit(5)
-            ->get(['id', 'payload', 'dibaca_at', 'created_at'])
+            ->get(['id', 'jenis', 'payload', 'dibaca_at', 'created_at'])
             ->map(function ($item) {
                 $item->detail = json_decode($item->payload, true) ?: [];
 
@@ -147,7 +146,7 @@ class MuzakkiController extends Controller
             ]);
         });
 
-        return redirect()->route('muzakki.profil')->with('success', 'Pilihan pemberitahuan disimpan. Email dan pengingat otomatis belum aktif.');
+        return redirect()->route('muzakki.profil')->with('success', 'Pilihan pemberitahuan disimpan. Pengingat muncul di aplikasi bila layanan penjadwalan berjalan; email belum aktif.');
     }
 
     public function updateProfil(Request $request): RedirectResponse

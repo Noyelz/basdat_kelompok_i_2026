@@ -196,7 +196,7 @@
         </div>
         <section class="card border-0 shadow-sm mt-4"><div class="card-body">
             <h2 class="h5">Pilihan pemberitahuan</h2>
-            <p class="small text-muted">Pemberitahuan penyaluran selesai sudah tampil di dashboard. Pengingat otomatis dan email belum aktif; pilihan di bawah disimpan untuk saat fitur tersebut tersedia.</p>
+            <p class="small text-muted">Pemberitahuan penyaluran selesai tampil di dashboard. Pengingat fitrah dan haul muncul di aplikasi bila layanan penjadwalan berjalan. Email belum dikirim otomatis.</p>
             <form method="POST" action="{{ route('muzakki.profil.notifikasi') }}">
                 @csrf
                 @foreach ([

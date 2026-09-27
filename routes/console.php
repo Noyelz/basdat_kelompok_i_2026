@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('app:expire-pending-orders')->everyMinute()->withoutOverlapping();
+Schedule::command('app:create-zakat-reminders')->dailyAt('08:00')->timezone('Asia/Jakarta')->withoutOverlapping();
