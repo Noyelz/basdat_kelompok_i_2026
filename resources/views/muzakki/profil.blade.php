@@ -194,6 +194,25 @@
                 </div>
             </div>
         </div>
+        <section class="card border-0 shadow-sm mt-4"><div class="card-body">
+            <h2 class="h5">Pilihan pemberitahuan</h2>
+            <p class="small text-muted">Pemberitahuan penyaluran selesai sudah tampil di dashboard. Pengingat otomatis dan email belum aktif; pilihan di bawah disimpan untuk saat fitur tersebut tersedia.</p>
+            <form method="POST" action="{{ route('muzakki.profil.notifikasi') }}">
+                @csrf
+                @foreach ([
+                    ['kunci' => 'ingatkan_fitrah', 'label' => 'Ingatkan saya tentang zakat fitrah'],
+                    ['kunci' => 'ingatkan_haul_maal', 'label' => 'Ingatkan saya untuk meninjau haul zakat maal'],
+                    ['kunci' => 'email_bukti_penyaluran', 'label' => 'Kirim bukti penyaluran melalui email bila layanan email sudah aktif'],
+                ] as $pilihan)
+                    <div class="form-check mb-2">
+                        <input type="hidden" name="{{ $pilihan['kunci'] }}" value="0">
+                        <input class="form-check-input" type="checkbox" name="{{ $pilihan['kunci'] }}" value="1" id="{{ $pilihan['kunci'] }}" @checked(old($pilihan['kunci'], $preferensi->{$pilihan['kunci']} ?? false))>
+                        <label class="form-check-label" for="{{ $pilihan['kunci'] }}">{{ $pilihan['label'] }}</label>
+                    </div>
+                @endforeach
+                <button type="submit" class="btn btn-outline-primary mt-2">Simpan pilihan</button>
+            </form>
+        </div></section>
     </div>
 </div>
 @endsection

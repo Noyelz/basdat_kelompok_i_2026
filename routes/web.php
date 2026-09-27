@@ -75,6 +75,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/riwayat', [MuzakkiController::class, 'riwayat'])->name('riwayat');
         Route::get('/profil', [MuzakkiController::class, 'profil'])->name('profil');
         Route::post('/profil', [MuzakkiController::class, 'updateProfil'])->name('profil.update');
+        Route::post('/profil/preferensi-notifikasi', [MuzakkiController::class, 'updateNotificationPreferences'])->name('profil.notifikasi');
     });
 
     // Group Route Panitia

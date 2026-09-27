@@ -725,7 +725,7 @@ Buka `http://localhost:8020` di browser, atau gunakan port forwarding IDE pada p
 - [ ] Peringkat dan pilihan acak memakai data panti terverifikasi/aktif serta periode yang jelas. Jangan membuka identitas donor atau anak di statistik publik.
 - [ ] Dashboard muzakki kini menampilkan hitung mundur Idulfitri dari tanggal admin serta menjelaskan tenggat fitrah berbeda menurut wilayah. Pengingat maal berdasarkan tanggal haul per pemilik belum dibuat.
 - [ ] Halaman publik sebelum login kini berisi informasi platform, cara kerja, mitra panti, kalkulator berat fitrah, dampak simulasi dari database, FAQ, dan tombol daftar/masuk. Teks utama dapat diedit admin dan warna mengikuti login. Artikel terpisah dan daftar lengkap panti publik belum dibuat.
-- [ ] Log pemberitahuan penyaluran di aplikasi sudah tersedia. Preferensi pengguna, pengingat maal/fitrah, antrean email, dan pengiriman email otomatis belum dibuat.
+- [ ] Log pemberitahuan penyaluran di aplikasi dan preferensi pengguna sudah tersedia. Pengingat maal/fitrah, antrean email, dan pengiriman email otomatis belum dibuat.
 
 ### 11.8 Perubahan skema yang diperkirakan
 
@@ -836,7 +836,7 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 | Tahap | Status | Catatan |
 | :--- | :--- | :--- |
 | Setup agent Laravel Boost | Selesai | Paket dan panduan proyek diperbarui; tidak mengubah tabel atau data aplikasi. |
-| Skema database pengembangan | Selesai | Seluruh 8 migration berstatus `Ran` pada `zakat_db`; 41 tabel tersedia, termasuk tabel Laravel. Kesesuaian seluruh controller dengan skema baru masih dikerjakan. |
+| Skema database pengembangan | Selesai | Seluruh 9 migration berstatus `Ran` pada `zakat_db`; 42 tabel tersedia, termasuk tabel Laravel. Kesesuaian seluruh controller dengan skema baru masih dikerjakan. |
 | Migrasi ke `zakat_db` | Selesai dengan pemulihan | Saat MariaDB pulih, `zakat_db` hanya memiliki `migrations` dan `user` kosong. `migrate:fresh` gagal karena user MySQL `keli` tidak memiliki hak `DROP` pada `zakat_db`. Migration pertama diperbaiki agar hanya menerima tabel `user` parsial kosong dengan kolom dan foreign key yang diharapkan, lalu melengkapi indeks NIK/email. `php artisan migrate` dan `OperationalSeeder` selesai. Gudang Surabaya, 7 bank awal, 6 zona Jawa nonaktif, tarif simulasi, dan pengaturan awal tersedia. Database lama `zakat` tidak disentuh. Rollback skema tetap memerlukan hak `DROP` atau bantuan admin database. |
 | Autentikasi dan peran | Kode dasar selesai, belum diuji dengan MySQL | Register hanya membuka muzakki/PJ; login menolak akun nonaktif; route dipisah menurut peran; admin dapat membuat/nonaktifkan panitia; sandi sementara wajib diganti; seeder kata sandi tetap dihapus. |
 | Pendaftaran panti | Kode dasar selesai, belum diuji dengan MySQL | PJ mengisi data panti dan foto privat, lalu menunggu verifikasi. Panti tidak lagi dibuat otomatis atau langsung dianggap terverifikasi. |
@@ -866,12 +866,13 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 | Detail historis maal | Kode dasar selesai | Halaman pesanan milik muzakki menampilkan snapshot aset, utang, emas, harga acuan, sumber harga, nisab, pernyataan haul, serta zakat wajib per pemilik harta. Perubahan draft sesudah checkout tidak mengubah detail lama. Halaman fitrah menampilkan harga per kg saat checkout dan komponen tagihan terpisah. |
 | Audit pembayaran simulasi | Selesai pada alur baru | Perubahan QR dari pending ke `simulated_paid` dan pembatalan pesanan kini dicatat pada `audit_log` dalam transaksi database yang sama. Klik ulang QR yang sudah dibayar tidak membuat catatan ganda. Karena QR uji boleh diakses tamu, audit pembayaran mencatat IP dan ID percobaan, bukan mengaku pemindai sebagai pemilik akun. |
 | Pilihan fitrah yang lebih jelas | Kode dasar selesai | Form fitrah memakai kartu beras terurut dari harga katalog termurah; jumlah jiwa memperbarui kebutuhan kg dan menonaktifkan pilihan beras yang stok tersedia setelah reservasi tidak cukup. Kartu panti menunjukkan lokasi, jumlah penerima layak, kebutuhan yang dicatat PJ, fitrah simulasi terkumpul/selesai, dan persentasenya. Foto panti tetap privat dan belum dipublikasikan; desain pop-up khusus belum dibuat. Validasi server tetap menjadi penentu akhir ketika stok atau kapasitas berubah. |
+| Preferensi pemberitahuan muzakki | Struktur dan kode dasar selesai | Cadangan `zakat_db` sebelum migration ada di `/tmp/zakat_db_before_notification_preferences_20260927.sql` (izin 600, di luar Git). Migration menambah tabel `preferensi_notifikasi` dan sudah dijalankan. Muzakki dapat menyimpan pilihan pengingat fitrah, tinjauan haul maal, serta email bukti penyaluran; default seluruhnya nonaktif. Pilihan tidak memicu email/pengingat sampai layanan itu dibuat. Perubahan dicatat dalam audit tanpa data pribadi tambahan. Cadangan `/tmp` perlu dipindah ke media persisten bila ingin disimpan lama. |
 
 Setiap tahap yang selesai disimpan dalam commit lokal. Commit Git dapat memulihkan kode, sedangkan pemulihan isi MySQL memerlukan cadangan database tersendiri.
 
 ### 11.15 Menjalankan Versi Pengembangan
 
-Status saat pemeriksaan 2026-09-27: koneksi MariaDB berfungsi, seluruh 8 migration pada `zakat_db` berstatus `Ran`, dan partisi LXC memiliki sekitar 2,8 GB ruang kosong. Banyak alur inti prototipe sudah dikodekan, tetapi persentase penyelesaian belum dapat dinilai ulang secara jujur sebelum pemeriksaan alur penuh. Alur akun → panti → stok → checkout → penyaluran **belum diuji ujung ke ujung** dengan data contoh.
+Status saat pemeriksaan 2026-09-27: koneksi MariaDB berfungsi, seluruh 9 migration pada `zakat_db` berstatus `Ran`, dan partisi LXC memiliki sekitar 2,8 GB ruang kosong. Banyak alur inti prototipe sudah dikodekan, tetapi persentase penyelesaian belum dapat dinilai ulang secara jujur sebelum pemeriksaan alur penuh. Alur akun → panti → stok → checkout → penyaluran **belum diuji ujung ke ujung** dengan data contoh.
 
 1. Pastikan `.env` lokal tetap menunjuk ke `zakat_db`; jangan commit atau membagikan isi `.env`. Database lama `zakat` tetap sebagai pembanding.
 2. Jika belum ada akun admin, jalankan `php artisan app:create-initial-admin` di terminal interaktif dan isi nama, email, serta kata sandi admin yang Anda pilih sendiri. Perintah hanya bekerja bila belum ada akun admin. Jangan tulis kata sandi di repository atau percakapan.

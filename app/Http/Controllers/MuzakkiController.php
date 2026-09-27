@@ -111,7 +111,43 @@ class MuzakkiController extends Controller
 
     public function profil(Request $request): View
     {
-        return view('muzakki.profil', ['user' => $request->user()]);
+        $preferensi = DB::table('preferensi_notifikasi')
+            ->where('user_id', $request->user()->id)
+            ->first(['ingatkan_fitrah', 'ingatkan_haul_maal', 'email_bukti_penyaluran']);
+
+        return view('muzakki.profil', ['user' => $request->user(), 'preferensi' => $preferensi]);
+    }
+
+    public function updateNotificationPreferences(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ingatkan_fitrah' => ['required', 'boolean'],
+            'ingatkan_haul_maal' => ['required', 'boolean'],
+            'email_bukti_penyaluran' => ['required', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($request, $data): void {
+            DB::table('preferensi_notifikasi')->upsert([[
+                'user_id' => $request->user()->id,
+                'ingatkan_fitrah' => (bool) $data['ingatkan_fitrah'],
+                'ingatkan_haul_maal' => (bool) $data['ingatkan_haul_maal'],
+                'email_bukti_penyaluran' => (bool) $data['email_bukti_penyaluran'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]], ['user_id'], ['ingatkan_fitrah', 'ingatkan_haul_maal', 'email_bukti_penyaluran', 'updated_at']);
+
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => 'preferensi_notifikasi.diubah',
+                'jenis_objek' => 'preferensi_notifikasi',
+                'objek_id' => $request->user()->id,
+                'detail' => json_encode($data, JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        });
+
+        return redirect()->route('muzakki.profil')->with('success', 'Pilihan pemberitahuan disimpan. Email dan pengingat otomatis belum aktif.');
     }
 
     public function updateProfil(Request $request): RedirectResponse
