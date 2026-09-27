@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\FitrahCheckoutController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MaalCheckoutController;
@@ -73,6 +74,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/vendor', [InventoryController::class, 'storeVendor'])->name('vendor.store');
         Route::post('/katalog', [InventoryController::class, 'storeKatalog'])->name('katalog.store');
         Route::post('/pembelian/terima', [InventoryController::class, 'receive'])->name('pembelian.receive');
+        Route::get('/distribusi', [DistributionController::class, 'index'])->name('distribusi.index');
+        Route::post('/perjalanan', [DistributionController::class, 'createTrip'])->name('perjalanan.store');
+        Route::post('/perjalanan/{id}/berangkat', [DistributionController::class, 'dispatch'])->whereNumber('id')->name('perjalanan.dispatch');
+        Route::post('/titik', [DistributionController::class, 'addStop'])->name('titik.store');
+        Route::post('/maal/{id}/alokasi', [DistributionController::class, 'allocateMaal'])->whereNumber('id')->name('maal.allocate');
     });
 
     // Group Route Yayasan

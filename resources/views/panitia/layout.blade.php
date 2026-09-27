@@ -33,6 +33,9 @@
             <li>
                 <a class="nav-link {{ request()->routeIs('panitia.gudang.*') ? 'active' : '' }}" href="{{ route('panitia.gudang.index') }}">Vendor & Gudang</a>
             </li>
+            <li>
+                <a class="nav-link {{ request()->routeIs('panitia.distribusi.*') ? 'active' : '' }}" href="{{ route('panitia.distribusi.index') }}">Pesanan & Distribusi</a>
+            </li>
         </ul>
 
         <div class="app-nav-user">
