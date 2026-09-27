@@ -648,7 +648,7 @@ Buka `http://localhost:8020` di browser, atau gunakan port forwarding IDE pada p
 - [x] Setelah QR simulasi dibayar, status pembayaran ditampilkan **Paid (simulasi)**, sedangkan status penyaluran tetap **pending**. Penyaluran baru **selesai** sesudah panitia mencatat pengiriman dan foto, lalu PJ panti mengonfirmasi jumlah yang diterima serta mengunggah foto dari pihaknya.
 - [x] Untuk **lingkup tugas ini**, konfirmasi panti beserta foto kedua pihak **dianggap sudah sampai ke penerima akhir**. Tidak diperlukan tahap bukti penyerahan lagi dari panti ke tiap mustahik pada versi tugas.
 - [x] Pemilik proyek menyerahkan rancangan awal biaya admin, keuntungan, ongkir, wilayah layanan, pemilihan panti otomatis, dan struktur data harta keluarga untuk disusun dalam dokumen ini. Angka simulasi dan wilayah awal di Bagian 11.10 adalah **usulan kebijakan proyek**, bukan tarif/izin operasional nyata.
-- [x] Permintaan saat ini adalah menyusun rencana dan checklist. **Tidak ada perubahan kode, skema, atau data aplikasi pada tahap ini.**
+- [x] Tahap perencanaan awal selesai tanpa perubahan kode, skema, atau data aplikasi. **Mulai 2026-09-27 pemilik proyek telah mengizinkan implementasi bertahap pada database pengembangan `zakat_db`, dengan commit lokal untuk setiap bagian yang selesai.**
 - [x] Keputusan pemilik proyek: penghapusan akun/data pengembangan **dicatat sebagai rencana saja dan belum dijalankan**.
 - [ ] Jika kelak diminta menjalankan penghapusan, tetapkan cakupan dan urutan penghapusan secara spesifik terlebih dahulu: akun terhubung ke yayasan, mustahik, transaksi, dan penyaluran melalui foreign key. Pada pembacaan terakhir database aktif berisi 15 akun, 6 yayasan, dan 11 transaksi.
 - [ ] Putuskan pembukuan nilai zakat beras, selisih harga/biaya layanan, dan ongkos kirim: mana yang merupakan zakat dan mana yang merupakan biaya terpisah. Minta peninjauan syariah/operasional sebelum transaksi nyata.
@@ -828,5 +828,15 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 - [x] **Tenggat simulasi dari tanggal Idulfitri yang ditetapkan admin:** Jawa Timur H-5, Jawa Tengah/DI Yogyakarta H-7, dan Jawa Barat/DKI Jakarta/Banten H-10. Admin dapat menutup tujuan tertentu lebih awal jika kapasitas/rute belum siap. Ini contoh aturan konservatif untuk tugas, bukan janji pengiriman nyata. [BAZNAS menyebut penyaluran fitrah sebelum salat Idulfitri](https://www.baznas.go.id/zakatfitrah).
 - [x] **Akun panitia:** hanya admin yang dapat membuat, menonaktifkan, dan mengatur akun panitia. Panitia tidak muncul sebagai opsi pendaftaran publik. Akun baru memakai email unik, kata sandi sementara yang disimpan sebagai hash, kewajiban mengganti kata sandi saat masuk pertama, serta catatan siapa admin pembuatnya. Nonaktifkan akun untuk mempertahankan audit tindakan lama.
 - [ ] Tambahkan kolom/relasi yang diperlukan untuk `created_by_admin_id`, `is_active`, dan `must_change_password` pada akun panitia; batasi route pembuatan panitia ke admin serta catat tindakan tersebut di audit log.
-- [ ] **Setup Laravel Boost:** `laravel/boost` sudah tercatat di `composer.json`, tetapi instruksi proyek di `AGENTS.md` masih meminta `php artisan boost:install` sebelum perubahan aplikasi. Installer membuat panduan/peralatan agent; baca kembali `AGENTS.md` hasilnya. Boost bukan bagian dari alur pembayaran atau database pengguna situs. [Dokumentasi Laravel Boost](https://laravel.com/framework/docs/13.x/installation#installing-laravel-boost).
-- [ ] Setelah pemilik proyek membuat database pengembangan baru, pastikan koneksi `.env` menunjuk ke database **baru** sebelum menjalankan migration. Database lama tetap utuh sampai ada permintaan penghapusan yang jelas.
+- [x] **Setup Laravel Boost:** paket diperbarui dan `php artisan boost:install` dijalankan; panduan baru di `AGENTS.md` telah dibaca. Boost bukan bagian dari alur pembayaran atau database pengguna situs. [Dokumentasi Laravel Boost](https://laravel.com/framework/docs/13.x/installation#installing-laravel-boost).
+- [ ] Database pengembangan `zakat_db` telah dibuat pemilik proyek. Pastikan koneksi `.env` menunjuk ke database **baru** sebelum menjalankan migration. Database lama tetap utuh sampai ada permintaan penghapusan yang jelas.
+
+### 11.14 Catatan Implementasi Bertahap
+
+| Tahap | Status | Catatan |
+| :--- | :--- | :--- |
+| Setup agent Laravel Boost | Selesai | Paket dan panduan proyek diperbarui; tidak mengubah tabel atau data aplikasi. |
+| Skema database pengembangan | Berjalan | Inventarisasi tabel lama dan kebutuhan model sebelum menulis migration lengkap untuk `zakat_db`. |
+| Migrasi dan penyesuaian aplikasi | Belum | Hanya dijalankan pada `zakat_db` setelah koneksi dan nama database dipastikan. |
+
+Setiap tahap yang selesai disimpan dalam commit lokal. Commit Git dapat memulihkan kode, sedangkan pemulihan isi MySQL memerlukan cadangan database tersendiri.
