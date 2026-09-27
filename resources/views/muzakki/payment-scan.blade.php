@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>QR Pembayaran Simulasi · Zakatara</title>
+    <title>QR Pembayaran Simulasi · Portal Zakat</title>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 </head>
 <body>
-    <header class="app-navbar"><div class="navbar-container"><strong class="brand-text">Zakatara · QR simulasi</strong></div></header>
+    <header class="app-navbar"><div class="navbar-container"><strong class="brand-text">Portal Zakat · QR simulasi</strong></div></header>
     <main class="app-container" style="max-width: 640px; padding-top: 2rem;">
         <section class="app-card" style="padding: 1.5rem;">
             <h1 class="app-card-title">Konfirmasi pembayaran simulasi</h1>

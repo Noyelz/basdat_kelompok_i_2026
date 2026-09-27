@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Zakatara</title>
+    <title>Admin · Portal Zakat</title>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 </head>
 <body>
     <header class="app-navbar">
         <div class="navbar-container">
-            <strong class="brand-text">Zakatara · Admin</strong>
+            <strong class="brand-text">Portal Zakat · Admin</strong>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="btn-app-logout">Keluar</button>

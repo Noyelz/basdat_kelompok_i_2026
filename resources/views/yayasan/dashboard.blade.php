@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Panti - Zakatara</title>
+    <title>Portal Panti · Portal Zakat</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 </head>
 <body>
     <header class="app-navbar">
         <div class="navbar-container">
-            <strong class="brand-text">Zakatara · Penanggung jawab panti</strong>
+            <strong class="brand-text">Portal Zakat · Penanggung jawab panti</strong>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="btn-app-logout">Keluar</button>
