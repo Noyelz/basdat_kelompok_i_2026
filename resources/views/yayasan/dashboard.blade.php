@@ -42,6 +42,9 @@
                     <h2 class="h5">{{ $yayasan->nama }}</h2>
                     <p class="mb-2">Nomor izin: {{ $yayasan->nomor_izin }}</p>
                     <p class="mb-2">Lokasi: {{ $yayasan->kota_kabupaten }}, {{ $yayasan->provinsi }}</p>
+                    <p class="mb-2">Penerima diajukan: {{ $yayasan->jumlah_mustahik_diajukan }} · Penerima disetujui: {{ $yayasan->jumlah_mustahik_layak }}</p>
+                    <p class="mb-2">Kapasitas per kunjungan: {{ $yayasan->kapasitas_penerimaan_kg ?? 'belum ditetapkan' }} kg</p>
+                    <p class="mb-2">Kebutuhan saat ini: {{ $yayasan->kebutuhan_saat_ini ?? 'belum dicatat' }}</p>
                     <p class="mb-2">Status pemeriksaan: <strong>{{ match ($yayasan->status_verif) { 'verified' => 'Terverifikasi', 'rejected' => 'Ditolak', default => 'Menunggu pemeriksaan' } }}</strong></p>
                     @if ($yayasan->status_verif === 'verified')
                         <p class="mb-0">Layanan: {{ $yayasan->is_active ? 'Aktif' : 'Belum diaktifkan panitia' }}</p>
@@ -51,6 +54,28 @@
                     @endif
                 </div>
             </section>
+            @if ($yayasan->status_verif === 'rejected')
+                <section class="card border-0 shadow-sm mt-4"><div class="card-body">
+                    <h2 class="h5">Perbaiki dan kirim ulang panti</h2>
+                    <p class="text-muted">Catatan penolakan ada di atas. Foto baru bersifat opsional; jika diunggah, foto lama diganti.</p>
+                    <form method="POST" action="{{ route('yayasan.panti.resubmit') }}" enctype="multipart/form-data" class="row g-3">
+                        @csrf
+                        @method('PATCH')
+                        <div class="col-md-6"><label class="form-label">Nama panti</label><input name="nama" class="form-control" value="{{ old('nama', $yayasan->nama) }}" required></div>
+                        <div class="col-md-6"><label class="form-label">Nomor izin</label><input name="nomor_izin" class="form-control" value="{{ old('nomor_izin', $yayasan->nomor_izin) }}" required></div>
+                        <div class="col-md-6"><label class="form-label">Telepon</label><input name="telp" class="form-control" value="{{ old('telp', $yayasan->telp) }}" required></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input name="email" type="email" class="form-control" value="{{ old('email', $yayasan->email) }}" required></div>
+                        <div class="col-md-6"><label class="form-label">Provinsi</label><input name="provinsi" class="form-control" value="{{ old('provinsi', $yayasan->provinsi) }}" required></div>
+                        <div class="col-md-6"><label class="form-label">Kota/kabupaten</label><input name="kota_kabupaten" class="form-control" value="{{ old('kota_kabupaten', $yayasan->kota_kabupaten) }}" required></div>
+                        <div class="col-md-8"><label class="form-label">Alamat lengkap</label><textarea name="alamat_lengkap" class="form-control" required>{{ old('alamat_lengkap', $yayasan->alamat_lengkap) }}</textarea></div>
+                        <div class="col-md-4"><label class="form-label">Kode pos</label><input name="kode_pos" class="form-control" value="{{ old('kode_pos', $yayasan->kode_pos) }}" required></div>
+                        <div class="col-md-4"><label class="form-label">Calon penerima zakat</label><input name="jumlah_mustahik_diajukan" type="number" min="1" class="form-control" value="{{ old('jumlah_mustahik_diajukan', $yayasan->jumlah_mustahik_diajukan) }}" required></div>
+                        <div class="col-md-8"><label class="form-label">Kebutuhan saat ini dan kriteria penerima</label><textarea name="kebutuhan_saat_ini" class="form-control" rows="2" required>{{ old('kebutuhan_saat_ini', $yayasan->kebutuhan_saat_ini) }}</textarea></div>
+                        <div class="col-12"><label class="form-label">Foto pengganti (opsional, maksimal 5)</label><input name="foto[]" type="file" accept="image/jpeg,image/png,image/webp" multiple class="form-control"></div>
+                        <div class="col-12"><button class="btn btn-success" type="submit">Kirim ulang untuk diperiksa</button></div>
+                    </form>
+                </div></section>
+            @endif
             <section class="card border-0 shadow-sm mt-4"><div class="card-body">
                 <h2 class="h5">Alokasi dan konfirmasi penerimaan</h2>
                 <p class="text-muted">Periksa jumlah yang diterima. Foto panitia dan foto PJ diperlukan sebelum penyaluran dianggap selesai dalam tugas ini.</p>
@@ -100,6 +125,8 @@
                             </div>
                             <div class="col-md-4"><label class="form-label" for="no_rek">Nomor rekening</label><input class="form-control" id="no_rek" name="no_rek" value="{{ old('no_rek') }}" required></div>
                             <div class="col-md-4"><label class="form-label" for="atas_nama_rek">Nama pemilik rekening</label><input class="form-control" id="atas_nama_rek" name="atas_nama_rek" value="{{ old('atas_nama_rek') }}" required></div>
+                            <div class="col-md-4"><label class="form-label" for="jumlah_mustahik_diajukan">Jumlah calon penerima zakat yang diajukan</label><input class="form-control" id="jumlah_mustahik_diajukan" type="number" min="1" name="jumlah_mustahik_diajukan" value="{{ old('jumlah_mustahik_diajukan') }}" required></div>
+                            <div class="col-md-8"><label class="form-label" for="kebutuhan_saat_ini">Kebutuhan panti saat ini dan kriteria penerima</label><textarea class="form-control" id="kebutuhan_saat_ini" name="kebutuhan_saat_ini" rows="2" maxlength="2000" required>{{ old('kebutuhan_saat_ini') }}</textarea></div>
                             <div class="col-12"><label class="form-label" for="foto">Foto panti (1–5 foto, masing-masing maksimal 2 MB)</label><input class="form-control" id="foto" type="file" name="foto[]" accept="image/jpeg,image/png,image/webp" multiple required></div>
                         </div>
                         @if ($bank->isEmpty())

@@ -93,6 +93,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('yayasan')->name('yayasan.')->middleware('role:pj')->group(function () {
         Route::get('/dashboard', [YayasanController::class, 'dashboard'])->name('dashboard');
         Route::post('/daftar-panti', [YayasanController::class, 'storePanti'])->name('panti.store');
+        Route::patch('/daftar-panti', [YayasanController::class, 'resubmitPanti'])->name('panti.resubmit');
         Route::post('/bukti/{id}', [HandoverEvidenceController::class, 'submitPj'])->whereNumber('id')->name('bukti.store');
     });
 

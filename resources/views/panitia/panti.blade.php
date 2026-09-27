@@ -13,7 +13,9 @@
                     <p class="mb-1">{{ $item->alamat_lengkap }}, {{ $item->kota_kabupaten }}, {{ $item->provinsi }}</p>
                     <p class="mb-1">Izin: {{ $item->nomor_izin }} · PJ: {{ $item->nama_pj }}</p>
                     <p class="mb-1">Kontak: {{ $item->telp }} · {{ $item->email }}</p>
-                    <p class="mb-2">Penerima layak: {{ $item->jumlah_mustahik_layak }} · Jarak jalan: {{ $item->jarak_jalan_km ?? 'belum dicatat' }} km</p>
+                    <p class="mb-2">Penerima diajukan: {{ $item->jumlah_mustahik_diajukan }} · Disetujui: {{ $item->jumlah_mustahik_layak }} · Jarak jalan: {{ $item->jarak_jalan_km ?? 'belum dicatat' }} km</p>
+                    <p class="mb-2">Kebutuhan yang diajukan: {{ $item->kebutuhan_saat_ini ?? 'belum dicatat' }}</p>
+                    <p class="mb-2">Kapasitas per kunjungan: {{ $item->kapasitas_penerimaan_kg ?? 'belum ditetapkan' }} kg</p>
                 </div>
                 <span class="badge {{ $item->status_verif === 'verified' ? 'bg-success' : ($item->status_verif === 'rejected' ? 'bg-danger' : 'bg-warning text-dark') }}">{{ $item->status_verif }}</span>
             </div>
@@ -49,6 +51,7 @@
                     <label class="form-label">Jarak jalan gudang → panti (km)</label>
                     <input type="number" min="0.01" step="0.01" name="jarak_jalan_km" class="form-control" value="{{ $item->jarak_jalan_km }}" required>
                 </div>
+                <div class="col-md-4"><label class="form-label">Kapasitas penerimaan per kunjungan (kg)</label><input type="number" min="0.01" step="0.01" name="kapasitas_penerimaan_kg" class="form-control" value="{{ $item->kapasitas_penerimaan_kg }}" required></div>
                 <div class="col-md-9"><label class="form-label">Catatan pemeriksaan</label><textarea name="catatan" class="form-control" rows="2" maxlength="2000"></textarea></div>
                 <div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-success w-100">Simpan verifikasi</button></div>
             </form>

@@ -55,6 +55,8 @@ class YayasanController extends Controller
             'bank_id' => ['required', Rule::exists('bank', 'id')->where('is_active', true)],
             'no_rek' => ['required', 'string', 'max:50'],
             'atas_nama_rek' => ['required', 'string', 'max:255'],
+            'jumlah_mustahik_diajukan' => ['required', 'integer', 'min:1', 'max:100000'],
+            'kebutuhan_saat_ini' => ['required', 'string', 'max:2000'],
             'foto' => ['required', 'array', 'min:1', 'max:5'],
             'foto.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
@@ -80,6 +82,8 @@ class YayasanController extends Controller
                     'nama_bank' => $bank->nama,
                     'no_rek' => $data['no_rek'],
                     'atas_nama_rek' => $data['atas_nama_rek'],
+                    'jumlah_mustahik_diajukan' => $data['jumlah_mustahik_diajukan'],
+                    'kebutuhan_saat_ini' => $data['kebutuhan_saat_ini'],
                     'status_verif' => 'pending',
                     'is_active' => false,
                 ]);
@@ -107,5 +111,83 @@ class YayasanController extends Controller
         }
 
         return redirect()->route('yayasan.dashboard')->with('success', 'Pendaftaran panti dikirim dan menunggu pemeriksaan panitia.');
+    }
+
+    public function resubmitPanti(Request $request): RedirectResponse
+    {
+        $yayasan = Yayasan::where('pj_user_id', $request->user()->id)->firstOrFail();
+        abort_unless($yayasan->status_verif === 'rejected', 409, 'Hanya panti yang ditolak dapat mengajukan koreksi.');
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'nomor_izin' => ['required', 'string', 'max:100', Rule::unique('yayasan', 'nomor_izin')->ignore($yayasan->id)],
+            'telp' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'email', 'max:191'],
+            'provinsi' => ['required', 'string', 'max:100'],
+            'kota_kabupaten' => ['required', 'string', 'max:100'],
+            'alamat_lengkap' => ['required', 'string', 'max:2000'],
+            'kode_pos' => ['required', 'string', 'max:10'],
+            'jumlah_mustahik_diajukan' => ['required', 'integer', 'min:1', 'max:100000'],
+            'kebutuhan_saat_ini' => ['required', 'string', 'max:2000'],
+            'foto' => ['nullable', 'array', 'min:1', 'max:5'],
+            'foto.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $storedPaths = [];
+        $oldPaths = [];
+
+        try {
+            DB::transaction(function () use ($request, $yayasan, $data, &$storedPaths, &$oldPaths): void {
+                $locked = Yayasan::whereKey($yayasan->id)->lockForUpdate()->firstOrFail();
+                abort_unless($locked->status_verif === 'rejected', 409);
+
+                $locked->update([
+                    'nama' => $data['nama'],
+                    'nomor_izin' => $data['nomor_izin'],
+                    'telp' => $data['telp'],
+                    'email' => $data['email'],
+                    'provinsi' => $data['provinsi'],
+                    'kota_kabupaten' => $data['kota_kabupaten'],
+                    'alamat_lengkap' => $data['alamat_lengkap'],
+                    'kode_pos' => $data['kode_pos'],
+                    'jumlah_mustahik_diajukan' => $data['jumlah_mustahik_diajukan'],
+                    'kebutuhan_saat_ini' => $data['kebutuhan_saat_ini'],
+                    'status_verif' => 'pending',
+                    'is_active' => false,
+                    'jumlah_mustahik_layak' => 0,
+                    'kapasitas_penerimaan_kg' => null,
+                    'wilayah_layanan_id' => null,
+                    'jarak_jalan_km' => null,
+                ]);
+
+                if ($request->hasFile('foto')) {
+                    $oldPaths = DB::table('foto_yayasan')->where('yayasan_id', $locked->id)->pluck('path_private')->all();
+                    DB::table('foto_yayasan')->where('yayasan_id', $locked->id)->delete();
+                    foreach ($request->file('foto') as $file) {
+                        $path = $file->store('panti', 'local');
+                        if (! $path) {
+                            throw new RuntimeException('Foto panti gagal disimpan.');
+                        }
+
+                        $storedPaths[] = $path;
+                        DB::table('foto_yayasan')->insert([
+                            'yayasan_id' => $locked->id,
+                            'diunggah_oleh' => $request->user()->id,
+                            'path_private' => $path,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('local')->delete($storedPaths);
+
+            throw $exception;
+        }
+
+        Storage::disk('local')->delete($oldPaths);
+
+        return back()->with('success', 'Koreksi panti dikirim kembali untuk pemeriksaan panitia.');
     }
 }

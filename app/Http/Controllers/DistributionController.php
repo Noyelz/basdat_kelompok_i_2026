@@ -91,7 +91,7 @@ class DistributionController extends Controller
                 ->where('yayasan.status_verif', 'verified')
                 ->where('yayasan.is_active', true)
                 ->where('wilayah_layanan.gudang_id', $perjalanan->gudang_id)
-                ->first(['yayasan.id']);
+                ->first(['yayasan.id', 'yayasan.kapasitas_penerimaan_kg']);
             abort_unless($panti, 422, 'Panti harus aktif dan berada pada rute gudang perjalanan.');
             abort_if(DB::table('titik_pengiriman')->where('perjalanan_pengiriman_id', $perjalanan->id)->where('yayasan_id', $data['yayasan_id'])->exists(), 422, 'Panti sudah menjadi tujuan perjalanan ini.');
 
@@ -109,6 +109,7 @@ class DistributionController extends Controller
                 abort_if(DB::table('alokasi_transaksi')->where('transaksi_id', $item->id)->exists(), 422, 'Pesanan sudah dialokasikan.');
                 $jumlah = bcadd($jumlah, $item->total_beras_kg, 2);
             }
+            abort_if($panti->kapasitas_penerimaan_kg === null || bccomp($jumlah, $panti->kapasitas_penerimaan_kg, 2) > 0, 422, 'Jumlah beras di titik melebihi kapasitas penerimaan panti per kunjungan.');
 
             $terpakai = DB::table('titik_pengiriman')->where('perjalanan_pengiriman_id', $perjalanan->id)->sum('jumlah_kg');
             abort_if(bccomp(bcadd((string) $terpakai, $jumlah, 2), $perjalanan->kapasitas_kg, 2) > 0, 422, 'Muatan melebihi kapasitas kendaraan.');

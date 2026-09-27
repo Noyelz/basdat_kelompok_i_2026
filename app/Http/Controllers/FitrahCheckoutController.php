@@ -29,12 +29,13 @@ class FitrahCheckoutController extends Controller
             ->where('yayasan.status_verif', 'verified')
             ->where('yayasan.is_active', true)
             ->where('yayasan.jumlah_mustahik_layak', '>', 0)
+            ->whereNotNull('yayasan.kapasitas_penerimaan_kg')
             ->whereNotNull('yayasan.jarak_jalan_km')
             ->where('wilayah_layanan.is_active', true)
             ->where('wilayah_layanan.batas_checkout_at', '>', now())
             ->orderBy('yayasan.provinsi')
             ->orderBy('yayasan.kota_kabupaten')
-            ->get(['yayasan.id', 'yayasan.nama', 'yayasan.kota_kabupaten', 'yayasan.provinsi', 'yayasan.jumlah_mustahik_layak', 'yayasan.jarak_jalan_km']);
+            ->get(['yayasan.id', 'yayasan.nama', 'yayasan.kota_kabupaten', 'yayasan.provinsi', 'yayasan.jumlah_mustahik_layak', 'yayasan.jarak_jalan_km', 'yayasan.kapasitas_penerimaan_kg']);
 
         $bobot = DB::table('pengaturan_operasional')->where('kunci', 'bobot_fitrah_per_jiwa_kg')->value('nilai');
 
@@ -62,10 +63,11 @@ class FitrahCheckoutController extends Controller
                 ->where('yayasan.status_verif', 'verified')
                 ->where('yayasan.is_active', true)
                 ->where('yayasan.jumlah_mustahik_layak', '>', 0)
+                ->whereNotNull('yayasan.kapasitas_penerimaan_kg')
                 ->whereNotNull('yayasan.jarak_jalan_km')
                 ->where('wilayah_layanan.is_active', true)
                 ->where('wilayah_layanan.batas_checkout_at', '>', now())
-                ->first(['yayasan.id', 'yayasan.jarak_jalan_km', 'wilayah_layanan.id as wilayah_id']);
+                ->first(['yayasan.id', 'yayasan.jarak_jalan_km', 'yayasan.kapasitas_penerimaan_kg', 'wilayah_layanan.id as wilayah_id']);
             abort_unless($tujuan, 422, 'Panti belum dapat menerima pesanan fitrah.');
 
             $tarif = DB::table('tarif_pengiriman')
@@ -84,6 +86,7 @@ class FitrahCheckoutController extends Controller
             abort_unless($pengaturan->count() === 3, 503, 'Pengaturan harga belum lengkap.');
 
             $berat = bcmul((string) $data['jumlah_jiwa'], $pengaturan['bobot_fitrah_per_jiwa_kg'], 2);
+            abort_if(bccomp($berat, $tujuan->kapasitas_penerimaan_kg, 2) > 0, 422, 'Jumlah beras pesanan melebihi kapasitas penerimaan panti per kunjungan.');
             $sisa = $berat;
             $pokokEmpatDesimal = '0';
             $alokasiLot = [];

@@ -26,6 +26,12 @@ class Yayasan extends Model
         'atas_nama_rek',
         'status_verif',
         'is_active',
+        'jumlah_mustahik_diajukan',
+        'jumlah_mustahik_layak',
+        'kebutuhan_saat_ini',
+        'kapasitas_penerimaan_kg',
+        'wilayah_layanan_id',
+        'jarak_jalan_km',
         'pj_user_id',
         'pict_id',
     ];
