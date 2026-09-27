@@ -98,6 +98,20 @@ class PantiVerificationController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => $terverifikasi ? 'panti.diverifikasi' : 'panti.ditolak',
+                'jenis_objek' => 'yayasan',
+                'objek_id' => $id,
+                'detail' => json_encode([
+                    'hasil' => $data['hasil'],
+                    'jumlah_mustahik_layak' => $terverifikasi ? $data['jumlah_mustahik_layak'] : 0,
+                    'fitrah_aktif' => $fitrah,
+                ], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
         });
 
         return back()->with('success', 'Hasil pemeriksaan panti tersimpan.');
