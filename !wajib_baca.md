@@ -635,6 +635,61 @@ php artisan serve --host=0.0.0.0 --port=8020
 
 Buka `http://localhost:8020` di browser, atau gunakan port forwarding IDE pada port `8020`. Untuk menghentikan server, tekan `Ctrl+C` di terminal.
 
+### Menjalankan `basdatkeli` otomatis di LXC
+
+Petunjuk ini khusus untuk proyek `/var/www/basdatkeli` di port `8020`. `basdat.service` yang sudah ada menjalankan website **berbeda** (`/root/basdat`) di port `8000`; jangan mengubah atau menghentikannya untuk menyalakan proyek ini. Jika sebelumnya menjalankan `php artisan serve` secara manual di port `8020`, hentikan dulu proses itu dengan `Ctrl+C` agar port tidak bentrok.
+
+Di terminal LXC, buat unit layanan systemd dengan mengetik:
+
+```bash
+sudo nano /etc/systemd/system/basdatkeli.service
+```
+
+Isi file tersebut dengan konfigurasi berikut. Akhiran nama file adalah **`.service`**, bukan `.ini`; isi unit systemd menggunakan bentuk bagian dan pasangan `kunci=nilai` yang mirip format INI.
+
+```ini
+[Unit]
+Description=Website Basdatkeli
+After=network-online.target mariadb.service
+Wants=network-online.target mariadb.service
+
+[Service]
+Type=simple
+User=keli
+WorkingDirectory=/var/www/basdatkeli
+ExecStart=/usr/bin/php artisan serve --host=0.0.0.0 --port=8020
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`WorkingDirectory` memilih proyek yang benar, `User` menjalankan proses sebagai pemilik proyek, dan `ExecStart` membuka server di port `8020`. `After` mengatur urutan mulai setelah jaringan dan MariaDB, sedangkan `Wants` meminta layanan tersebut ikut dimulai. `Restart=always` mencoba menjalankan ulang proses yang berhenti, dengan jeda `RestartSec=5` detik; perintah `systemctl stop` tetap dapat menghentikannya secara sengaja. `WantedBy=multi-user.target` memungkinkan layanan aktif saat LXC boot.
+
+Di nano, simpan dengan `Ctrl+O`, tekan `Enter`, lalu keluar dengan `Ctrl+X`. Setelah itu ketik:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now basdatkeli.service
+sudo systemctl status basdatkeli.service --no-pager
+```
+
+`daemon-reload` membuat systemd membaca unit baru; `enable --now` mengaktifkannya untuk boot berikutnya sekaligus menjalankannya sekarang; `status` memeriksa hasilnya. Untuk melihat alasan kegagalan atau memulai ulang setelah perubahan konfigurasi, gunakan:
+
+```bash
+sudo journalctl -u basdatkeli.service -n 50 --no-pager
+sudo systemctl restart basdatkeli.service
+```
+
+Agar LXC `100 (gemini)` ikut menyala setelah **host Proxmox** boot, aktifkan `Options → Start at boot → Yes` pada LXC tersebut, atau ketik perintah berikut **di host Proxmox**, bukan di terminal LXC:
+
+```bash
+pct set 100 -onboot 1
+```
+
+Pengaturan Proxmox ini berlaku saat host boot; pengaturan systemd berlaku setelah LXC berjalan. Scheduler Laravel untuk tugas berkala tetap perlu dijalankan terpisah seperti dijelaskan pada Bagian 11.15.
+
 ---
 
 ## 11. Rencana Perubahan dan Checklist (2026-09-27)
