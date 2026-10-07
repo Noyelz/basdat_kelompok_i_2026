@@ -15,6 +15,8 @@ Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pen
 
 > **Arah pengembangan terbaru:** Lihat [Bagian 11: Rencana perubahan dan checklist](#11-rencana-perubahan-dan-checklist-2026-09-27), khususnya [Bagian 11.14: Catatan implementasi](#1114-catatan-implementasi-bertahap) dan [Bagian 11.15: Menjalankan versi pengembangan](#1115-menjalankan-versi-pengembangan). Bagian 1–9 menggambarkan skema dan alur lama, **bukan spesifikasi implementasi baru**. Khususnya, uraian QRIS/payment gateway nyata, harga tetap, pemotongan stok langsung saat pembayaran, dan akun panitia sebagai pengelola seluruh situs sudah perlu direvisi. Banyak bagian checklist telah diimplementasikan sebagian; kotak kosong berarti pekerjaan atau pemeriksaan masih tersisa, bukan berarti semua kode pada bagian itu belum ada.
 
+> **ERD database baru (7 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 42 tabel, 423 kolom, 55 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Dokumentasi ini memakai metadata saja dan tidak mengubah skema atau data. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
+
 ---
 
 ## 1. Arsitektur & Prinsip Desain "Anti-Banting"
