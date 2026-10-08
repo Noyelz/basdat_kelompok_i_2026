@@ -75,8 +75,14 @@ class YayasanController extends Controller
             'atas_nama_rek' => ['required', 'string', 'max:255'],
             'jumlah_mustahik_diajukan' => ['required', 'integer', 'min:1', 'max:100000'],
             'kebutuhan_saat_ini' => ['required', 'string', 'max:2000'],
+            'layanan_diminta' => ['required', Rule::in(['maal', 'fitrah_maal'])],
+            'kapasitas_diajukan_kg' => ['exclude_unless:layanan_diminta,fitrah_maal', 'required', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
             'foto' => ['required', 'array', 'min:1', 'max:5'],
             'foto.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'layanan_diminta.required' => 'Pilih layanan maal saja atau fitrah dan maal.',
+            'kapasitas_diajukan_kg.required' => 'Kapasitas beras per kunjungan wajib diisi bila panti mengajukan layanan fitrah.',
+            'kapasitas_diajukan_kg.gt' => 'Kapasitas beras per kunjungan harus lebih dari nol.',
         ]);
 
         $storedPaths = [];
@@ -102,6 +108,7 @@ class YayasanController extends Controller
                     'atas_nama_rek' => $data['atas_nama_rek'],
                     'jumlah_mustahik_diajukan' => $data['jumlah_mustahik_diajukan'],
                     'kebutuhan_saat_ini' => $data['kebutuhan_saat_ini'],
+                    'kapasitas_diajukan_kg' => $data['kapasitas_diajukan_kg'] ?? null,
                     'status_verif' => 'pending',
                     'is_active' => false,
                 ]);
@@ -134,7 +141,7 @@ class YayasanController extends Controller
     public function resubmitPanti(Request $request): RedirectResponse
     {
         $yayasan = Yayasan::where('pj_user_id', $request->user()->id)->firstOrFail();
-        abort_unless($yayasan->status_verif === 'rejected', 409, 'Hanya panti yang ditolak dapat mengajukan koreksi.');
+        abort_unless(in_array($yayasan->status_verif, ['pending', 'rejected'], true), 409, 'Hanya panti pending atau ditolak yang dapat memperbarui pengajuan.');
 
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
@@ -147,8 +154,14 @@ class YayasanController extends Controller
             'kode_pos' => ['required', 'string', 'max:10'],
             'jumlah_mustahik_diajukan' => ['required', 'integer', 'min:1', 'max:100000'],
             'kebutuhan_saat_ini' => ['required', 'string', 'max:2000'],
+            'layanan_diminta' => ['required', Rule::in(['maal', 'fitrah_maal'])],
+            'kapasitas_diajukan_kg' => ['exclude_unless:layanan_diminta,fitrah_maal', 'required', 'decimal:0,2', 'gt:0', 'max:9999999999.99'],
             'foto' => ['nullable', 'array', 'min:1', 'max:5'],
             'foto.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'layanan_diminta.required' => 'Pilih layanan maal saja atau fitrah dan maal.',
+            'kapasitas_diajukan_kg.required' => 'Kapasitas beras per kunjungan wajib diisi bila panti mengajukan layanan fitrah.',
+            'kapasitas_diajukan_kg.gt' => 'Kapasitas beras per kunjungan harus lebih dari nol.',
         ]);
 
         $storedPaths = [];
@@ -157,7 +170,7 @@ class YayasanController extends Controller
         try {
             DB::transaction(function () use ($request, $yayasan, $data, &$storedPaths, &$oldPaths): void {
                 $locked = Yayasan::whereKey($yayasan->id)->lockForUpdate()->firstOrFail();
-                abort_unless($locked->status_verif === 'rejected', 409);
+                abort_unless(in_array($locked->status_verif, ['pending', 'rejected'], true), 409);
 
                 $locked->update([
                     'nama' => $data['nama'],
@@ -170,6 +183,7 @@ class YayasanController extends Controller
                     'kode_pos' => $data['kode_pos'],
                     'jumlah_mustahik_diajukan' => $data['jumlah_mustahik_diajukan'],
                     'kebutuhan_saat_ini' => $data['kebutuhan_saat_ini'],
+                    'kapasitas_diajukan_kg' => $data['kapasitas_diajukan_kg'] ?? null,
                     'status_verif' => 'pending',
                     'is_active' => false,
                     'jumlah_mustahik_layak' => 0,

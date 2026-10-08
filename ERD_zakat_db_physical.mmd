@@ -1,5 +1,5 @@
 %% ERD physical zakat_db, snapshot 2026-10-08 WIB.
-%% 42 tabel, 431 kolom, 55 foreign key. Nama dan relasi berasal dari metadata database aktif.
+%% 42 tabel, 432 kolom, 55 foreign key. Nama dan relasi berasal dari metadata database aktif.
 %% Tipe SQL persis berada di komentar atribut; UK hanya untuk unique satu kolom.
 %% Unique gabungan, default, semua indeks, CHECK, dan aturan FK dicatat di ERD_zakat_db.md.
 erDiagram
@@ -59,6 +59,7 @@ erDiagram
         int_unsigned jumlah_mustahik_diajukan "int(10) unsigned; NOT NULL"
         text kebutuhan_saat_ini "text; NULL"
         decimal kapasitas_penerimaan_kg "decimal(12,2); NULL"
+        decimal kapasitas_diajukan_kg "decimal(12,2); NULL"
     }
     mustahik {
         bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"

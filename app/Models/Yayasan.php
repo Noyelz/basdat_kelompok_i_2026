@@ -29,6 +29,7 @@ class Yayasan extends Model
         'jumlah_mustahik_diajukan',
         'jumlah_mustahik_layak',
         'kebutuhan_saat_ini',
+        'kapasitas_diajukan_kg',
         'kapasitas_penerimaan_kg',
         'wilayah_layanan_id',
         'jarak_jalan_km',
@@ -40,6 +41,7 @@ class Yayasan extends Model
     {
         return [
             'is_active' => 'boolean',
+            'kapasitas_diajukan_kg' => 'decimal:2',
         ];
     }
 

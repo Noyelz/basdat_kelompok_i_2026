@@ -482,7 +482,7 @@ JavaScript dalam view membantu interaksi: membuka password, pilihan domisili, me
 
 ### 6.1 Fakta skema aktif
 
-Metadata yang diperiksa: **42 tabel, 431 kolom, 55 foreign key, dan 2 CHECK untuk validitas JSON**. Koneksi bernama `mysql` dapat berbicara dengan server MariaDB; nama driver tidak berarti aplikasi sedang memakai SQLite.
+Metadata yang diperiksa: **42 tabel, 432 kolom, 55 foreign key, dan 2 CHECK untuk validitas JSON**. Koneksi bernama `mysql` dapat berbicara dengan server MariaDB; nama driver tidak berarti aplikasi sedang memakai SQLite.
 
 [ERD_zakat_db.md](ERD_zakat_db.md) berisi diagram konseptual, physical per kelompok, serta rincian teknis indeks/default/FK. [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd) adalah sumber Mermaid diagram physical lengkap. File `.mmd` berisi teks diagram, bukan data database.
 
@@ -655,7 +655,8 @@ Dibuat PJ lalu diperiksa panitia. Menggabungkan identitas, rekening aktif, jumla
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 | `jumlah_mustahik_diajukan` | `int(10) unsigned` | Tidak | Jumlah calon penerima yang dinyatakan PJ. |
 | `kebutuhan_saat_ini` | `text` | Ya | Deskripsi kebutuhan dari PJ, bukan target kuantitas periode yang dihitung otomatis. |
-| `kapasitas_penerimaan_kg` | `decimal(12,2)` | Ya | Batas beras yang dapat diterima panti per kunjungan. |
+| `kapasitas_penerimaan_kg` | `decimal(12,2)` | Ya | Batas beras per kunjungan yang disetujui panitia. |
+| `kapasitas_diajukan_kg` | `decimal(12,2)` | Ya | Kapasitas beras per kunjungan yang diajukan PJ; wajib pada pengajuan fitrah baru. NULL untuk maal saja atau data lama yang belum mengajukan. |
 
 **Kunci dan hubungan:**
 
@@ -1924,7 +1925,7 @@ Pemeriksaan kelayakan panti dan penyajian foto privat panti.
 | Method | Tugas dan hasil |
 | --- | --- |
 | [`index()`](app/Http/Controllers/PantiVerificationController.php:16) | Membaca panti/pengaju/wilayah paginasi 10, foto per panti, dan zona gudang aktif. Merender panitia.panti. |
-| [`update()`](app/Http/Controllers/PantiVerificationController.php:41) | Validasi verified/rejected, jumlah layak, pilihan fitrah, rute dan catatan. Menolak penonaktifan jika pesanan terbuka; mencocokkan jumlah diajukan/kebutuhan dan provinsi wilayah. Penolakan bisnis memakai ValidationException sehingga pesan tampil di form dan isian dipertahankan, bukan halaman error generik. Mengubah yayasan, menambah verifikasi dan audit hanya setelah seluruh syarat terpenuhi. |
+| [`update()`](app/Http/Controllers/PantiVerificationController.php:41) | Validasi verified/rejected, jumlah layak, pilihan fitrah, rute dan catatan. Menolak penonaktifan jika pesanan terbuka; mencocokkan jumlah diajukan/kebutuhan, kapasitas persetujuan terhadap kapasitas PJ, dan provinsi wilayah. Penolakan bisnis memakai ValidationException sehingga pesan tampil di form dan isian dipertahankan, bukan halaman error generik. Mengubah yayasan, menambah verifikasi dan audit hanya setelah seluruh syarat terpenuhi. |
 | [`foto()`](app/Http/Controllers/PantiVerificationController.php:141) | Mengizinkan panitia/admin aktif atau PJ pemilik melihat foto, memastikan file privat ada, mengirim berkas. Muzakki tidak diberikan akses foto pendaftaran ini. |
 
 ### SimulationPaymentController.php
@@ -1950,8 +1951,8 @@ Dashboard PJ, pendaftaran satu panti, dan koreksi pengajuan ditolak.
 | Method | Tugas dan hasil |
 | --- | --- |
 | [`dashboard()`](app/Http/Controllers/YayasanController.php:17) | Membaca panti akun, bank aktif, catatan pemeriksaan, pengajuan rekening terakhir, alokasi/bukti milik panti dan 5 notifikasi penyaluran. Merender yayasan.dashboard. |
-| [`storePanti()`](app/Http/Controllers/YayasanController.php:60) | Menolak panti kedua, memvalidasi identitas/rekening/kebutuhan/foto, membuat Yayasan pending nonaktif. Menyimpan foto privat dan foto_yayasan; membersihkan file bila gagal. |
-| [`resubmitPanti()`](app/Http/Controllers/YayasanController.php:134) | Hanya untuk status rejected. Memvalidasi identitas/kebutuhan/foto opsional, mengunci panti, kembali pending nonaktif dan menghapus kelayakan/rute lama. Jika foto baru ada mengganti foto; membersihkan file sesuai hasil transaksi. |
+| [`storePanti()`](app/Http/Controllers/YayasanController.php:60) | Menolak panti kedua, memvalidasi identitas/rekening/kebutuhan/foto, pilihan layanan dan kapasitas beras wajib untuk fitrah, membuat Yayasan pending nonaktif. Menyimpan foto privat dan foto_yayasan; membersihkan file bila gagal. |
+| [`resubmitPanti()`](app/Http/Controllers/YayasanController.php:134) | Untuk status pending atau rejected. Memvalidasi identitas/kebutuhan, pilihan layanan, kapasitas beras wajib bila memilih fitrah, dan foto opsional, mengunci panti, kembali pending nonaktif dan menghapus kelayakan/rute lama. Jika foto baru ada mengganti foto; membersihkan file sesuai hasil transaksi. |
 
 
 ## 10. Model, middleware, provider, dan command
@@ -2166,6 +2167,7 @@ Nama file berawalan waktu menentukan urutan. Tabel yang menjadi induk harus dibu
 | [2026_09_27_062149_add_panti_need_fields_to_yayasan.php](database/migrations/2026_09_27_062149_add_panti_need_fields_to_yayasan.php) | `yayasan`, `verifikasi_panti` | Menambah jumlah_mustahik_diajukan, kebutuhan_saat_ini, kapasitas_penerimaan_kg pada yayasan serta kapasitas/kebutuhan_snapshot pada verifikasi_panti. Bukan membuat panti kedua. |
 | [2026_09_27_124232_create_notification_preferences_table.php](database/migrations/2026_09_27_124232_create_notification_preferences_table.php) | `preferensi_notifikasi` | Membuat preferensi_notifikasi satu baris per user dengan tiga boolean. |
 | [2026_10_08_082353_add_api_source_fields_to_harga_emas.php](database/migrations/2026_10_08_082353_add_api_source_fields_to_harga_emas.php) | `harga_emas` | Menambah delapan kolom metadata API emas/kurs dan indeks unik tanggal sinkronisasi. Riwayat lama tetap ada dan bertipe manual. down menghapus metadata tambahan, bukan nominal/snapshot transaksi. |
+| [2026_10_08_090750_add_proposed_capacity_to_yayasan.php](database/migrations/2026_10_08_090750_add_proposed_capacity_to_yayasan.php) | `yayasan` | Menambah kapasitas_diajukan_kg nullable untuk pengajuan kapasitas beras PJ, terpisah dari kapasitas_penerimaan_kg panitia. down menghapus kolom dan isi pengajuannya. |
 
 ### 11.2 Data awal dan data contoh
 
@@ -2347,7 +2349,7 @@ Pekerjaan menunggu: panti, alokasi, stok rendah, perjalanan dekat, bukti. Tautan
 
 **File:** [resources/views/panitia/panti.blade.php](resources/views/panitia/panti.blade.php). **Status:** Aktif, panitia. **Dibuka oleh:** `PantiVerificationController::index`.
 
-Pengajuan panti, foto privat, kebutuhan/jumlah penerima, form persetujuan dengan rute/kapasitas dan penolakan dengan catatan. Input persetujuan dibatasi maksimal jumlah pengajuan PJ; ketika gagal, isian dikembalikan hanya pada panti dan jenis form yang dikirim. Detail perbaikan ada di [!wajib_baca.md Bagian 13](%21wajib_baca.md#13-perbaikan-pesan-verifikasi-panti-8-oktober-2026).
+Pengajuan panti, foto privat, kebutuhan/jumlah penerima, form persetujuan dengan rute/kapasitas dan penolakan dengan catatan. Kapasitas beras PJ dan panitia ditampilkan terpisah; jarak tetap ditetapkan panitia. Input persetujuan dibatasi maksimal jumlah pengajuan PJ; ketika gagal, isian dikembalikan hanya pada panti dan jenis form yang dikirim. Detail perbaikan ada di [!wajib_baca.md Bagian 13](%21wajib_baca.md#13-perbaikan-pesan-verifikasi-panti-8-oktober-2026).
 
 **Kerangka:** `panitia.layout`.
 
@@ -2733,4 +2735,7 @@ Saat menambah fitur nanti, perbarui: langkah alur, status yang mungkin, tabel/ko
 
 **Acuan utama penulisan:** source app/routes/resources/database/config/tests dalam workspace, hasil route:list, versi paket terpasang, serta metadata zakat_db melalui Laravel Boost. Dokumentasi tidak menjalankan checkout, seed, migration, penghapusan akun, atau pembayaran simulasi.
 
-**Catatan perubahan dokumentasi 8 Oktober 2026:** dibuat panduan baru untuk alur seluruh role, contoh hitungan/stok, kamus 42 tabel/431 kolom, peta 63 route aplikasi, penjelasan 17 controller dan seluruh methodnya, 12 model, middleware/provider/command, 9 migration, seeder/factory, 29 Blade, konfigurasi serta file pendukung. Ditautkan dekat bagian atas wajib baca. Perubahan aplikasi/aset yang sudah ada di workspace tidak termasuk perubahan dokumentasi ini.
+**Catatan perubahan dokumentasi 8 Oktober 2026:** dibuat panduan baru untuk alur seluruh role, contoh hitungan/stok, kamus 42 tabel/432 kolom, peta 63 route aplikasi, penjelasan 17 controller dan seluruh methodnya, 12 model, middleware/provider/command, 9 migration, seeder/factory, 29 Blade, konfigurasi serta file pendukung. Ditautkan dekat bagian atas wajib baca. Perubahan aplikasi/aset yang sudah ada di workspace tidak termasuk perubahan dokumentasi ini.
+
+
+**Pembaruan kapasitas PJ 8 Oktober 2026:** Pilihan layanan dan kapasitas beras untuk fitrah wajib diisi PJ pada pengajuan; pending/rejected dapat dilengkapi. Panitia menyetujui kapasitas dan menentukan jarak jalan. Lihat [wajib baca Bagian 14](%21wajib_baca.md#14-kapasitas-beras-dari-pj-dan-jarak-yang-diperiksa-panitia-8-oktober-2026).

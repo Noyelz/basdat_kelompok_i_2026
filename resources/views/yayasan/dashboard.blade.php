@@ -61,7 +61,8 @@
                     <p class="mb-2">Nomor izin: {{ $yayasan->nomor_izin }}</p>
                     <p class="mb-2">Lokasi: {{ $yayasan->kota_kabupaten }}, {{ $yayasan->provinsi }}</p>
                     <p class="mb-2">Penerima diajukan: {{ $yayasan->jumlah_mustahik_diajukan }} · Penerima disetujui: {{ $yayasan->jumlah_mustahik_layak }}</p>
-                    <p class="mb-2">Kapasitas per kunjungan: {{ $yayasan->kapasitas_penerimaan_kg ?? 'belum ditetapkan' }} kg</p>
+                    <p class="mb-2">Kapasitas beras diajukan: {{ $yayasan->kapasitas_diajukan_kg ?? 'belum diajukan' }} kg per kunjungan</p>
+                    <p class="mb-2">Kapasitas disetujui per kunjungan: {{ $yayasan->kapasitas_penerimaan_kg ?? 'belum ditetapkan' }} kg</p>
                     <p class="mb-2">Kebutuhan saat ini: {{ $yayasan->kebutuhan_saat_ini ?? 'belum dicatat' }}</p>
                     <p class="mb-2">Status pemeriksaan: <strong>{{ match ($yayasan->status_verif) { 'verified' => 'Terverifikasi', 'rejected' => 'Ditolak', default => 'Menunggu pemeriksaan' } }}</strong></p>
                     @if ($yayasan->status_verif === 'verified')
@@ -91,10 +92,10 @@
                     <p class="text-muted mb-0">Permohonan sedang diperiksa. Rekening aktif tetap dapat digunakan sesuai proses yang berlaku.</p>
                 @endif
             </div></section>
-            @if ($yayasan->status_verif === 'rejected')
+            @if (in_array($yayasan->status_verif, ['pending', 'rejected'], true))
                 <section class="card border-0 shadow-sm mt-4"><div class="card-body">
-                    <h2 class="h5">Perbaiki dan kirim ulang panti</h2>
-                    <p class="text-muted">Catatan penolakan ada di atas. Foto baru bersifat opsional; jika diunggah, foto lama diganti.</p>
+                    <h2 class="h5">Lengkapi atau perbaiki pengajuan panti</h2>
+                    <p class="text-muted">Pengajuan yang pending atau ditolak dapat dilengkapi sebelum panitia menyetujui. Pilih layanan dan isi kapasitas jika ingin menerima beras fitrah. Foto pengganti opsional; jika diunggah, foto lama diganti.</p>
                     <form method="POST" action="{{ route('yayasan.panti.resubmit') }}" enctype="multipart/form-data" class="row g-3">
                         @csrf
                         @method('PATCH')
@@ -108,6 +109,20 @@
                         <div class="col-md-4"><label class="form-label">Kode pos</label><input name="kode_pos" class="form-control" value="{{ old('kode_pos', $yayasan->kode_pos) }}" required></div>
                         <div class="col-md-4"><label class="form-label">Calon penerima zakat</label><input name="jumlah_mustahik_diajukan" type="number" min="1" class="form-control" value="{{ old('jumlah_mustahik_diajukan', $yayasan->jumlah_mustahik_diajukan) }}" required></div>
                         <div class="col-md-8"><label class="form-label">Kebutuhan saat ini dan kriteria penerima</label><textarea name="kebutuhan_saat_ini" class="form-control" rows="2" required>{{ old('kebutuhan_saat_ini', $yayasan->kebutuhan_saat_ini) }}</textarea></div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="layanan_diminta">Layanan yang diajukan</label>
+                            <select id="layanan_diminta" name="layanan_diminta" class="form-select" required>
+                                <option value="">Pilih layanan</option>
+                                <option value="maal" @selected(old('layanan_diminta', $yayasan?->kapasitas_diajukan_kg !== null ? 'fitrah_maal' : '') === 'maal')>Maal saja</option>
+                                <option value="fitrah_maal" @selected(old('layanan_diminta', $yayasan?->kapasitas_diajukan_kg !== null ? 'fitrah_maal' : '') === 'fitrah_maal')>Fitrah beras dan maal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="kapasitas_diajukan_kg">Kapasitas beras yang diajukan per kunjungan (kg)</label>
+                            <input id="kapasitas_diajukan_kg" name="kapasitas_diajukan_kg" type="number" min="0.01" max="9999999999.99" step="0.01" class="form-control" value="{{ old('kapasitas_diajukan_kg', $yayasan?->kapasitas_diajukan_kg) }}">
+                            <small>Wajib untuk fitrah: jumlah maksimal beras yang dapat diterima dan disimpan dalam satu kunjungan. Panitia akan memeriksa kapasitas dan jarak dari gudang.</small>
+                        </div>
                         <div class="col-12"><label class="form-label">Foto pengganti (opsional, maksimal 5)</label><input name="foto[]" type="file" accept="image/jpeg,image/png,image/webp" multiple class="form-control"></div>
                         <div class="col-12"><button class="btn btn-success" type="submit">Kirim ulang untuk diperiksa</button></div>
                     </form>
@@ -164,6 +179,20 @@
                             <div class="col-md-4"><label class="form-label" for="atas_nama_rek">Nama pemilik rekening</label><input class="form-control" id="atas_nama_rek" name="atas_nama_rek" value="{{ old('atas_nama_rek') }}" required></div>
                             <div class="col-md-4"><label class="form-label" for="jumlah_mustahik_diajukan">Jumlah calon penerima zakat yang diajukan</label><input class="form-control" id="jumlah_mustahik_diajukan" type="number" min="1" name="jumlah_mustahik_diajukan" value="{{ old('jumlah_mustahik_diajukan') }}" required></div>
                             <div class="col-md-8"><label class="form-label" for="kebutuhan_saat_ini">Kebutuhan panti saat ini dan kriteria penerima</label><textarea class="form-control" id="kebutuhan_saat_ini" name="kebutuhan_saat_ini" rows="2" maxlength="2000" required>{{ old('kebutuhan_saat_ini') }}</textarea></div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="layanan_diminta">Layanan yang diajukan</label>
+                            <select id="layanan_diminta" name="layanan_diminta" class="form-select" required>
+                                <option value="">Pilih layanan</option>
+                                <option value="maal" @selected(old('layanan_diminta', $yayasan?->kapasitas_diajukan_kg !== null ? 'fitrah_maal' : '') === 'maal')>Maal saja</option>
+                                <option value="fitrah_maal" @selected(old('layanan_diminta', $yayasan?->kapasitas_diajukan_kg !== null ? 'fitrah_maal' : '') === 'fitrah_maal')>Fitrah beras dan maal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="kapasitas_diajukan_kg">Kapasitas beras yang diajukan per kunjungan (kg)</label>
+                            <input id="kapasitas_diajukan_kg" name="kapasitas_diajukan_kg" type="number" min="0.01" max="9999999999.99" step="0.01" class="form-control" value="{{ old('kapasitas_diajukan_kg', $yayasan?->kapasitas_diajukan_kg) }}">
+                            <small>Wajib untuk fitrah: jumlah maksimal beras yang dapat diterima dan disimpan dalam satu kunjungan. Panitia akan memeriksa kapasitas dan jarak dari gudang.</small>
+                        </div>
                             <div class="col-12"><label class="form-label" for="foto">Foto panti (1–5 foto, masing-masing maksimal 2 MB)</label><input class="form-control" id="foto" type="file" name="foto[]" accept="image/jpeg,image/png,image/webp" multiple required></div>
                         </div>
                         @if ($bank->isEmpty())
@@ -175,5 +204,17 @@
             </section>
         @endif
     </main>
+    <script>
+        document.querySelectorAll('select[name="layanan_diminta"]').forEach(function (select) {
+            const capacity = select.closest('form').querySelector('input[name="kapasitas_diajukan_kg"]');
+            function updateCapacityRequirement() {
+                const needsRice = select.value === 'fitrah_maal';
+                capacity.required = needsRice;
+                capacity.disabled = !needsRice;
+            }
+            select.addEventListener('change', updateCapacityRequirement);
+            updateCapacityRequirement();
+        });
+    </script>
 </body>
 </html>

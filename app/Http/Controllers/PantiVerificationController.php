@@ -84,6 +84,18 @@ class PantiVerificationController extends Controller
                 }
             }
             if ($fitrah) {
+                if ($panti->kapasitas_diajukan_kg === null && $panti->status_verif !== 'verified') {
+                    throw ValidationException::withMessages([
+                        'kapasitas_penerimaan_kg' => 'PJ belum mengajukan kapasitas beras. Minta PJ melengkapi pengajuan fitrah sebelum mengaktifkan layanan beras.',
+                    ]);
+                }
+
+                if ($panti->kapasitas_diajukan_kg !== null && bccomp((string) $data['kapasitas_penerimaan_kg'], (string) $panti->kapasitas_diajukan_kg, 2) > 0) {
+                    throw ValidationException::withMessages([
+                        'kapasitas_penerimaan_kg' => 'Kapasitas yang disetujui maksimal '.$panti->kapasitas_diajukan_kg.' kg per kunjungan, sesuai pengajuan PJ.',
+                    ]);
+                }
+
                 $wilayah = DB::table('wilayah_layanan')
                     ->join('gudang', 'gudang.id', '=', 'wilayah_layanan.gudang_id')
                     ->where('wilayah_layanan.id', $data['wilayah_layanan_id'])

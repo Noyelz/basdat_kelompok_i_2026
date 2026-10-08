@@ -17,7 +17,8 @@
                     <p class="mb-1">Kontak: {{ $item->telp }} · {{ $item->email }}</p>
                     <p class="mb-2">Penerima diajukan: {{ $item->jumlah_mustahik_diajukan }} · Disetujui: {{ $item->jumlah_mustahik_layak }} · Jarak jalan: {{ $item->jarak_jalan_km ?? 'belum dicatat' }} km</p>
                     <p class="mb-2">Kebutuhan yang diajukan: {{ $item->kebutuhan_saat_ini ?? 'belum dicatat' }}</p>
-                    <p class="mb-2">Kapasitas per kunjungan: {{ $item->kapasitas_penerimaan_kg ?? 'belum ditetapkan' }} kg</p>
+                    <p class="mb-2">Kapasitas beras diajukan PJ: {{ $item->kapasitas_diajukan_kg ?? 'belum diajukan' }} kg per kunjungan</p>
+                    <p class="mb-2">Kapasitas disetujui per kunjungan: {{ $item->kapasitas_penerimaan_kg ?? 'belum ditetapkan' }} kg</p>
                 </div>
                 <span class="badge {{ $item->status_verif === 'verified' ? 'bg-success' : ($item->status_verif === 'rejected' ? 'bg-danger' : 'bg-warning text-dark') }}">{{ $item->status_verif }}</span>
             </div>
@@ -36,7 +37,7 @@
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="hasil" value="verified">
-                <div class="col-12"><input type="hidden" name="fitrah_aktif" value="0"><label><input type="checkbox" name="fitrah_aktif" value="1" @checked($verifikasiIni ? old('fitrah_aktif') : $item->wilayah_layanan_id)> Layani fitrah beras dari gudang Surabaya juga; kosongkan untuk panti maal saja</label></div>
+                <div class="col-12"><input type="hidden" name="fitrah_aktif" value="0"><label><input type="checkbox" name="fitrah_aktif" value="1" @checked($verifikasiIni ? old('fitrah_aktif') : ($item->wilayah_layanan_id || ($item->status_verif !== 'verified' && $item->kapasitas_diajukan_kg !== null)))> Layani fitrah beras dari gudang Surabaya juga; kosongkan untuk panti maal saja</label></div>
                 <div class="col-md-4">
                     <label class="form-label">Penerima zakat yang layak</label>
                     <input type="number" min="1" max="{{ $item->jumlah_mustahik_diajukan }}" name="jumlah_mustahik_layak" class="form-control" value="{{ $verifikasiIni ? old('jumlah_mustahik_layak') : ($item->jumlah_mustahik_layak ?: '') }}" required>
@@ -52,10 +53,10 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Jarak jalan gudang → panti (km)</label>
+                    <label class="form-label">Jarak jalan gudang → panti, diperiksa panitia (km)</label>
                     <input type="number" min="0.01" step="0.01" name="jarak_jalan_km" class="form-control" value="{{ $verifikasiIni ? old('jarak_jalan_km') : $item->jarak_jalan_km }}">
                 </div>
-                <div class="col-md-4"><label class="form-label">Kapasitas penerimaan per kunjungan (kg)</label><input type="number" min="0.01" step="0.01" name="kapasitas_penerimaan_kg" class="form-control" value="{{ $verifikasiIni ? old('kapasitas_penerimaan_kg') : $item->kapasitas_penerimaan_kg }}"></div>
+                <div class="col-md-4"><label class="form-label">Kapasitas disetujui per kunjungan (kg)</label><input type="number" min="0.01" step="0.01" name="kapasitas_penerimaan_kg" class="form-control" max="{{ $item->kapasitas_diajukan_kg ?? '9999999999.99' }}" value="{{ $verifikasiIni ? old('kapasitas_penerimaan_kg') : ($item->kapasitas_penerimaan_kg ?? $item->kapasitas_diajukan_kg) }}"></div>
                 <div class="col-md-9"><label class="form-label">Catatan pemeriksaan</label><textarea name="catatan" class="form-control" rows="2" maxlength="2000">{{ $verifikasiIni ? old('catatan') : '' }}</textarea></div>
                 <div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-success w-100">Simpan verifikasi</button></div>
             </form>

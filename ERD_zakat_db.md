@@ -1,6 +1,6 @@
 # ERD database zakat_db
 
-Snapshot skema **8 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQL aktif `zakat_db`, bukan ERD lama database `zakat` pada Bagian 2 di `!wajib_baca.md`. Server memakai MariaDB 10.6.23; seluruh 42 tabel memakai InnoDB dan collation `utf8mb4_unicode_ci`. Snapshot mencakup **431 kolom, 55 foreign key, dan 2 CHECK constraint JSON**.
+Snapshot skema **8 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQL aktif `zakat_db`, bukan ERD lama database `zakat` pada Bagian 2 di `!wajib_baca.md`. Server memakai MariaDB 10.6.23; seluruh 42 tabel memakai InnoDB dan collation `utf8mb4_unicode_ci`. Snapshot mencakup **432 kolom, 55 foreign key, dan 2 CHECK constraint JSON**.
 
 Dokumen ini dibuat dengan pembacaan skema dan metadata saja. Nama kolom seperti `pass_hash`, `token`, atau `no_rek` merupakan definisi skema; tidak ada kata sandi, hash milik pengguna, nomor rekening, maupun baris data transaksi yang disalin ke dokumentasi.
 
@@ -476,6 +476,7 @@ Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
 | `jumlah_mustahik_diajukan` | `int(10) unsigned` | Tidak | `0` | — | Tidak |
 | `kebutuhan_saat_ini` | `text` | Ya | `NULL` | — | Tidak |
 | `kapasitas_penerimaan_kg` | `decimal(12,2)` | Ya | `NULL` | — | Tidak |
+| `kapasitas_diajukan_kg` | `decimal(12,2)` | Ya | `NULL` | — | Tidak |
 
 Indeks (urutan kolom dipertahankan):
 
