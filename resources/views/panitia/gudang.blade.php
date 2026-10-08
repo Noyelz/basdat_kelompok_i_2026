@@ -10,10 +10,10 @@
             <h2 class="h5">Tambah vendor</h2>
             <form method="POST" action="{{ route('panitia.vendor.store') }}" class="row g-2">
                 @csrf
-                <div class="col-12"><label class="form-label">Nama vendor</label><input name="nama" class="form-control" value="{{ old('nama') }}" required></div>
-                <div class="col-md-6"><label class="form-label">Telepon</label><input name="telp" class="form-control" value="{{ old('telp') }}"></div>
-                <div class="col-md-6"><label class="form-label">Email</label><input name="email" type="email" class="form-control" value="{{ old('email') }}"></div>
-                <div class="col-12"><label class="form-label">Alamat</label><textarea name="alamat" class="form-control" rows="2">{{ old('alamat') }}</textarea></div>
+                <div class="col-12"><label class="form-label">Nama vendor</label><input name="nama" class="form-control" value="{{ old('vendor_edit_id') ? '' : old('nama') }}" required></div>
+                <div class="col-md-6"><label class="form-label">Telepon</label><input name="telp" class="form-control" value="{{ old('vendor_edit_id') ? '' : old('telp') }}"></div>
+                <div class="col-md-6"><label class="form-label">Email</label><input name="email" type="email" class="form-control" value="{{ old('vendor_edit_id') ? '' : old('email') }}"></div>
+                <div class="col-12"><label class="form-label">Alamat</label><textarea name="alamat" class="form-control" rows="2">{{ old('vendor_edit_id') ? '' : old('alamat') }}</textarea></div>
                 <div class="col-12"><button class="btn btn-primary" type="submit">Simpan vendor</button></div>
             </form>
         </div></section>
@@ -30,6 +30,40 @@
         </div></section>
     </div>
 </div>
+
+<section class="card border-0 shadow-sm mb-4"><div class="card-body">
+    <h2 class="h5">Daftar vendor</h2>
+    <p class="small text-muted">Vendor yang belum memiliki pembelian dapat dihapus. Jika sudah digunakan, ubah status menjadi nonaktif melalui Edit vendor.</p>
+    @forelse ($vendor as $item)
+        @php($editVendorIni = (int) old('vendor_edit_id', 0) === (int) $item->id)
+        <div class="border rounded p-3 mb-3">
+            <h3 class="h6">{{ $item->nama }} · {{ $item->is_active ? 'Aktif' : 'Nonaktif' }}</h3>
+            <p class="small mb-2">Telepon: {{ $item->telp ?? '—' }} · Email: {{ $item->email ?? '—' }} · {{ $item->pembelian_count }} pembelian</p>
+            <p class="small text-muted">Alamat: {{ $item->alamat ?? '—' }}</p>
+            <details @if ($editVendorIni) open @endif>
+                <summary class="btn btn-sm btn-outline-primary mb-2">Edit vendor</summary>
+                <form method="POST" action="{{ route('panitia.vendor.update', $item->id) }}" class="row g-2 mb-3">
+                    @csrf
+                    @method('PATCH')
+                    <div class="col-md-6"><label class="form-label" for="vendor-nama-{{ $item->id }}">Nama vendor</label><input id="vendor-nama-{{ $item->id }}" name="nama" class="form-control" maxlength="255" value="{{ $editVendorIni ? old('nama') : $item->nama }}" required></div>
+                    <div class="col-md-6"><label class="form-label" for="vendor-telp-{{ $item->id }}">Telepon</label><input id="vendor-telp-{{ $item->id }}" name="telp" class="form-control" maxlength="20" value="{{ $editVendorIni ? old('telp') : $item->telp }}"></div>
+                    <div class="col-md-6"><label class="form-label" for="vendor-email-{{ $item->id }}">Email</label><input id="vendor-email-{{ $item->id }}" name="email" type="email" class="form-control" maxlength="191" value="{{ $editVendorIni ? old('email') : $item->email }}"></div>
+                    <div class="col-md-6"><label class="form-label" for="vendor-aktif-{{ $item->id }}">Status vendor</label><select id="vendor-aktif-{{ $item->id }}" name="is_active" class="form-select" required><option value="1" @selected($editVendorIni ? old('is_active') == 1 : $item->is_active)>Aktif</option><option value="0" @selected($editVendorIni ? old('is_active') == 0 : ! $item->is_active)>Nonaktif</option></select></div>
+                    <div class="col-12"><label class="form-label" for="vendor-alamat-{{ $item->id }}">Alamat</label><textarea id="vendor-alamat-{{ $item->id }}" name="alamat" class="form-control" maxlength="2000" rows="2">{{ $editVendorIni ? old('alamat') : $item->alamat }}</textarea></div>
+                    <div class="col-12"><button class="btn btn-primary" type="submit">Simpan perubahan vendor</button></div>
+                </form>
+            </details>
+            <form method="POST" action="{{ route('panitia.vendor.destroy', $item->id) }}" onsubmit="return confirm('Hapus vendor ini secara permanen? Vendor hanya dapat dihapus jika belum memiliki pembelian.');">
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-sm btn-outline-danger" type="submit" @disabled($item->pembelian_count > 0)>Hapus vendor</button>
+                @if ($item->pembelian_count > 0)<span class="small text-muted">Riwayat pembelian harus tetap tersimpan.</span>@endif
+            </form>
+        </div>
+    @empty
+        <p class="text-muted">Belum ada vendor. Tambahkan melalui formulir di atas.</p>
+    @endforelse
+</div></section>
 
 <section class="card border-0 shadow-sm mb-4"><div class="card-body">
     <h2 class="h5">Catat beras diterima di gudang</h2>

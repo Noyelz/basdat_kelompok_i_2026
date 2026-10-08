@@ -1072,3 +1072,19 @@ Referensi sumber: [Gold API](https://gold-api.com/docs), [ketentuan Gold API](ht
 **Untuk panti pending pada gambar:** masuk sebagai PJ, buka dashboard, lalu form **Lengkapi atau perbaiki pengajuan panti**. Pilih fitrah beras dan maal, isi kapasitas sebenarnya, kemudian kirim pengajuan. Panitia selanjutnya memeriksa jumlah penerima, mengisi jarak jalan, dan menetapkan kapasitas yang disetujui. Contoh: PJ sanggup menerima 200 kg per kunjungan; panitia dapat menyetujui 150 kg, tetapi tidak 250 kg. Ini kapasitas penerimaan, bukan kewajiban mengirim jumlah tersebut setiap kali.
 
 Untuk membatalkan kode gunakan `git revert <hash>`; rollback migration menghapus data kolom kapasitas yang diajukan sehingga memerlukan cadangan jika sudah terisi. Database dan crontab tidak dipulihkan oleh Git.
+
+
+## 15. CRUD dan penghapusan terbatas (8 Oktober 2026)
+
+### 15.1 Vendor: CRUD lengkap oleh panitia
+
+- [x] **Create:** tambah vendor di Vendor & gudang.
+- [x] **Read:** daftar menampilkan nama, kontak, alamat, status aktif, dan jumlah pembelian.
+- [x] **Update:** Edit vendor mengubah nama, kontak, alamat, serta status aktif/nonaktif. Isian gagal validasi dikembalikan hanya ke vendor yang bersangkutan.
+- [x] **Delete:** Hapus vendor menghapus permanen hanya jika belum mempunyai riwayat `pembelian_beras`. Tombol meminta konfirmasi; server memeriksa ulang meskipun permintaan dibuat langsung.
+- [x] Vendor yang sudah digunakan dapat dinonaktifkan, bukan dihapus; pembelian lama tetap tersimpan. Penerimaan beras memeriksa status vendor kembali di dalam transaksi database.
+- [x] Update dan delete memakai autentikasi, role panitia, CSRF, penguncian baris, dan audit_log dalam transaksi yang sama.
+
+**File:** `InventoryController.php`, `routes/web.php`, `resources/views/panitia/gudang.blade.php`. Tidak ada migration atau database baru. Tidak ada data operasional yang dihapus saat pemasangan fitur. Penghapusan dari UI bersifat permanen; commit Git mengembalikan kode, bukan baris database yang sudah dihapus.
+
+**Pemeriksaan:** format PHP melalui Pint dan pemeriksaan diff; pengujian otomatis/alur browser belum dijalankan pada tahap ini.

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -17,7 +18,15 @@ class InventoryController extends Controller
 {
     public function index(): View
     {
-        $vendor = DB::table('vendor')->orderBy('nama')->get(['id', 'nama', 'is_active']);
+        $vendor = DB::table('vendor')
+            ->select('id', 'nama', 'telp', 'email', 'alamat', 'is_active')
+            ->selectSub(function ($query): void {
+                $query->from('pembelian_beras')
+                    ->whereColumn('pembelian_beras.vendor_id', 'vendor.id')
+                    ->selectRaw('COUNT(*)');
+            }, 'pembelian_count')
+            ->orderBy('nama')
+            ->get();
         $gudang = DB::table('gudang')->where('is_active', true)->orderBy('nama')->get(['id', 'nama']);
         $katalog = DB::table('katalog_beras')
             ->select('katalog_beras.*')
@@ -76,6 +85,72 @@ class InventoryController extends Controller
         return back()->with('success', 'Vendor ditambahkan.');
     }
 
+    public function updateVendor(Request $request, int $id): RedirectResponse
+    {
+        $request->merge(['vendor_edit_id' => $id]);
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'telp' => ['nullable', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:191'],
+            'alamat' => ['nullable', 'string', 'max:2000'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($request, $id, $data): void {
+            $vendor = DB::table('vendor')->where('id', $id)->lockForUpdate()->first();
+            abort_unless($vendor, 404);
+
+            DB::table('vendor')->where('id', $id)->update([
+                ...$data,
+                'is_active' => (bool) $data['is_active'],
+                'updated_at' => now(),
+            ]);
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => 'vendor.diperbarui',
+                'jenis_objek' => 'vendor',
+                'objek_id' => $id,
+                'detail' => json_encode([
+                    'nama_sebelum' => $vendor->nama,
+                    'nama_sesudah' => $data['nama'],
+                    'aktif_sebelum' => (bool) $vendor->is_active,
+                    'aktif_sesudah' => (bool) $data['is_active'],
+                ], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        }, attempts: 3);
+
+        return redirect()->route('panitia.gudang.index')->with('success', 'Vendor diperbarui. Vendor nonaktif tidak dapat dipilih untuk penerimaan baru; riwayat pembelian tetap tersimpan.');
+    }
+
+    public function destroyVendor(Request $request, int $id): RedirectResponse
+    {
+        DB::transaction(function () use ($request, $id): void {
+            $vendor = DB::table('vendor')->where('id', $id)->lockForUpdate()->first();
+            abort_unless($vendor, 404);
+
+            if (DB::table('pembelian_beras')->where('vendor_id', $id)->exists()) {
+                throw ValidationException::withMessages([
+                    'vendor' => 'Vendor sudah memiliki riwayat pembelian dan tidak boleh dihapus. Gunakan Edit vendor untuk menonaktifkannya.',
+                ]);
+            }
+
+            DB::table('vendor')->where('id', $id)->delete();
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => 'vendor.dihapus',
+                'jenis_objek' => 'vendor',
+                'objek_id' => $id,
+                'detail' => json_encode(['nama' => $vendor->nama], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        }, attempts: 3);
+
+        return redirect()->route('panitia.gudang.index')->with('success', 'Vendor yang belum digunakan berhasil dihapus.');
+    }
+
     public function storeKatalog(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -119,7 +194,10 @@ class InventoryController extends Controller
             DB::transaction(function () use ($request, $data, $buktiPath): void {
                 $produk = DB::table('katalog_beras')->where('id', $data['katalog_beras_id'])->lockForUpdate()->first();
                 abort_unless($produk && $produk->is_active, 422);
-                abort_unless(DB::table('vendor')->where('id', $data['vendor_id'])->where('is_active', true)->exists(), 422);
+                $vendor = DB::table('vendor')->where('id', $data['vendor_id'])->lockForUpdate()->first(['id', 'is_active']);
+                if (! $vendor || ! $vendor->is_active) {
+                    throw ValidationException::withMessages(['vendor_id' => 'Vendor sudah dihapus atau dinonaktifkan. Pilih vendor aktif lain.']);
+                }
                 abort_unless(DB::table('gudang')->where('id', $data['gudang_id'])->where('is_active', true)->exists(), 422);
 
                 $pembelianId = DB::table('pembelian_beras')->insertGetId([

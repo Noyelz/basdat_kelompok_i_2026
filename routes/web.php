@@ -87,6 +87,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('/rekening/{id}', [BankChangeRequestController::class, 'review'])->whereNumber('id')->name('rekening.review');
         Route::get('/gudang', [InventoryController::class, 'index'])->name('gudang.index');
         Route::post('/vendor', [InventoryController::class, 'storeVendor'])->name('vendor.store');
+        Route::patch('/vendor/{id}', [InventoryController::class, 'updateVendor'])->whereNumber('id')->name('vendor.update');
+        Route::delete('/vendor/{id}', [InventoryController::class, 'destroyVendor'])->whereNumber('id')->name('vendor.destroy');
         Route::post('/katalog', [InventoryController::class, 'storeKatalog'])->name('katalog.store');
         Route::post('/pembelian/terima', [InventoryController::class, 'receive'])->name('pembelian.receive');
         Route::post('/pembelian/{id}/faktur', [InventoryController::class, 'uploadInvoice'])->whereNumber('id')->name('pembelian.faktur.store');
