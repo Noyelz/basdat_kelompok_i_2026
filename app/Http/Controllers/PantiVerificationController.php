@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -39,6 +40,8 @@ class PantiVerificationController extends Controller
 
     public function update(Request $request, int $id): RedirectResponse
     {
+        $request->merge(['panti_id' => $id]);
+
         $data = $request->validate([
             'hasil' => ['required', Rule::in(['verified', 'rejected'])],
             'jumlah_mustahik_layak' => ['required_if:hasil,verified', 'nullable', 'integer', 'min:1'],
@@ -61,10 +64,24 @@ class PantiVerificationController extends Controller
                     ->whereIn('status_pembayaran', ['pending', 'simulated_paid'])
                     ->where('status_penyaluran', '!=', 'selesai')
                     ->exists();
-                abort_if($pesananTerbuka, 422, 'Panti masih memiliki pesanan terbuka; selesaikan penyaluran sebelum menonaktifkannya.');
+                if ($pesananTerbuka) {
+                    throw ValidationException::withMessages([
+                        'hasil' => 'Panti masih memiliki pesanan terbuka; selesaikan penyaluran sebelum menonaktifkannya.',
+                    ]);
+                }
             }
             if ($terverifikasi) {
-                abort_if($data['jumlah_mustahik_layak'] > $panti->jumlah_mustahik_diajukan || ! $panti->kebutuhan_saat_ini, 422, 'Jumlah yang disetujui tidak boleh melebihi yang diajukan dan kebutuhan PJ harus terisi.');
+                if ($data['jumlah_mustahik_layak'] > $panti->jumlah_mustahik_diajukan) {
+                    throw ValidationException::withMessages([
+                        'jumlah_mustahik_layak' => 'Jumlah penerima yang disetujui maksimal '.$panti->jumlah_mustahik_diajukan.' orang, sesuai pengajuan PJ. Kurangi jumlah persetujuan atau minta PJ memperbarui pengajuannya.',
+                    ]);
+                }
+
+                if (! $panti->kebutuhan_saat_ini) {
+                    throw ValidationException::withMessages([
+                        'kebutuhan_saat_ini' => 'Kebutuhan panti belum diisi. Minta PJ melengkapi kebutuhan sebelum verifikasi.',
+                    ]);
+                }
             }
             if ($fitrah) {
                 $wilayah = DB::table('wilayah_layanan')
@@ -73,7 +90,11 @@ class PantiVerificationController extends Controller
                     ->where('wilayah_layanan.provinsi', $panti->provinsi)
                     ->where('gudang.is_active', true)
                     ->first(['wilayah_layanan.id']);
-                abort_unless($wilayah, 422, 'Wilayah panti harus sesuai dengan provinsi dan gudang yang aktif.');
+                if (! $wilayah) {
+                    throw ValidationException::withMessages([
+                        'wilayah_layanan_id' => 'Wilayah panti harus sesuai dengan provinsi dan gudang yang aktif.',
+                    ]);
+                }
             }
 
             DB::table('yayasan')->where('id', $id)->update([

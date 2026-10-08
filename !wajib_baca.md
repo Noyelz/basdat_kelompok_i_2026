@@ -1036,3 +1036,17 @@ Log keberhasilan/kegagalan ada di kanal log Laravel, pada konfigurasi server ini
 Perubahan disimpan dalam satu commit lokal untuk integrasi yang utuh, tanpa push otomatis. `git revert <hash-commit>` mengembalikan kode, bukan data MySQL atau crontab. Delapan kolom tambahan dan riwayat harga tetap ada di database setelah revert kode. Jangan memakai `migrate:fresh` untuk membatalkan perubahan. `down()` migration menghapus kolom metadata API sehingga datanya hilang; lakukan hanya bila memang ingin membuang metadata, setelah membuat cadangan. Snapshot transaksi dan nominal riwayat tidak perlu dihapus.
 
 Referensi sumber: [Gold API](https://gold-api.com/docs), [ketentuan Gold API](https://gold-api.com/terms), [Frankfurter](https://frankfurter.dev/), [rupiah di Frankfurter](https://frankfurter.dev/currencies/idr/).
+
+
+## 13. Perbaikan pesan verifikasi panti (8 Oktober 2026)
+
+**Penyebab laporan 422:** pada pengajuan panti ID 2, PJ mengajukan 10 penerima, sedangkan form persetujuan diisi 11. Database masih mencatat status pending dan 0 disetujui. Aturan batas jumlah bekerja, tetapi sebelumnya `abort_if(..., 422)` menampilkan halaman error generik sehingga alasan penolakan tidak terlihat.
+
+- [x] Mengganti penolakan bisnis menjadi `ValidationException::withMessages()` di [PantiVerificationController.php](app/Http/Controllers/PantiVerificationController.php), agar request form kembali dengan alasan yang jelas. Respons JSON tetap memakai error validasi 422 bila diminta klien.
+- [x] Memisahkan pesan jumlah melebihi pengajuan dari kebutuhan PJ yang belum terisi; penonaktifan dengan pesanan terbuka serta wilayah yang tidak cocok juga mendapat pesan form.
+- [x] [Form verifikasi panti](resources/views/panitia/panti.blade.php) menampilkan jumlah maksimal dan membatasi input dengan atribut HTML `max`. Pemeriksaan server tetap dilakukan dalam transaksi dan penguncian baris; batas HTML saja tidak menjadi penentu.
+- [x] Isian jumlah, pilihan fitrah, wilayah, jarak, kapasitas, dan catatan dipertahankan ketika validasi gagal. Isian hanya dipulihkan pada panti dan jenis form yang dikirim; alasan penolakan tidak disalin ke catatan persetujuan atau panti lain. ID pemulihan diambil dari parameter route oleh server.
+- [x] Tidak mengubah data pengajuan, status verifikasi, skema database, atau perubahan tema pengguna yang sudah ada. Format PHP diperbaiki dengan Pint dan perubahan disimpan sebagai commit lokal tersendiri.
+- [ ] Pengujian otomatis serta submit lengkap melalui browser belum dijalankan pada perbaikan ini.
+
+**Cara melanjutkan pengajuan pada gambar:** isi jumlah yang disetujui paling banyak 10. Jika kenyataannya ada 11 penerima, PJ perlu memperbarui jumlah pengajuannya terlebih dahulu. Panitia tetap memutuskan berapa orang yang layak; aplikasi tidak menyetujui pengajuan otomatis. Jika panti juga akan menerima beras fitrah, centang pilihan layanan fitrah; jika tidak dicentang, wilayah/jarak/kapasitas tidak disimpan sebagai layanan fitrah dan panti diverifikasi untuk maal saja.

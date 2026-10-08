@@ -5,6 +5,8 @@
 <p class="text-muted">Periksa izin, foto, penerima yang layak, dan jarak jalan dari gudang Surabaya sebelum menerima panti.</p>
 
 @forelse ($panti as $item)
+    @php($verifikasiIni = (int) old('panti_id', 0) === (int) $item->id && old('hasil') === 'verified')
+    @php($penolakanIni = (int) old('panti_id', 0) === (int) $item->id && old('hasil') === 'rejected')
     <section class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-start gap-3">
@@ -34,26 +36,27 @@
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="hasil" value="verified">
-                <div class="col-12"><input type="hidden" name="fitrah_aktif" value="0"><label><input type="checkbox" name="fitrah_aktif" value="1" @checked($item->wilayah_layanan_id)> Layani fitrah beras dari gudang Surabaya juga; kosongkan untuk panti maal saja</label></div>
+                <div class="col-12"><input type="hidden" name="fitrah_aktif" value="0"><label><input type="checkbox" name="fitrah_aktif" value="1" @checked($verifikasiIni ? old('fitrah_aktif') : $item->wilayah_layanan_id)> Layani fitrah beras dari gudang Surabaya juga; kosongkan untuk panti maal saja</label></div>
                 <div class="col-md-4">
                     <label class="form-label">Penerima zakat yang layak</label>
-                    <input type="number" min="1" name="jumlah_mustahik_layak" class="form-control" value="{{ $item->jumlah_mustahik_layak ?: '' }}" required>
+                    <input type="number" min="1" max="{{ $item->jumlah_mustahik_diajukan }}" name="jumlah_mustahik_layak" class="form-control" value="{{ $verifikasiIni ? old('jumlah_mustahik_layak') : ($item->jumlah_mustahik_layak ?: '') }}" required>
+                    <small>Maksimal {{ $item->jumlah_mustahik_diajukan }} orang sesuai pengajuan PJ.</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Wilayah layanan</label>
                     <select name="wilayah_layanan_id" class="form-select">
                         <option value="">Pilih wilayah</option>
                         @foreach ($wilayah->where('provinsi', $item->provinsi) as $zona)
-                            <option value="{{ $zona->id }}" @selected($item->wilayah_layanan_id == $zona->id)>{{ $zona->provinsi }} {{ $zona->is_active ? '(aktif)' : '(belum aktif)' }}</option>
+                            <option value="{{ $zona->id }}" @selected(($verifikasiIni ? old('wilayah_layanan_id') : $item->wilayah_layanan_id) == $zona->id)>{{ $zona->provinsi }} {{ $zona->is_active ? '(aktif)' : '(belum aktif)' }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Jarak jalan gudang → panti (km)</label>
-                    <input type="number" min="0.01" step="0.01" name="jarak_jalan_km" class="form-control" value="{{ $item->jarak_jalan_km }}">
+                    <input type="number" min="0.01" step="0.01" name="jarak_jalan_km" class="form-control" value="{{ $verifikasiIni ? old('jarak_jalan_km') : $item->jarak_jalan_km }}">
                 </div>
-                <div class="col-md-4"><label class="form-label">Kapasitas penerimaan per kunjungan (kg)</label><input type="number" min="0.01" step="0.01" name="kapasitas_penerimaan_kg" class="form-control" value="{{ $item->kapasitas_penerimaan_kg }}"></div>
-                <div class="col-md-9"><label class="form-label">Catatan pemeriksaan</label><textarea name="catatan" class="form-control" rows="2" maxlength="2000"></textarea></div>
+                <div class="col-md-4"><label class="form-label">Kapasitas penerimaan per kunjungan (kg)</label><input type="number" min="0.01" step="0.01" name="kapasitas_penerimaan_kg" class="form-control" value="{{ $verifikasiIni ? old('kapasitas_penerimaan_kg') : $item->kapasitas_penerimaan_kg }}"></div>
+                <div class="col-md-9"><label class="form-label">Catatan pemeriksaan</label><textarea name="catatan" class="form-control" rows="2" maxlength="2000">{{ $verifikasiIni ? old('catatan') : '' }}</textarea></div>
                 <div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-success w-100">Simpan verifikasi</button></div>
             </form>
 
@@ -61,7 +64,7 @@
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="hasil" value="rejected">
-                <div class="col-md-9"><label class="form-label">Alasan penolakan</label><input name="catatan" class="form-control" maxlength="2000" required></div>
+                <div class="col-md-9"><label class="form-label">Alasan penolakan</label><input name="catatan" class="form-control" maxlength="2000" value="{{ $penolakanIni ? old('catatan') : '' }}" required></div>
                 <div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-outline-danger w-100">Tolak / nonaktifkan</button></div>
             </form>
         </div>

@@ -1923,9 +1923,9 @@ Pemeriksaan kelayakan panti dan penyajian foto privat panti.
 
 | Method | Tugas dan hasil |
 | --- | --- |
-| [`index()`](app/Http/Controllers/PantiVerificationController.php:15) | Membaca panti/pengaju/wilayah paginasi 10, foto per panti, dan zona gudang aktif. Merender panitia.panti. |
-| [`update()`](app/Http/Controllers/PantiVerificationController.php:40) | Validasi verified/rejected, jumlah layak, pilihan fitrah, rute dan catatan. Menolak penonaktifan jika pesanan terbuka; mencocokkan jumlah diajukan/kebutuhan dan provinsi wilayah. Mengubah yayasan, menambah verifikasi dan audit. |
-| [`foto()`](app/Http/Controllers/PantiVerificationController.php:120) | Mengizinkan panitia/admin aktif atau PJ pemilik melihat foto, memastikan file privat ada, mengirim berkas. Muzakki tidak diberikan akses foto pendaftaran ini. |
+| [`index()`](app/Http/Controllers/PantiVerificationController.php:16) | Membaca panti/pengaju/wilayah paginasi 10, foto per panti, dan zona gudang aktif. Merender panitia.panti. |
+| [`update()`](app/Http/Controllers/PantiVerificationController.php:41) | Validasi verified/rejected, jumlah layak, pilihan fitrah, rute dan catatan. Menolak penonaktifan jika pesanan terbuka; mencocokkan jumlah diajukan/kebutuhan dan provinsi wilayah. Penolakan bisnis memakai ValidationException sehingga pesan tampil di form dan isian dipertahankan, bukan halaman error generik. Mengubah yayasan, menambah verifikasi dan audit hanya setelah seluruh syarat terpenuhi. |
+| [`foto()`](app/Http/Controllers/PantiVerificationController.php:141) | Mengizinkan panitia/admin aktif atau PJ pemilik melihat foto, memastikan file privat ada, mengirim berkas. Muzakki tidak diberikan akses foto pendaftaran ini. |
 
 ### SimulationPaymentController.php
 
@@ -2347,7 +2347,7 @@ Pekerjaan menunggu: panti, alokasi, stok rendah, perjalanan dekat, bukti. Tautan
 
 **File:** [resources/views/panitia/panti.blade.php](resources/views/panitia/panti.blade.php). **Status:** Aktif, panitia. **Dibuka oleh:** `PantiVerificationController::index`.
 
-Pengajuan panti, foto privat, kebutuhan/jumlah penerima, form persetujuan dengan rute/kapasitas dan penolakan dengan catatan.
+Pengajuan panti, foto privat, kebutuhan/jumlah penerima, form persetujuan dengan rute/kapasitas dan penolakan dengan catatan. Input persetujuan dibatasi maksimal jumlah pengajuan PJ; ketika gagal, isian dikembalikan hanya pada panti dan jenis form yang dikirim. Detail perbaikan ada di [!wajib_baca.md Bagian 13](%21wajib_baca.md#13-perbaikan-pesan-verifikasi-panti-8-oktober-2026).
 
 **Kerangka:** `panitia.layout`.
 
