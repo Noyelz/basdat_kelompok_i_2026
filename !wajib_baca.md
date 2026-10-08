@@ -19,6 +19,8 @@ Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pen
 
 > **Arah pengembangan terbaru:** Lihat [Bagian 11: Rencana perubahan dan checklist](#11-rencana-perubahan-dan-checklist-2026-09-27), khususnya [Bagian 11.14: Catatan implementasi](#1114-catatan-implementasi-bertahap) dan [Bagian 11.15: Menjalankan versi pengembangan](#1115-menjalankan-versi-pengembangan). Bagian 1–9 menggambarkan skema dan alur lama, **bukan spesifikasi implementasi baru**. Khususnya, uraian QRIS/payment gateway nyata, harga tetap, pemotongan stok langsung saat pembayaran, dan akun panitia sebagai pengelola seluruh situs sudah perlu direvisi. Banyak bagian checklist telah diimplementasikan sebagian; kotak kosong berarti pekerjaan atau pemeriksaan masih tersisa, bukan berarti semua kode pada bagian itu belum ada.
 
+> **CRUD terbaru:** [Bagian 15](#15-crud-dan-penghapusan-terbatas-8-oktober-2026) menjelaskan CRUD vendor dan penghapusan terbatas jenis beras, draft maal, serta perjalanan kosong. Semua operasi hapus memeriksa hak akses dan riwayat terkait.
+
 > **ERD database baru (diperbarui 8 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 42 tabel, 432 kolom, 55 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Diagram memakai metadata skema; diperbarui setelah migration emas harian dan kapasitas pengajuan PJ pada Bagian 12 dan 14. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
 
 ---
@@ -1108,3 +1110,23 @@ Untuk membatalkan kode gunakan `git revert <hash>`; rollback migration menghapus
 - [x] Audit mencatat jumlah pemilik draft yang dihapus, tanpa rincian aset. Snapshot transaksi, transaksi_mal, QR, dan pembayaran tidak berubah.
 
 **File:** `MaalCheckoutController.php::destroyDraft`, `routes/web.php`, `resources/views/muzakki/maal.blade.php`. Tidak ada migration/data baru atau penghapusan data saat pemasangan. Ini penghapusan draft tersimpan; tombol Hapus pemilik ini pada form hanya menghapus isian sementara sampai pengguna menyimpan kembali. Format/diff diperiksa; pengujian otomatis dan browser belum dijalankan.
+
+### 15.4 Hapus perjalanan fitrah kosong
+
+- [x] Pada Pesanan & alokasi, **Hapus perjalanan kosong** tersedia untuk perjalanan direncanakan; tombol dinonaktifkan jika sudah memiliki titik atau berangkat_at terisi.
+- [x] Server mengunci baris perjalanan, memeriksa status direncanakan, berangkat_at NULL, dan tidak adanya titik_pengiriman. Alokasi mengacu pada titik; keberadaan titik sudah cukup untuk menolak penghapusan, termasuk titik yang belum memiliki alokasi.
+- [x] addStop dan dispatch memakai kunci perjalanan yang sama; permintaan bersamaan tidak dapat menyisipkan alokasi di tengah penghapusan.
+- [x] Penghapusan tidak membatalkan pesanan, melepas reservasi, mengubah stok, atau menghapus bukti/penyaluran. Trip berisi alokasi atau sudah dikirim tetap tersimpan.
+- [x] Role panitia, CSRF, konfirmasi, pesan penolakan di form, dan audit diterapkan.
+
+**File:** `DistributionController.php::destroyTrip`, `routes/web.php`, `resources/views/panitia/distribusi.blade.php`. Tidak ada migration/data baru. Database masih 42 tabel, 432 kolom, 55 foreign key; fitur baru memakai aturan foreign key yang sudah ada.
+
+### 15.5 Cara demonstrasi dan batasan
+
+Untuk demonstrasi CRUD lengkap, gunakan **vendor baru yang belum pernah dipakai pembelian**: tambah → lihat pada Daftar vendor → Edit vendor → ubah dan simpan → Hapus vendor → konfirmasi. Setelah vendor dipakai pada pembelian, penghapusan ditolak dan status nonaktif menjadi pilihan operasional. Jangan menyebut nonaktif sebagai Delete; ia tetap Update.
+
+Fitur Delete lainnya: tambah jenis beras tanpa menerima stok lalu hapus; simpan draft maal lalu hapus draft keluarga; buat perjalanan kosong lalu hapus sebelum menambahkan titik. Semua operasi menghapus permanen target yang diperbolehkan, bukan soft delete. Vendor/jenis beras/perjalanan terpakai, snapshot transaksi, stok/mutasi, dan penyaluran tidak tersedia untuk penghapusan umum.
+
+**Route baru:** PATCH /panitia/vendor/{id}; DELETE /panitia/vendor/{id}; DELETE /panitia/katalog/{id}; DELETE /muzakki/zakat-maal/draft; DELETE /panitia/perjalanan/{id}. Total route aplikasi sekarang 68 (sebelumnya 63); empat route DELETE. Tidak ada perubahan dependensi dan tidak ada data operasional yang dihapus otomatis.
+
+**Status pemeriksaan:** Pint dijalankan, diff ditinjau, dan daftar route diperiksa. Tes otomatis dan submit di browser belum dijalankan. Perubahan tema lokal serta PDF laporan pengguna tidak ikut dalam commit fitur. Tidak ada push otomatis. Setiap bagian fitur disimpan pada commit lokal tersendiri; lihat git log untuk hash. Revert mengembalikan kode saja; data yang kemudian dihapus melalui fitur perlu cadangan MySQL jika ingin dipulihkan.

@@ -69,6 +69,39 @@ class DistributionController extends Controller
         return back()->with('success', 'Perjalanan simulasi dibuat. Tambahkan tujuan dan pesanan sebelum berangkat.');
     }
 
+    public function destroyTrip(Request $request, int $id): RedirectResponse
+    {
+        DB::transaction(function () use ($request, $id): void {
+            $perjalanan = DB::table('perjalanan_pengiriman')->where('id', $id)->lockForUpdate()->first();
+            abort_unless($perjalanan, 404);
+
+            if ($perjalanan->status !== 'direncanakan' || $perjalanan->berangkat_at !== null) {
+                throw ValidationException::withMessages([
+                    'perjalanan' => 'Hanya perjalanan yang masih direncanakan dan belum berangkat yang boleh dihapus.',
+                ]);
+            }
+
+            if (DB::table('titik_pengiriman')->where('perjalanan_pengiriman_id', $id)->exists()) {
+                throw ValidationException::withMessages([
+                    'perjalanan' => 'Perjalanan sudah memiliki titik pengiriman atau alokasi dan tidak boleh dihapus. Riwayat pesanan dan pengiriman harus tetap tersimpan.',
+                ]);
+            }
+
+            DB::table('perjalanan_pengiriman')->where('id', $id)->delete();
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => 'perjalanan.dihapus',
+                'jenis_objek' => 'perjalanan_pengiriman',
+                'objek_id' => $id,
+                'detail' => json_encode(['kode_perjalanan' => $perjalanan->kode_perjalanan, 'kendaraan' => $perjalanan->kendaraan], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        }, attempts: 3);
+
+        return redirect()->route('panitia.distribusi.index')->with('success', 'Perjalanan yang belum memiliki titik pengiriman berhasil dihapus.');
+    }
+
     public function addStop(Request $request): RedirectResponse
     {
         $data = $request->validate([

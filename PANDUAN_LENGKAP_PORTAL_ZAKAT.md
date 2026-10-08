@@ -4,7 +4,7 @@
 
 **Tujuan:** membantu Anda memahami hubungan antara tombol di website, fungsi PHP, tabel database, dan hasil yang ditampilkan. Contoh nama, ID, harga, dan pesanan di bawah adalah **contoh belajar**, bukan salinan data pribadi dari database.
 
-**Batas panduan:** inventaris mencakup file aplikasi milik proyek, konfigurasi, migration, view, aset, serta penjelasan kelompok file alat pengembangan. Isi ribuan file `vendor`, editor, dan dependensi tidak dijelaskan satu per satu karena merupakan kode pihak lain. Penjelasan fungsi di sini bukan komentar yang telah dimasukkan ke kode. Perubahan untuk dokumen ini hanya berupa dokumentasi; kode, skema, dan data tidak diubah.
+**Batas panduan:** inventaris mencakup file aplikasi milik proyek, konfigurasi, migration, view, aset, serta penjelasan kelompok file alat pengembangan. Isi ribuan file `vendor`, editor, dan dependensi tidak dijelaskan satu per satu karena merupakan kode pihak lain. Penjelasan fungsi di sini bukan komentar yang telah dimasukkan ke kode. Pembuatan awal panduan hanya berupa dokumentasi. Pembaruan implementasi berikutnya dijelaskan pada catatan API emas, kapasitas PJ, dan Bagian 17 tentang CRUD.
 
 > **Keadaan implementasi:** pembayaran dan persediaan yang dicatat alur baru adalah simulasi pengembangan. QR bukan QRIS bank. Pada tugas ini, bukti panitia dan bukti PJ yang sesuai dianggap cukup untuk menandai penyaluran ke penerima akhir selesai. Panduan tidak menyatakan sistem siap menerima uang sungguhan.
 >
@@ -28,6 +28,7 @@
 14. [Latihan membaca kode dan menulis komentar](#14-latihan-membaca-kode-dan-menulis-komentar)
 15. [Batas implementasi dan hal yang perlu diperhatikan](#15-batas-implementasi-dan-hal-yang-perlu-diperhatikan)
 16. [Urutan belajar dan catatan dokumentasi](#16-urutan-belajar-dan-catatan-dokumentasi)
+17. [CRUD dan penghapusan terbatas](#17-crud-dan-penghapusan-terbatas)
 
 ## 1. Cara membaca dan istilah dasar
 
@@ -1697,6 +1698,7 @@ Route berikut diperoleh dari `php artisan route:list --json --except-vendor` pad
 | GET / HEAD | `/muzakki/zakat-maal` | `muzakki.maal` | `MaalCheckoutController@index` | `web`, `auth`, `role:pemberi` |
 | POST | `/muzakki/zakat-maal` | `muzakki.maal.store` | `MaalCheckoutController@store` | `web`, `auth`, `role:pemberi` |
 | POST | `/muzakki/zakat-maal/draft` | `muzakki.maal.draft` | `MaalCheckoutController@saveDraft` | `web`, `auth`, `role:pemberi` |
+| DELETE | `/muzakki/zakat-maal/draft` | `muzakki.maal.draft.destroy` | `MaalCheckoutController@destroyDraft` | `web`, `auth`, `role:pemberi` |
 | POST | `/notifikasi/{id}/dibaca` | `notifikasi.read` | `InAppNotificationController@markRead` | `web`, `auth` |
 | GET / HEAD | `/panitia/bukti` | `panitia.bukti.index` | `HandoverEvidenceController@index` | `web`, `auth`, `role:panitia` |
 | POST | `/panitia/bukti/{id}` | `panitia.bukti.store` | `HandoverEvidenceController@submitPanitia` | `web`, `auth`, `role:panitia` |
@@ -1704,6 +1706,7 @@ Route berikut diperoleh dari `php artisan route:list --json --except-vendor` pad
 | GET / HEAD | `/panitia/distribusi` | `panitia.distribusi.index` | `DistributionController@index` | `web`, `auth`, `role:panitia` |
 | GET / HEAD | `/panitia/gudang` | `panitia.gudang.index` | `InventoryController@index` | `web`, `auth`, `role:panitia` |
 | POST | `/panitia/katalog` | `panitia.katalog.store` | `InventoryController@storeKatalog` | `web`, `auth`, `role:panitia` |
+| DELETE | `/panitia/katalog/{id}` | `panitia.katalog.destroy` | `InventoryController@destroyKatalog` | `web`, `auth`, `role:panitia` |
 | GET / HEAD | `/panitia/laporan` | `panitia.laporan.index` | `OperationalReportController@index` | `web`, `auth`, `role:panitia` |
 | PATCH | `/panitia/lot/{id}/koreksi` | `panitia.lot.adjust` | `InventoryController@adjust` | `web`, `auth`, `role:panitia` |
 | POST | `/panitia/maal/{id}/alokasi` | `panitia.maal.allocate` | `DistributionController@allocateMaal` | `web`, `auth`, `role:panitia` |
@@ -1713,6 +1716,7 @@ Route berikut diperoleh dari `php artisan route:list --json --except-vendor` pad
 | POST | `/panitia/pembelian/{id}/faktur` | `panitia.pembelian.faktur.store` | `InventoryController@uploadInvoice` | `web`, `auth`, `role:panitia` |
 | GET / HEAD | `/panitia/pembelian/{id}/faktur` | `panitia.pembelian.faktur.show` | `InventoryController@invoice` | `web`, `auth`, `role:panitia` |
 | POST | `/panitia/perjalanan` | `panitia.perjalanan.store` | `DistributionController@createTrip` | `web`, `auth`, `role:panitia` |
+| DELETE | `/panitia/perjalanan/{id}` | `panitia.perjalanan.destroy` | `DistributionController@destroyTrip` | `web`, `auth`, `role:panitia` |
 | POST | `/panitia/perjalanan/{id}/berangkat` | `panitia.perjalanan.dispatch` | `DistributionController@dispatch` | `web`, `auth`, `role:panitia` |
 | GET / HEAD | `/panitia/perjalanan/{id}/manifest` | `panitia.perjalanan.manifest` | `DistributionController@manifest` | `web`, `auth`, `role:panitia` |
 | GET / HEAD | `/panitia/rekening` | `panitia.rekening.index` | `BankChangeRequestController@index` | `web`, `auth`, `role:panitia` |
@@ -1720,6 +1724,8 @@ Route berikut diperoleh dari `php artisan route:list --json --except-vendor` pad
 | POST | `/panitia/titik` | `panitia.titik.store` | `DistributionController@addStop` | `web`, `auth`, `role:panitia` |
 | PATCH | `/panitia/titik/{id}/ongkir` | `panitia.titik.ongkir` | `DistributionController@setActualShipping` | `web`, `auth`, `role:panitia` |
 | POST | `/panitia/vendor` | `panitia.vendor.store` | `InventoryController@storeVendor` | `web`, `auth`, `role:panitia` |
+| PATCH | `/panitia/vendor/{id}` | `panitia.vendor.update` | `InventoryController@updateVendor` | `web`, `auth`, `role:panitia` |
+| DELETE | `/panitia/vendor/{id}` | `panitia.vendor.destroy` | `InventoryController@destroyVendor` | `web`, `auth`, `role:panitia` |
 | GET / HEAD | `/panti/foto/{id}` | `panti.foto` | `PantiVerificationController@foto` | `web`, `auth` |
 | GET / HEAD | `/register` | `register` | `AuthController@showRegister` | `web`, `guest` |
 | POST | `/register` | `register.post` | `AuthController@register` | `web`, `guest`, `throttle:5,1` |
@@ -1800,6 +1806,7 @@ Mengatur pesanan yang siap dialokasikan, perjalanan fitrah, titik, keberangkatan
 | --- | --- |
 | [`index()`](app/Http/Controllers/DistributionController.php:16) | Membaca gudang, pesanan fitrah/maal simulated_paid yang belum dialokasikan, 30 perjalanan terbaru dan titiknya; merender panitia.distribusi. |
 | [`createTrip()`](app/Http/Controllers/DistributionController.php:45) | Memvalidasi gudang aktif, kendaraan, kapasitas, jadwal WIB masa depan; membuat perjalanan direncanakan dengan penanda simulasi. |
+| [`destroyTrip()`](app/Http/Controllers/DistributionController.php) | Mengunci perjalanan, mensyaratkan direncanakan, belum berangkat, dan tanpa titik pengiriman. Menghapus trip kosong dan mencatat audit; tidak mengubah pesanan, reservasi, atau stok. |
 | [`addStop()`](app/Http/Controllers/DistributionController.php:72) | Memvalidasi ID pesanan tidak ganda; mengunci perjalanan, memeriksa panti pada gudang sama, status/panti pesanan, kapasitas per kunjungan dan kendaraan. Membuat titik serta alokasi tiap pesanan dan status dijadwalkan; tidak mengurangi stok. |
 | [`allocateMaal()`](app/Http/Controllers/DistributionController.php:146) | Memastikan pesanan mal dibayar simulasi dan belum dialokasikan. Membuat alokasi nominal menunggu_bukti serta memperbarui penyaluran. Tidak membuat perjalanan beras. |
 | [`dispatch()`](app/Http/Controllers/DistributionController.php:168) | Mengunci perjalanan/produk/lot; memastikan berat reservasi sama dengan alokasi dan saldo cukup. Mengurangi lot/katalog, membuat mutasi keluar, menandai reservasi fulfilled, memperbarui harga katalog, lalu status dikirim. Ini titik pemotongan stok. |
@@ -1851,7 +1858,10 @@ Persediaan: vendor, katalog, penerimaan lot/faktur dan koreksi. Harga beli lot t
 | --- | --- |
 | [`index()`](app/Http/Controllers/InventoryController.php:18) | Membaca vendor/gudang/katalog dan reservasi, 30 lot/pembelian terbaru, 20 koreksi. Merender panitia.gudang. |
 | [`storeVendor()`](app/Http/Controllers/InventoryController.php:60) | Memvalidasi kontak pemasok dan menambah vendor aktif. |
+| [`updateVendor()`](app/Http/Controllers/InventoryController.php) | Memvalidasi nama/kontak/status aktif, mengunci vendor, memperbarui data dan mencatat audit. Isian gagal validasi ditandai vendor_edit_id agar tampil pada form vendor yang benar. |
+| [`destroyVendor()`](app/Http/Controllers/InventoryController.php) | Mengunci vendor, menolak jika ada pembelian, lalu menghapus permanen vendor yang belum digunakan dan mencatat audit dalam transaksi yang sama. |
 | [`storeKatalog()`](app/Http/Controllers/InventoryController.php:79) | Membuat jenis beras dengan nama unik, harga/stok nol, aktif. Penerimaan stok menentukan harga. |
+| [`destroyKatalog()`](app/Http/Controllers/InventoryController.php) | Mengunci jenis beras dan menolak jika stok bukan nol atau memiliki lot/transaksi_fitrah/riwayat harga. Menghapus hanya katalog yang belum digunakan dan mencatat audit. |
 | [`receive()`](app/Http/Controllers/InventoryController.php:97) | Memvalidasi pemasok/gudang/jenis/berat/harga/tanggal/faktur, menyimpan berkas bila ada. Dalam transaksi: buat pembelian, lot, mutasi masuk, tambah stock, refresh harga. Hapus file baru jika gagal. |
 | [`uploadInvoice()`](app/Http/Controllers/InventoryController.php:181) | Menambah faktur privat untuk pembelian yang belum mempunyai faktur, audit. Bila sudah punya, ditolak 409; file baru dihapus jika transaksi gagal. |
 | [`invoice()`](app/Http/Controllers/InventoryController.php:218) | Membaca path faktur, memeriksa file ada, mengirim respons privat. Hak panitia datang dari middleware route. |
@@ -1879,6 +1889,7 @@ Draft keluarga, perhitungan maal per pemilik dan pemilihan panti manual/acak.
 | [`index()`](app/Http/Controllers/MaalCheckoutController.php:17) | Membaca acuan emas dan usia, panti layak/statistik, draft keluarga akun. Memaksa checkbox haul tampil false ketika draft dibuka. Merender muzakki.maal. |
 | [`store()`](app/Http/Controllers/MaalCheckoutController.php:58) | Memvalidasi subjek/panti; memeriksa acuan emas, memilih panti, menghitung nisab/kewajiban per subjek lalu agregat. Menolak total wajib nol. Membuat transaksi master/detail/snapshot/QR, audit bila panti otomatis. Tidak mengambil stok beras. |
 | [`saveDraft()`](app/Http/Controllers/MaalCheckoutController.php:210) | Memvalidasi subjek, mengunci user, menghapus draft lama saja (transaksi NULL, bukan snapshot), lalu menyimpan draft baru. Redirect form maal tanpa membuat pesanan. |
+| [`destroyDraft()`](app/Http/Controllers/MaalCheckoutController.php) | Mengunci user login seperti saveDraft; menghapus hanya draft akun sendiri dengan transaksi_id NULL dan is_snapshot false. Snapshot/riwayat pesanan tetap ada. Audit hanya memuat jumlah draft yang dihapus. |
 | [`validateSubjects()`](app/Http/Controllers/MaalCheckoutController.php:247) | Helper privat membatasi jumlah/angka/hubungan/tanggal. Tepat satu diri dan maksimum satu istri; seluruh subjek maksimum 10. Dipakai draft maupun checkout. |
 
 ### MuzakkiController.php
@@ -2287,7 +2298,7 @@ Form pemilik harta diri/istri/anak, aset/utang/haul, pilihan panti, tombol simpa
 
 **Kerangka:** `muzakki.layout`.
 
-**Nama route yang dipanggil template:** `muzakki.maal.store`, `muzakki.maal.draft`. Tautan/form lama yang ditandai di atas bukan route aktif.
+**Nama route yang dipanggil template:** `muzakki.maal.store`, `muzakki.maal.draft`, `muzakki.maal.draft.destroy`. Tautan/form lama yang ditandai di atas bukan route aktif.
 
 ### muzakki/payment.blade.php
 
@@ -2373,7 +2384,7 @@ Tambah vendor/jenis, catat penerimaan/faktur, tabel stok/reservasi, lot dan form
 
 **Kerangka:** `panitia.layout`.
 
-**Nama route yang dipanggil template:** `panitia.vendor.store`, `panitia.katalog.store`, `panitia.pembelian.receive`, `panitia.pembelian.faktur.show`, `panitia.pembelian.faktur.store`, `panitia.lot.adjust`. Tautan/form lama yang ditandai di atas bukan route aktif.
+**Nama route yang dipanggil template:** `panitia.vendor.store`, `panitia.vendor.update`, `panitia.vendor.destroy`, `panitia.katalog.store`, `panitia.katalog.destroy`, `panitia.pembelian.receive`, `panitia.pembelian.faktur.show`, `panitia.pembelian.faktur.store`, `panitia.lot.adjust`. Tautan/form lama yang ditandai di atas bukan route aktif.
 
 ### panitia/distribusi.blade.php
 
@@ -2383,7 +2394,7 @@ Form perjalanan, pemilihan titik/pesanan fitrah, daftar perjalanan, manifest/ber
 
 **Kerangka:** `panitia.layout`.
 
-**Nama route yang dipanggil template:** `panitia.perjalanan.store`, `panitia.titik.store`, `panitia.titik.ongkir`, `panitia.perjalanan.manifest`, `panitia.perjalanan.dispatch`, `panitia.maal.allocate`. Tautan/form lama yang ditandai di atas bukan route aktif.
+**Nama route yang dipanggil template:** `panitia.perjalanan.store`, `panitia.perjalanan.destroy`, `panitia.titik.store`, `panitia.titik.ongkir`, `panitia.perjalanan.manifest`, `panitia.perjalanan.dispatch`, `panitia.maal.allocate`. Tautan/form lama yang ditandai di atas bukan route aktif.
 
 ### panitia/manifest.blade.php
 
@@ -2739,3 +2750,45 @@ Saat menambah fitur nanti, perbarui: langkah alur, status yang mungkin, tabel/ko
 
 
 **Pembaruan kapasitas PJ 8 Oktober 2026:** Pilihan layanan dan kapasitas beras untuk fitrah wajib diisi PJ pada pengajuan; pending/rejected dapat dilengkapi. Panitia menyetujui kapasitas dan menentukan jarak jalan. Lihat [wajib baca Bagian 14](%21wajib_baca.md#14-kapasitas-beras-dari-pj-dan-jarak-yang-diperiksa-panitia-8-oktober-2026).
+
+
+## 17. CRUD dan penghapusan terbatas
+
+Pembaruan 8 Oktober 2026 menambahkan lima route, sehingga total menjadi **68 route aplikasi**, termasuk **empat route DELETE**. Database tetap **42 tabel, 432 kolom, 55 foreign key**; tidak ada migration baru. Penghapusan berlangsung hanya saat pengguna menekan tombol dan mengonfirmasi; pemasangan fitur tidak menghapus data.
+
+### 17.1 CRUD lengkap vendor
+
+| CRUD | Cara memakai | Penjelasan kode/database |
+| --- | --- | --- |
+| Create | Panitia → Vendor & gudang → Tambah vendor | storeVendor memvalidasi data pemasok lalu menambah vendor aktif. |
+| Read | Bagian Daftar vendor | index membaca kontak, alamat, status, dan jumlah pembelian lewat subquery; tidak ada query database dalam Blade. |
+| Update | Buka Edit vendor, ubah data/status, Simpan perubahan vendor | updateVendor mengunci vendor dan mengubah nama, telepon, email, alamat, is_active, updated_at. Status nonaktif menghentikan pilihan untuk penerimaan baru. |
+| Delete | Hapus vendor pada vendor tanpa pembelian | destroyVendor memeriksa ulang pembelian_beras dalam transaksi. Jika sudah dipakai, tampil pesan agar menonaktifkan vendor. Jika belum, baris vendor dihapus permanen. |
+
+Riwayat pembelian tidak dihapus ketika vendor nonaktif. Kontak vendor tidak mempunyai akun login terpisah. Pembaruan nama vendor mengubah nama yang ditampilkan melalui join pada laporan pembelian; ini bukan snapshot nama vendor pada setiap faktur. Faktur privat dan nilai lot tidak diubah oleh edit vendor.
+
+### 17.2 Delete pada data lainnya
+
+| Tombol | Lokasi | Syarat server |
+| --- | --- | --- |
+| Hapus jenis beras | Panitia → Vendor & gudang → Katalog & ketersediaan | Stok tepat nol, tanpa lot, transaksi fitrah, dan riwayat harga. Semua lot termasuk lot habis tetap melindungi riwayat. |
+| Hapus draft keluarga tersimpan | Muzakki → Kalkulator zakat maal, ketika ada draft | Hanya user_id akun login, transaksi_id NULL, is_snapshot false. Menghapus seluruh draft keluarga tersimpan, bukan snapshot atau pesanan. |
+| Hapus perjalanan kosong | Panitia → Pesanan & alokasi → Perjalanan terakhir | Status direncanakan, berangkat_at NULL, dan tidak memiliki satu pun titik pengiriman. Trip yang memiliki alokasi atau sudah berangkat tetap ada. |
+
+Tombol menampilkan konfirmasi. Penghapusan draft memakai form terpisah sehingga tidak menuntut harta memenuhi nisab atau panti terpilih. Setelah draft dihapus, halaman dimuat ulang dengan form awal; isian yang belum disimpan ditinggalkan. Hapus pemilik ini pada form maal berbeda: hanya menghapus isian sementara, kemudian perlu Simpan draft untuk memperbarui draft database.
+
+### 17.3 Hubungan keamanan dan kode
+
+1. Route baru berada dalam grup auth dan role yang sudah ada: panitia atau pemberi. Akun nonaktif dan panitia yang belum mengganti password sementara tidak lolos middleware.
+2. HTML memakai POST + @method('DELETE') atau @method('PATCH') dan @csrf. Tidak ada penghapusan melalui GET.
+3. Controller memeriksa ulang kondisi database; tombol disabled hanya petunjuk tampilan dan bukan pengaman tunggal.
+4. Vendor dan katalog dikunci saat hapus; penerimaan memeriksa kembali vendor/katalog di dalam transaksi. Trip memakai kunci yang juga dipakai addStop/dispatch. Draft memakai kunci user yang juga dipakai saveDraft.
+5. Pelanggaran syarat bisnis memakai ValidationException sehingga kembali ke form dengan pesan. ID objek yang sudah tidak ada menghasilkan 404.
+6. Update vendor serta seluruh penghapusan dicatat pada audit_log dalam transaksi yang sama. Audit draft menyimpan jumlah, bukan isi aset. Audit tidak dihapus bersama objek.
+7. Foreign key RESTRICT tetap aktif sebagai pengaman tambahan. Tidak ada penghapusan berantai riwayat.
+
+**Batas fitur:** vendor mempunyai CRUD lengkap. Katalog dan perjalanan mendapat Delete terbatas; ini bukan klaim bahwa semua tabel punya CRUD lengkap. Pembatalan pesanan dan penonaktifan akun/bank/vendor adalah Update status, bukan Delete. Transaksi, mutasi stok, bukti selesai, dan penyaluran tidak mendapatkan tombol hapus umum.
+
+**Cara demonstrasi:** tambah vendor uji → lihat daftar → edit nama/telepon → simpan → hapus sebelum memiliki pembelian. Untuk data terpakai, gunakan nonaktif. Contoh lain: jenis beras baru sebelum penerimaan stok; draft keluarga milik sendiri; perjalanan baru sebelum penambahan titik.
+
+**Pemeriksaan dan pemulihan:** format PHP diperbaiki dengan Pint dan route/diff ditinjau. Tes otomatis dan submit browser belum dijalankan. Commit lokal mengembalikan kode; pemulihan baris yang dihapus permanen memerlukan backup MySQL. Tidak ada push otomatis atau perubahan skema/database lama.

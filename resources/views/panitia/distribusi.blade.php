@@ -64,6 +64,14 @@
             @if ($trip->status === 'direncanakan' && $titik->has($trip->id))
                 <form method="POST" action="{{ route('panitia.perjalanan.dispatch', $trip->id) }}">@csrf<button class="btn btn-warning" type="submit">Catat berangkat & keluarkan stok lot</button></form>
             @endif
+            @if ($trip->status === 'direncanakan')
+                <form method="POST" action="{{ route('panitia.perjalanan.destroy', $trip->id) }}" class="mt-2" onsubmit="return confirm('Hapus perjalanan kosong ini secara permanen? Perjalanan yang sudah memiliki titik pengiriman tidak dapat dihapus.');">
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-sm btn-outline-danger" type="submit" @disabled($trip->berangkat_at !== null || $titik->has($trip->id))>Hapus perjalanan kosong</button>
+                </form>
+                @if ($titik->has($trip->id))<p class="small text-muted mt-1 mb-0">Sudah memiliki titik pengiriman/alokasi; perjalanan tidak dapat dihapus.</p>@endif
+            @endif
         </div>
     @empty
         <p class="text-muted">Belum ada perjalanan.</p>

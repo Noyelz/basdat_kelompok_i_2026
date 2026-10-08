@@ -98,6 +98,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/lot/{id}/koreksi', [InventoryController::class, 'adjust'])->whereNumber('id')->name('lot.adjust');
         Route::get('/distribusi', [DistributionController::class, 'index'])->name('distribusi.index');
         Route::post('/perjalanan', [DistributionController::class, 'createTrip'])->name('perjalanan.store');
+        Route::delete('/perjalanan/{id}', [DistributionController::class, 'destroyTrip'])->whereNumber('id')->name('perjalanan.destroy');
         Route::post('/perjalanan/{id}/berangkat', [DistributionController::class, 'dispatch'])->whereNumber('id')->name('perjalanan.dispatch');
         Route::get('/perjalanan/{id}/manifest', [DistributionController::class, 'manifest'])->whereNumber('id')->name('perjalanan.manifest');
         Route::post('/titik', [DistributionController::class, 'addStop'])->name('titik.store');
