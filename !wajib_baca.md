@@ -11,6 +11,8 @@
 
 # 📖 Handout & Dokumentasi Desain Database: Sistem Pengelolaan Zakat
 
+> **Panduan belajar lengkap (8 Oktober 2026):** Baca [PANDUAN_LENGKAP_PORTAL_ZAKAT.md](PANDUAN_LENGKAP_PORTAL_ZAKAT.md) untuk memahami alur seluruh role, status pembayaran dan penyaluran, contoh perhitungan/stok, arti 42 tabel dan 423 kolom database aktif `zakat_db`, peta route, serta tugas setiap file aplikasi dan method controller. Panduan menandai kode lama dan fitur yang belum lengkap. Penulisan ini hanya mengubah dokumentasi; kode, skema, data, dan perubahan tampilan yang sudah ada tidak dimasukkan ke perubahan ini.
+
 Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pengelolaan & Pembayaran Zakat (Fitrah & Maal)**. Database ini dirancang dengan standar industri (menggunakan MySQL/MariaDB Engine: `InnoDB`, Charset: `utf8mb4`) agar **anti-banting, aman dari selisih pembulatan uang, konsisten secara audit finansial, dan sesuai prinsip syariah**.
 
 > **Arah pengembangan terbaru:** Lihat [Bagian 11: Rencana perubahan dan checklist](#11-rencana-perubahan-dan-checklist-2026-09-27), khususnya [Bagian 11.14: Catatan implementasi](#1114-catatan-implementasi-bertahap) dan [Bagian 11.15: Menjalankan versi pengembangan](#1115-menjalankan-versi-pengembangan). Bagian 1–9 menggambarkan skema dan alur lama, **bukan spesifikasi implementasi baru**. Khususnya, uraian QRIS/payment gateway nyata, harga tetap, pemotongan stok langsung saat pembayaran, dan akun panitia sebagai pengelola seluruh situs sudah perlu direvisi. Banyak bagian checklist telah diimplementasikan sebagian; kotak kosong berarti pekerjaan atau pemeriksaan masih tersisa, bukan berarti semua kode pada bagian itu belum ada.
