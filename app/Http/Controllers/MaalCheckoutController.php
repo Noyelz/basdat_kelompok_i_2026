@@ -252,6 +252,36 @@ class MaalCheckoutController extends Controller
         return redirect()->route('muzakki.maal')->with('success', 'Draft keluarga disimpan. Harga emas, nisab, dan kewajiban akan dihitung ulang saat checkout.');
     }
 
+    public function destroyDraft(Request $request): RedirectResponse
+    {
+        $jumlahDihapus = DB::transaction(function () use ($request): int {
+            DB::table('user')->where('id', $request->user()->id)->lockForUpdate()->first(['id']);
+            $jumlah = DB::table('subjek_zakat_maal')
+                ->where('user_id', $request->user()->id)
+                ->whereNull('transaksi_id')
+                ->where('is_snapshot', false)
+                ->delete();
+
+            if ($jumlah > 0) {
+                DB::table('audit_log')->insert([
+                    'actor_user_id' => $request->user()->id,
+                    'aksi' => 'maal.draft_dihapus',
+                    'jenis_objek' => 'draft_maal',
+                    'objek_id' => $request->user()->id,
+                    'detail' => json_encode(['jumlah_pemilik_dihapus' => $jumlah], JSON_THROW_ON_ERROR),
+                    'ip_address' => $request->ip(),
+                    'created_at' => now(),
+                ]);
+            }
+
+            return $jumlah;
+        }, attempts: 3);
+
+        return redirect()->route('muzakki.maal')->with('success', $jumlahDihapus > 0
+            ? 'Draft keluarga dihapus. Riwayat pesanan dan perhitungan transaksi lama tetap tersimpan.'
+            : 'Tidak ada draft keluarga tersimpan yang perlu dihapus.');
+    }
+
     /** @return array{subjek: array<int|string, array<string, mixed>>} */
     private function validateSubjects(Request $request): array
     {

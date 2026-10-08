@@ -81,6 +81,17 @@
                 <button type="submit" class="btn btn-outline-primary w-100" formaction="{{ route('muzakki.maal.draft') }}">Simpan draft keluarga tanpa membuat pesanan</button>
             </div></div>
         </form>
+    @if ($draftSubjects)
+        <section class="card border-0 shadow-sm mb-4"><div class="card-body">
+            <h2 class="h5">Draft keluarga tersimpan</h2>
+            <p class="small text-muted">Hapus seluruh draft keluarga milik akun ini jika sudah tidak diperlukan. Riwayat pesanan dan snapshot perhitungan transaksi tetap tersimpan.</p>
+            <form method="POST" action="{{ route('muzakki.maal.draft.destroy') }}" onsubmit="return confirm('Hapus seluruh draft keluarga tersimpan? Isian yang belum disimpan akan ditinggalkan. Riwayat transaksi tetap tersimpan.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-outline-danger">Hapus draft keluarga tersimpan</button>
+            </form>
+        </div></section>
+    @endif
     @if ($panti->isEmpty())
         <div class="alert alert-warning">Belum ada panti terverifikasi yang aktif untuk menerima zakat maal.</div>
     @endif

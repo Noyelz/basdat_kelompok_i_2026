@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/zakat-maal', [MaalCheckoutController::class, 'index'])->name('maal');
         Route::post('/zakat-maal', [MaalCheckoutController::class, 'store'])->name('maal.store');
         Route::post('/zakat-maal/draft', [MaalCheckoutController::class, 'saveDraft'])->name('maal.draft');
+        Route::delete('/zakat-maal/draft', [MaalCheckoutController::class, 'destroyDraft'])->name('maal.draft.destroy');
         Route::get('/pembayaran/{id}', [SimulationPaymentController::class, 'show'])->whereNumber('id')->name('payment.show');
         Route::post('/pembayaran/{id}/batalkan', [SimulationPaymentController::class, 'cancel'])->whereNumber('id')->name('payment.cancel');
         Route::get('/riwayat', [MuzakkiController::class, 'riwayat'])->name('riwayat');

@@ -1098,3 +1098,13 @@ Untuk membatalkan kode gunakan `git revert <hash>`; rollback migration menghapus
 - [x] Role panitia, CSRF, ValidationException untuk pesan di form, dan audit penghapusan diterapkan. Penerimaan memberi pesan jelas jika katalog dihapus/dinonaktifkan setelah form dibuka.
 
 **File:** `InventoryController.php`, `routes/web.php`, `resources/views/panitia/gudang.blade.php`. Skema dan jumlah kolom tetap; tidak ada penghapusan data saat memasang fitur. Ini penambahan Delete katalog, bukan klaim CRUD manual harga/stok; harga berasal dari lot dan stok dikoreksi lewat mutasi. Pemeriksaan format/diff dilakukan; alur browser dan pengujian otomatis belum dijalankan.
+
+### 15.3 Hapus draft keluarga maal milik sendiri
+
+- [x] Pada Kalkulator zakat maal, tombol **Hapus draft keluarga tersimpan** muncul jika akun memiliki draft. Form hapus terpisah dari form checkout agar tidak membuat pesanan atau menuntut isian harta/panti.
+- [x] Konfirmasi menjelaskan seluruh draft keluarga tersimpan dihapus dan isian yang belum disimpan ditinggalkan; riwayat transaksi tetap ada.
+- [x] Server menggunakan akun login, tanpa menerima ID akun target. Query hanya menghapus `subjek_zakat_maal` dengan user_id milik sendiri, transaksi_id NULL, dan is_snapshot false.
+- [x] Penguncian baris user sama dengan saveDraft mencegah penghapusan/simpan draft saling menyela. Permintaan ulang ketika draft sudah kosong tidak menghapus data lain dan memberi pesan jelas.
+- [x] Audit mencatat jumlah pemilik draft yang dihapus, tanpa rincian aset. Snapshot transaksi, transaksi_mal, QR, dan pembayaran tidak berubah.
+
+**File:** `MaalCheckoutController.php::destroyDraft`, `routes/web.php`, `resources/views/muzakki/maal.blade.php`. Tidak ada migration/data baru atau penghapusan data saat pemasangan. Ini penghapusan draft tersimpan; tombol Hapus pemilik ini pada form hanya menghapus isian sementara sampai pengguna menyimpan kembali. Format/diff diperiksa; pengujian otomatis dan browser belum dijalankan.
