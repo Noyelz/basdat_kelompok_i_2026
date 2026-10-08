@@ -2,11 +2,11 @@
 
 @section('content')
 <h1 class="h3 mb-2">Tugas panitia</h1>
-<p class="text-muted mb-4">Pembayaran QR di situs ini masih simulasi. Pengiriman beras memerlukan proses dan bukti terpisah.</p>
+<p class="text-muted mb-4">Pengiriman beras memerlukan alokasi, pemberangkatan, dan bukti penerimaan.</p>
 
 <div class="row g-3 mb-4">
     <div class="col-md-4"><div class="card shadow-sm border-0"><div class="card-body"><h2 class="h6">Panti menunggu pemeriksaan</h2><strong class="fs-3">{{ $ringkasan['panti_pending'] }}</strong><p class="mb-0"><a href="{{ route('panitia.panti.index') }}">Periksa panti</a></p></div></div></div>
-    <div class="col-md-4"><div class="card shadow-sm border-0"><div class="card-body"><h2 class="h6">Pesanan uji menunggu alokasi</h2><strong class="fs-3">{{ $ringkasan['pesanan_dibayar'] }}</strong><p class="small text-muted mb-0">Tidak menjadi perintah kirim otomatis.</p></div></div></div>
+    <div class="col-md-4"><div class="card shadow-sm border-0"><div class="card-body"><h2 class="h6">Pesanan menunggu alokasi</h2><strong class="fs-3">{{ $ringkasan['pesanan_dibayar'] }}</strong><p class="small text-muted mb-0">Tidak menjadi perintah kirim otomatis.</p></div></div></div>
     <div class="col-md-4"><div class="card shadow-sm border-0"><div class="card-body"><h2 class="h6">Titik pengiriman tertunda</h2><strong class="fs-3">{{ $ringkasan['pengiriman_tertunda'] }}</strong><p class="small text-muted mb-0">Menunggu pengiriman atau konfirmasi.</p></div></div></div>
 </div>
 <div class="alert alert-info">Stok tercatat: {{ number_format($ringkasan['stok_kg'], 2, ',', '.') }} kg · Reservasi aktif: {{ number_format($ringkasan['reservasi_kg'], 2, ',', '.') }} kg · Tersedia: {{ number_format(max(0, $ringkasan['stok_kg'] - $ringkasan['reservasi_kg']), 2, ',', '.') }} kg.</div>
@@ -38,7 +38,7 @@
         @forelse ($pesananSiap as $item)
             <p class="border-top py-2 mb-0"><strong>{{ $item->kode_transaksi }}</strong> · {{ $item->jenis_zakat }}<br><small>{{ $item->nama_panti }}</small></p>
         @empty
-            <p class="text-muted">Tidak ada pesanan uji menunggu alokasi.</p>
+            <p class="text-muted">Tidak ada pesanan menunggu alokasi.</p>
         @endforelse
         <a href="{{ route('panitia.distribusi.index') }}" class="btn btn-outline-primary">Atur alokasi</a>
     </div></section></div>

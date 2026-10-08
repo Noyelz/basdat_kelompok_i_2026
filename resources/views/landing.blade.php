@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Pelajari alur zakat fitrah dan maal di Portal Zakat. Pembayaran saat ini hanya simulasi internal.">
+    <meta name="description" content="Pelajari perhitungan zakat fitrah dan maal, rincian biaya, serta alur penyaluran di Portal Zakat.">
     <title>Beranda · Portal Zakat</title>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 </head>
@@ -12,7 +12,7 @@
         <div class="navbar-container">
             <a class="brand-wrapper" href="{{ route('landing') }}">
                 <span class="brand-icon" aria-hidden="true">PZ</span>
-                <span><strong class="brand-text">Portal Zakat</strong> <span class="brand-badge">Simulasi</span></span>
+                <span><strong class="brand-text">Portal Zakat</strong></span>
             </a>
             <nav class="landing-nav" aria-label="Navigasi utama">
                 <a href="#cara-kerja">Cara kerja</a>
@@ -30,7 +30,7 @@
     <main class="app-container landing-main">
         <section class="landing-hero" aria-labelledby="landing-title">
             <div>
-                <p class="landing-eyebrow">Portal Zakat · pengembangan internal</p>
+                <p class="landing-eyebrow">Portal Zakat</p>
                 <h1 id="landing-title">{{ $konten['landing_judul'] }}</h1>
                 <p class="landing-lead">{{ $konten['landing_pengantar'] }}</p>
                 <div class="landing-actions">
@@ -46,19 +46,18 @@
                 <span class="landing-mark" aria-hidden="true">✦</span>
                 <h2>Transparansi sejak awal</h2>
                 <p>Harga pokok beras, biaya admin, keuntungan, dan ongkos kirim ditampilkan terpisah sebelum checkout.</p>
-                <p class="landing-small">Pembayaran dan angka dampak pada situs ini merupakan simulasi internal.</p>
             </div>
         </section>
 
         <section class="landing-section" aria-labelledby="dampak-title">
             <div class="landing-heading">
-                <div><p class="landing-eyebrow">Data pengembangan</p><h2 id="dampak-title">Dampak yang tercatat</h2></div>
-                <p>Akumulasi seluruh periode pada database simulasi. “Selesai” berarti panitia dan panti sudah mengunggah bukti yang cocok.</p>
+                <div><p class="landing-eyebrow">Ringkasan penyaluran</p><h2 id="dampak-title">Dampak yang tercatat</h2></div>
+                <p>Akumulasi penyaluran yang tercatat dari seluruh periode. “Selesai” berarti panitia dan panti sudah mengunggah bukti yang cocok.</p>
             </div>
             <div class="landing-grid landing-grid-three">
                 <div class="landing-stat"><strong>{{ number_format($jumlahPanti, 0, ',', '.') }}</strong><span>Panti terverifikasi aktif</span></div>
-                <div class="landing-stat"><strong>{{ number_format((float) ($selesai->fitrah_kg ?? 0), 2, ',', '.') }} kg</strong><span>Beras fitrah selesai disalurkan dalam simulasi</span></div>
-                <div class="landing-stat"><strong>Rp{{ number_format((float) ($selesai->maal_rupiah ?? 0), 0, ',', '.') }}</strong><span>Maal selesai disalurkan dalam simulasi</span></div>
+                <div class="landing-stat"><strong>{{ number_format((float) ($selesai->fitrah_kg ?? 0), 2, ',', '.') }} kg</strong><span>Beras fitrah selesai disalurkan</span></div>
+                <div class="landing-stat"><strong>Rp{{ number_format((float) ($selesai->maal_rupiah ?? 0), 0, ',', '.') }}</strong><span>Maal selesai disalurkan</span></div>
             </div>
         </section>
 
@@ -66,7 +65,7 @@
             <div class="landing-heading"><div><p class="landing-eyebrow">Alur layanan</p><h2 id="cara-kerja-title">Cara kerja</h2></div></div>
             <div class="landing-grid landing-grid-three">
                 <article class="landing-card"><span class="landing-step">01</span><h3>Hitung & pilih</h3><p>Hitung kebutuhan fitrah atau kewajiban maal per pemilik harta, lalu pilih panti yang terverifikasi.</p></article>
-                <article class="landing-card"><span class="landing-step">02</span><h3>Tinjau rincian</h3><p>Periksa jumlah beras atau maal dan rincian biaya. QR hanya membuka pembayaran uji, tanpa uang sungguhan.</p></article>
+                <article class="landing-card"><span class="landing-step">02</span><h3>Tinjau rincian</h3><p>Periksa jumlah beras atau maal dan rincian biaya, lalu buka QR untuk mencatat konfirmasi pesanan.</p></article>
                 <article class="landing-card"><span class="landing-step">03</span><h3>Ikuti penyaluran</h3><p>Panitia mengalokasikan pesanan secara terpisah. Status selesai dicatat setelah bukti panitia dan panti sesuai.</p></article>
             </div>
         </section>
@@ -114,7 +113,7 @@
             <div><p class="landing-eyebrow">Pertanyaan umum</p><h2>{{ $konten['landing_faq_judul'] }}</h2><p>{{ $konten['landing_faq_jawaban'] }}</p></div>
         </section>
     </main>
-    <footer class="landing-footer">Portal Zakat · simulasi internal pengembangan</footer>
+    <footer class="landing-footer">Portal Zakat</footer>
     <script>
         const jumlahJiwa = document.getElementById('jumlah-jiwa');
         const hasilFitrah = document.getElementById('hasil-fitrah');

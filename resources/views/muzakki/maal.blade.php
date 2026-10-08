@@ -58,11 +58,11 @@
             <div class="card border-0 shadow-sm mb-4"><div class="card-body">
                 <fieldset>
                     <legend class="h5">Panti tujuan</legend>
-                    <p class="small text-muted">Panti terverifikasi dapat dipilih langsung atau sistem memilih acak dari panti layak yang belum menerima maal. Bila semuanya pernah menerima, pilihan tetap diacak. Angka berikut adalah simulasi sejak database pengembangan digunakan.</p>
+                    <p class="small text-muted">Panti terverifikasi dapat dipilih langsung atau sistem memilih acak dari panti layak yang belum menerima maal. Bila semuanya pernah menerima, pilihan tetap diacak.</p>
                     <div class="choice-grid mb-3">
                         <label class="choice-card">
                             <input type="radio" name="yayasan_id" value="" @checked(old('yayasan_id', '') === '')>
-                            <span><strong>Pilih otomatis</strong><small class="d-block">Acak di antara panti layak yang belum menerima maal simulasi.</small></span>
+                            <span><strong>Pilih otomatis</strong><small class="d-block">Acak di antara panti layak yang belum menerima maal.</small></span>
                         </label>
                         @foreach ($panti as $item)
                             @php($persen = (float) $item->maal_masuk > 0 ? (float) $item->maal_selesai / (float) $item->maal_masuk * 100 : null)

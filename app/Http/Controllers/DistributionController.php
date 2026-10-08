@@ -66,7 +66,7 @@ class DistributionController extends Controller
             'updated_at' => now(),
         ]);
 
-        return back()->with('success', 'Perjalanan simulasi dibuat. Tambahkan tujuan dan pesanan sebelum berangkat.');
+        return back()->with('success', 'Perjalanan dibuat. Tambahkan tujuan dan pesanan sebelum berangkat.');
     }
 
     public function destroyTrip(Request $request, int $id): RedirectResponse
@@ -138,7 +138,7 @@ class DistributionController extends Controller
 
             $jumlah = '0.00';
             foreach ($pesanan as $item) {
-                abort_unless($item->yayasan_id === (int) $data['yayasan_id'] && $item->status_pembayaran === 'simulated_paid' && $item->status_penyaluran === 'menunggu_alokasi', 422, 'Pesanan harus dibayar simulasi, belum dialokasikan, dan menuju panti yang sama.');
+                abort_unless($item->yayasan_id === (int) $data['yayasan_id'] && $item->status_pembayaran === 'simulated_paid' && $item->status_penyaluran === 'menunggu_alokasi', 422, 'Pesanan harus memiliki konfirmasi pembayaran, belum dialokasikan, dan menuju panti yang sama.');
                 abort_if(DB::table('alokasi_transaksi')->where('transaksi_id', $item->id)->exists(), 422, 'Pesanan sudah dialokasikan.');
                 $jumlah = bcadd($jumlah, $item->total_beras_kg, 2);
             }
@@ -195,7 +195,7 @@ class DistributionController extends Controller
             DB::table('transaksi_zakat')->where('id', $id)->update(['status_penyaluran' => 'menunggu_bukti', 'updated_at' => now()]);
         });
 
-        return back()->with('success', 'Alokasi maal uji dibuat. Panitia dan PJ perlu mengunggah bukti serah terima terpisah.');
+        return back()->with('success', 'Alokasi maal dibuat. Panitia dan PJ perlu mengunggah bukti serah terima terpisah.');
     }
 
     public function dispatch(Request $request, int $id): RedirectResponse

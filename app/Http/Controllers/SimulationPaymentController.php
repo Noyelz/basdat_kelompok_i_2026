@@ -126,8 +126,8 @@ class SimulationPaymentController extends Controller
 
         return redirect()->route('muzakki.payment.scan', $token)
             ->with('success', $baruDibayar
-                ? 'Pembayaran simulasi berhasil dicatat. Penyaluran tetap menunggu proses panitia.'
-                : 'Pembayaran simulasi untuk QR ini sudah tercatat.');
+                ? 'Konfirmasi pembayaran berhasil dicatat. Penyaluran tetap menunggu proses panitia.'
+                : 'Konfirmasi pembayaran untuk QR ini sudah tercatat.');
     }
 
     public function cancel(Request $request, int $id): RedirectResponse

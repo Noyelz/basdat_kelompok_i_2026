@@ -2,7 +2,7 @@
 
 @section('content')
 <h1 class="h3 mb-2">Pesanan & alokasi</h1>
-<p class="text-muted mb-4">Hanya pesanan dengan pembayaran simulasi yang tercatat dapat dialokasikan. Perjalanan berangkat melalui tindakan panitia terpisah; semua lot masih bertanda data simulasi.</p>
+<p class="text-muted mb-4">Hanya pesanan dengan konfirmasi pembayaran yang tercatat dapat dialokasikan. Pemberangkatan perjalanan dilakukan secara terpisah oleh panitia.</p>
 
 <section class="card border-0 shadow-sm mb-4"><div class="card-body">
     <h2 class="h5">Buat perjalanan fitrah</h2>
@@ -29,7 +29,7 @@
             @forelse ($pesananFitrah as $item)
                 <tr><td><input type="checkbox" name="transaksi_ids[]" value="{{ $item->id }}"></td><td>{{ $item->kode_transaksi }}</td><td>{{ $item->nama_panti }}</td><td>{{ $item->total_beras_kg }} kg</td></tr>
             @empty
-                <tr><td colspan="4" class="text-muted">Belum ada pesanan fitrah dibayar simulasi yang menunggu alokasi.</td></tr>
+                <tr><td colspan="4" class="text-muted">Belum ada pesanan fitrah dengan pembayaran tercatat yang menunggu alokasi.</td></tr>
             @endforelse
         </tbody></table></div>
         <button class="btn btn-primary" type="submit" @disabled($pesananFitrah->isEmpty() || $perjalanan->where('status', 'direncanakan')->isEmpty())>Tambahkan titik & alokasi</button>

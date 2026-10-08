@@ -4,7 +4,7 @@
 <div class="row justify-content-center"><div class="col-lg-8">
     <h1 class="h3 mb-3">Pesanan {{ $pesanan->kode_transaksi }}</h1>
     @if (session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-    <div class="alert alert-warning">Pembayaran ini hanya simulasi internal. Status “dibayar” bukan bukti uang sungguhan diterima dan tidak memicu pengiriman beras.</div>
+    <div class="alert alert-warning">Halaman QR mencatat konfirmasi pesanan tanpa melakukan transfer uang. Pengiriman diproses terpisah oleh panitia.</div>
     <div class="card border-0 shadow-sm mb-4"><div class="card-body">
         <p>Tujuan: <strong>{{ $pesanan->nama_panti }}</strong></p>
         @if ($pesanan->jenis_zakat === 'fitrah')
@@ -22,7 +22,7 @@
             @else
                 <tr><td>Zakat maal wajib seluruh pemilik yang memenuhi syarat</td><td class="text-end">Rp{{ number_format($pesanan->total_zakat_wajib, 2, ',', '.') }}</td></tr>
             @endif
-            <tr class="fw-bold"><td>Total tagihan simulasi</td><td class="text-end">Rp{{ number_format($pesanan->total_nominal, 2, ',', '.') }}</td></tr>
+            <tr class="fw-bold"><td>Total tagihan</td><td class="text-end">Rp{{ number_format($pesanan->total_nominal, 2, ',', '.') }}</td></tr>
         </tbody></table>
         @if ($pesanan->jenis_zakat === 'mal' && $pemilikMaal->isNotEmpty())
             <h2 class="h5 mt-4">Perhitungan tiap pemilik saat checkout</h2>
@@ -44,7 +44,7 @@
                 </section>
             @endforeach
         @endif
-        <p class="mb-1">Status pembayaran: <strong>{{ $pesanan->status_pembayaran }}</strong></p>
+        <p class="mb-1">Status pembayaran: <strong>{{ $pesanan->status_pembayaran === 'simulated_paid' ? 'Pembayaran tercatat' : str_replace('_', ' ', $pesanan->status_pembayaran) }}</strong></p>
         <p>Status penyaluran: <strong>{{ $pesanan->status_penyaluran }}</strong></p>
         @if ($bukti->isNotEmpty())
             <p class="mb-1">Bukti serah terima:</p>
@@ -54,7 +54,7 @@
         @endif
         @if ($pesanan->status_pembayaran === 'pending')
             <p>Berlaku sampai {{ \Carbon\Carbon::parse($pesanan->expired_at)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB.</p>
-            <div class="text-center"><img src="{{ $qrDataUri }}" width="300" height="300" alt="QR menuju halaman pembayaran simulasi"><p><a href="{{ $scanUrl }}" rel="noreferrer">Buka halaman QR simulasi</a></p></div>
+            <div class="text-center"><img src="{{ $qrDataUri }}" width="300" height="300" alt="QR menuju halaman konfirmasi pembayaran"><p><a href="{{ $scanUrl }}" rel="noreferrer">Buka halaman QR</a></p></div>
             <form method="POST" action="{{ route('muzakki.payment.cancel', $pesanan->id) }}" class="text-end">@csrf<button class="btn btn-outline-danger" type="submit">Batalkan pesanan</button></form>
         @endif
     </div></div>

@@ -11,7 +11,7 @@
     <h1>Manifest perjalanan {{ $perjalanan->kode_perjalanan }}</h1>
     <p>Gudang: {{ $perjalanan->nama_gudang }} · Kendaraan: {{ $perjalanan->kendaraan }} · Kapasitas: {{ $perjalanan->kapasitas_kg }} kg</p>
     <p>Jadwal: {{ \Carbon\Carbon::parse($perjalanan->jadwal_berangkat)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB · Status: {{ $perjalanan->status }}</p>
-    <p><strong>Dokumen internal simulasi.</strong> Tidak memuat NIK atau identitas anak.</p>
+    <p><strong>Dokumen pengiriman.</strong> Tidak memuat NIK atau identitas anak.</p>
 
     @foreach ($titik as $stop)
         <h2>{{ $stop->urutan }}. {{ $stop->nama_panti }}</h2>

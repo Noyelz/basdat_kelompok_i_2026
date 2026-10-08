@@ -1,8 +1,8 @@
 @extends('panitia.layout')
 
 @section('content')
-<h1 class="h3 mb-2">Laporan operasional simulasi</h1>
-<p class="text-muted mb-4">Periode: seluruh data sejak database pengembangan ini digunakan. Angka pembayaran berarti klik uji, bukan dana nyata.</p>
+<h1 class="h3 mb-2">Laporan operasional</h1>
+<p class="text-muted mb-4">Periode: seluruh data yang tercatat. Laporan menampilkan status pesanan, persediaan, pengiriman, dan bukti penerimaan.</p>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3"><div class="card shadow-sm border-0"><div class="card-body"><h2 class="h6">Panti menunggu pemeriksaan</h2><strong class="fs-3">{{ $tugas['panti_pending'] }}</strong></div></div></div>
@@ -15,7 +15,7 @@
     <h2 class="h5">Status pesanan</h2>
     <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Jenis</th><th>Pembayaran</th><th>Penyaluran</th><th>Jumlah pesanan</th></tr></thead><tbody>
         @forelse ($status as $item)
-            <tr><td>{{ $item->jenis_zakat }}</td><td>{{ $item->status_pembayaran }}</td><td>{{ $item->status_penyaluran }}</td><td>{{ $item->jumlah }}</td></tr>
+            <tr><td>{{ $item->jenis_zakat }}</td><td>{{ $item->status_pembayaran === 'simulated_paid' ? 'Pembayaran tercatat' : str_replace('_', ' ', $item->status_pembayaran) }}</td><td>{{ $item->status_penyaluran }}</td><td>{{ $item->jumlah }}</td></tr>
         @empty
             <tr><td colspan="4" class="text-muted">Belum ada transaksi.</td></tr>
         @endforelse

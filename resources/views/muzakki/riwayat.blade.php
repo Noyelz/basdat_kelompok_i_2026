@@ -2,7 +2,7 @@
 
 @section('content')
 <h1 class="h3 mb-3">Riwayat zakat saya</h1>
-<p class="text-muted">Status pembayaran dan penyaluran ditampilkan terpisah. “Dibayar simulasi” hanya menunjukkan tombol uji telah ditekan.</p>
+<p class="text-muted">Status pembayaran dan penyaluran ditampilkan terpisah. Buka rincian pesanan untuk melihat perkembangannya.</p>
 <div class="card border-0 shadow-sm"><div class="card-body">
     <div class="table-responsive"><table class="table table-hover align-middle">
         <thead><tr><th>Tanggal</th><th>Pesanan</th><th>Tujuan</th><th>Rincian</th><th>Total</th><th>Pembayaran</th><th>Penyaluran</th><th></th></tr></thead>
@@ -20,7 +20,7 @@
                     @endif
                 </td>
                 <td>Rp{{ number_format($item->total_nominal, 2, ',', '.') }}</td>
-                <td>{{ $item->status_pembayaran }}</td>
+                <td>{{ $item->status_pembayaran === 'simulated_paid' ? 'Pembayaran tercatat' : str_replace('_', ' ', $item->status_pembayaran) }}</td>
                 <td>{{ $item->status_penyaluran }}</td>
                 <td><a href="{{ route('muzakki.payment.show', $item->id) }}" class="btn btn-sm btn-outline-primary">Detail</a></td>
             </tr>

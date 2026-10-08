@@ -27,7 +27,7 @@
                         @forelse ($riwayat as $item)
                             <tr>
                                 <td>{{ \Carbon\Carbon::parse($item->created_at)->timezone('Asia/Jakarta')->format('d M Y H:i') }}</td>
-                                <td>{{ str_replace(['.', '_'], ' ', $item->aksi) }}</td>
+                                <td>{{ $item->aksi === 'pembayaran.simulasi_dibayar' ? 'Konfirmasi pembayaran dicatat' : str_replace(['.', '_'], ' ', $item->aksi) }}</td>
                                 <td>{{ $item->nama_pelaku ?? 'Sistem/akun dihapus' }} @if ($item->peran_pelaku) <small>({{ $item->peran_pelaku }})</small> @endif</td>
                                 <td>{{ $item->jenis_objek }}{{ $item->objek_id ? ' #'.$item->objek_id : '' }}</td>
                             </tr>

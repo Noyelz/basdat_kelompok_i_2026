@@ -10,9 +10,9 @@ class LandingController extends Controller
     public const DEFAULT_CONTENT = [
         'landing_judul' => 'Zakat yang jelas alurnya, dari niat hingga diterima panti',
         'landing_pengantar' => 'Portal Zakat membantu Anda memahami perhitungan zakat, memilih panti yang terverifikasi, dan mengikuti proses penyaluran secara terbuka.',
-        'landing_tentang' => 'Untuk tahap pengembangan, pembayaran dan angka dampak di situs ini adalah simulasi internal. Panitia mengelola stok beras di gudang Surabaya dan rute layanan awal di Pulau Jawa.',
+        'landing_tentang' => 'Portal Zakat menghubungkan muzakki dengan panti terverifikasi. Panitia mengelola stok beras di gudang Surabaya dan rute layanan awal di Pulau Jawa.',
         'landing_faq_judul' => 'Apakah pembayaran di sini sudah menerima uang sungguhan?',
-        'landing_faq_jawaban' => 'Belum. Tombol bayar hanya mencoba alur aplikasi. Status dibayar simulasi bukan bukti penerimaan uang dan tidak otomatis mengirim beras.',
+        'landing_faq_jawaban' => 'Belum. QR mencatat konfirmasi pesanan tanpa melakukan transfer uang. Pengiriman diproses secara terpisah oleh panitia.',
     ];
 
     public function index(): View

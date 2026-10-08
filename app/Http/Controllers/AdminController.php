@@ -285,7 +285,7 @@ class AdminController extends Controller
             abort_unless($wilayah, 404);
             if ($data['is_active'] && (! $wilayah->batas_checkout_at || CarbonImmutable::parse($wilayah->batas_checkout_at)->isPast())) {
                 throw ValidationException::withMessages([
-                    'is_active' => 'Simpan tanggal Idulfitri di Pengaturan simulasi terlebih dahulu, lalu pastikan batas checkout '.$wilayah->nama.' belum lewat.',
+                    'is_active' => 'Simpan tanggal Idulfitri di Pengaturan operasional terlebih dahulu, lalu pastikan batas checkout '.$wilayah->nama.' belum lewat.',
                 ]);
             }
 

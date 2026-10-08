@@ -31,7 +31,7 @@
                 </fieldset>
                 <fieldset class="col-12">
                     <legend class="h5">Pilih panti tujuan</legend>
-                    <p class="small text-muted">Hanya panti terverifikasi dengan wilayah, jarak rute, dan kapasitas penerimaan yang siap ditampilkan. Angka di bawah berasal dari simulasi.</p>
+                    <p class="small text-muted">Hanya panti terverifikasi dengan wilayah, jarak rute, dan kapasitas penerimaan yang siap ditampilkan.</p>
                     <div class="choice-grid">
                         @foreach ($panti as $item)
                             @php($persen = (float) $item->fitrah_masuk > 0 ? (float) $item->fitrah_selesai / (float) $item->fitrah_masuk * 100 : null)
@@ -47,7 +47,7 @@
                     </div>
                 </fieldset>
                 <div class="col-12"><label class="form-label">Titip doa (opsional)</label><textarea name="catatan_doa" class="form-control" rows="2" maxlength="1000">{{ old('catatan_doa') }}</textarea></div>
-                <div class="col-12"><div class="alert alert-info mb-0">Rincian final memisahkan harga pokok beras, keuntungan, biaya admin, dan ongkos kirim. Pesanan berlaku 30 menit untuk simulasi pembayaran.</div></div>
+                <div class="col-12"><div class="alert alert-info mb-0">Rincian final memisahkan harga pokok beras, keuntungan, biaya admin, dan ongkos kirim. Pesanan berlaku 30 menit untuk konfirmasi pembayaran.</div></div>
                 <div class="col-12"><button id="buat-pesanan-fitrah" type="submit" class="btn btn-success w-100">Buat pesanan & lihat rincian harga</button></div>
             </form>
         </div></div>

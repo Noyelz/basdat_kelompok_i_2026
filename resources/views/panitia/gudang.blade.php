@@ -67,7 +67,7 @@
 
 <section class="card border-0 shadow-sm mb-4"><div class="card-body">
     <h2 class="h5">Catat beras diterima di gudang</h2>
-    <p class="small text-muted">Gunakan hanya setelah barang benar-benar tiba. Data pada tahap pengembangan ini diberi tanda simulasi.</p>
+    <p class="small text-muted">Gunakan hanya setelah barang benar-benar tiba di gudang.</p>
     <form method="POST" action="{{ route('panitia.pembelian.receive') }}" enctype="multipart/form-data" class="row g-3">
         @csrf
         <div class="col-md-4"><label class="form-label">Vendor</label><select name="vendor_id" class="form-select" required><option value="">Pilih vendor</option>@foreach ($vendor->where('is_active', true) as $item)<option value="{{ $item->id }}" @selected(old('vendor_id') == $item->id)>{{ $item->nama }}</option>@endforeach</select></div>
@@ -149,7 +149,7 @@
 
 <section class="card border-0 shadow-sm mt-4"><div class="card-body">
     <h2 class="h5">Riwayat koreksi stok</h2>
-    <p class="small text-muted">Koreksi mengubah stok fisik simulasi dan tidak boleh mengurangi jumlah yang sudah dipesan.</p>
+    <p class="small text-muted">Koreksi mengubah stok fisik dan tidak boleh mengurangi jumlah yang sudah dipesan.</p>
     <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Waktu</th><th>Lot</th><th>Perubahan</th><th>Sisa setelah</th><th>Alasan</th><th>Panitia</th></tr></thead><tbody>
         @forelse ($koreksi as $item)
             <tr><td>{{ $item->created_at }}</td><td>{{ $item->kode_lot }}</td><td>{{ $item->perubahan_kg }} kg</td><td>{{ $item->saldo_setelah_kg }} kg</td><td>{{ $item->alasan }}</td><td>{{ $item->nama_panitia }}</td></tr>

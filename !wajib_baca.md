@@ -21,6 +21,8 @@ Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pen
 
 > **CRUD terbaru:** [Bagian 15](#15-crud-dan-penghapusan-terbatas-8-oktober-2026) menjelaskan CRUD vendor dan penghapusan terbatas jenis beras, draft maal, serta perjalanan kosong. Semua operasi hapus memeriksa hak akses dan riwayat terkait.
 
+> **Teks tampilan terbaru:** Label simulasi, data pengembangan, dan pengembangan internal di antarmuka dirapikan pada 8 Oktober 2026. Lihat [Bagian 16](#16-perapian-teks-tampilan-dan-salinan-github-8-oktober-2026). Ini perubahan presentasi; QR masih mencatat konfirmasi tanpa transfer uang dan belum terhubung ke payment gateway.
+
 > **ERD database baru (diperbarui 8 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 42 tabel, 432 kolom, 55 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Diagram memakai metadata skema; diperbarui setelah migration emas harian dan kapasitas pengajuan PJ pada Bagian 12 dan 14. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
 
 ---
@@ -1130,3 +1132,18 @@ Fitur Delete lainnya: tambah jenis beras tanpa menerima stok lalu hapus; simpan 
 **Route baru:** PATCH /panitia/vendor/{id}; DELETE /panitia/vendor/{id}; DELETE /panitia/katalog/{id}; DELETE /muzakki/zakat-maal/draft; DELETE /panitia/perjalanan/{id}. Total route aplikasi sekarang 68 (sebelumnya 63); empat route DELETE. Tidak ada perubahan dependensi dan tidak ada data operasional yang dihapus otomatis.
 
 **Status pemeriksaan:** Pint dijalankan, diff ditinjau, dan daftar route diperiksa. Tes otomatis dan submit di browser belum dijalankan. Perubahan tema lokal serta PDF laporan pengguna tidak ikut dalam commit fitur. Tidak ada push otomatis. Setiap bagian fitur disimpan pada commit lokal tersendiri; lihat git log untuk hash. Revert mengembalikan kode saja; data yang kemudian dihapus melalui fitur perlu cadangan MySQL jika ingin dipulihkan.
+
+
+## 16. Perapian teks tampilan dan salinan GitHub (8 Oktober 2026)
+
+- [x] Menghapus badge Simulasi, tulisan pengembangan internal, pemberitahuan di kartu transparansi, dan keterangan pengembangan pada footer beranda. Judul, statistik, deskripsi SEO, dan konten bawaan beranda memakai kalimat yang sesuai fungsi halaman.
+- [x] Merapikan teks dashboard muzakki/panitia, formulir fitrah/maal, riwayat, persediaan, alokasi, laporan, manifest, panel admin, dan halaman QR. Pengaturan simulasi sekarang ditampilkan sebagai Pengaturan operasional; anchor dan tautan dalam panel diperbarui bersama.
+- [x] Status database simulated_paid ditampilkan sebagai Pembayaran tercatat pada dashboard, riwayat, rincian pesanan, dan laporan. Nama kolom, kode status, query, mode pembayaran, masa berlaku QR, serta aturan stok dan pengiriman tidak diubah. Tidak ada migration atau perubahan data operasional.
+- [x] Pesan konfirmasi pembayaran, pembuatan perjalanan, alokasi maal, dan penolakan aktivasi wilayah memakai kalimat baru. QR dan FAQ tetap menjelaskan bahwa konfirmasi belum melakukan transfer uang. Penghapusan label tidak berarti integrasi pembayaran sungguhan sudah tersedia.
+- [x] Konten beranda dari pengaturan_operasional diperiksa secara baca saja: belum ada nilai landing_* tersimpan, sehingga teks baru memakai DEFAULT_CONTENT tanpa perlu mengubah database. Admin tetap dapat mengatur konten publik.
+- [x] Perubahan disimpan sebagai commit lokal pada repository utama. Perubahan tema milik pengguna tetap dipertahankan di workspace dan tidak ikut dalam commit teks.
+- [x] File tampilan/controller yang berubah serta catatan ini disalin ke /var/www/basdatkeli-github. File tujuan dicocokkan dengan sumber; konfigurasi Git, .gitignore milik salinan, dan data rahasia tidak ditimpa atau disalin.
+- [x] Format PHP diperiksa dengan Pint; sintaks controller dan diff ditinjau. Cache tampilan dibersihkan agar perubahan dapat ditampilkan.
+- [ ] Pengujian otomatis dan pemeriksaan tampilan melalui browser belum dijalankan untuk perubahan ini.
+
+**Pemulihan:** gunakan git revert terhadap commit teks di repository utama, lalu salin kembali file yang diperlukan ke folder GitHub. Dokumentasi teknis tetap menyebut mode simulasi dan keterbatasan pembayaran agar kemampuan aplikasi tercatat dengan benar.
