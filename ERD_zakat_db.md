@@ -1,6 +1,6 @@
 # ERD database zakat_db
 
-Snapshot skema **7 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQL aktif `zakat_db`, bukan ERD lama database `zakat` pada Bagian 2 di `!wajib_baca.md`. Server memakai MariaDB 10.6.23; seluruh 42 tabel memakai InnoDB dan collation `utf8mb4_unicode_ci`. Snapshot mencakup **423 kolom, 55 foreign key, dan 2 CHECK constraint JSON**.
+Snapshot skema **8 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQL aktif `zakat_db`, bukan ERD lama database `zakat` pada Bagian 2 di `!wajib_baca.md`. Server memakai MariaDB 10.6.23; seluruh 42 tabel memakai InnoDB dan collation `utf8mb4_unicode_ci`. Snapshot mencakup **431 kolom, 55 foreign key, dan 2 CHECK constraint JSON**.
 
 Dokumen ini dibuat dengan pembacaan skema dan metadata saja. Nama kolom seperti `pass_hash`, `token`, atau `no_rek` merupakan definisi skema; tidak ada kata sandi, hash milik pengguna, nomor rekening, maupun baris data transaksi yang disalin ke dokumentasi.
 
@@ -1185,12 +1185,21 @@ Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
 | `dicatat_oleh` | `bigint(20) unsigned` | Ya | `NULL` | FK | Tidak |
 | `created_at` | `timestamp` | Ya | `NULL` | — | Tidak |
 | `updated_at` | `timestamp` | Ya | `NULL` | — | Tidak |
+| `jenis_sumber` | `varchar(20)` | Tidak | `manual` | — | Tidak |
+| `harga_usd_per_troy_ounce` | `decimal(20,8)` | Ya | `NULL` | — | Tidak |
+| `kurs_usd_idr` | `decimal(20,8)` | Ya | `NULL` | — | Tidak |
+| `sumber_kurs` | `varchar(255)` | Ya | `NULL` | — | Tidak |
+| `waktu_harga_emas` | `timestamp` | Ya | `NULL` | — | Tidak |
+| `tanggal_kurs` | `date` | Ya | `NULL` | — | Tidak |
+| `diambil_at` | `timestamp` | Ya | `NULL` | — | Tidak |
+| `tanggal_sinkronisasi` | `date` | Ya | `NULL` | UK | Tidak |
 
 Indeks (urutan kolom dipertahankan):
 
 | Nama | Jenis | Kolom | Metode |
 | --- | --- | --- | --- |
 | `harga_emas_dicatat_oleh_foreign` | INDEX | `dicatat_oleh` | `btree` |
+| `harga_emas_tanggal_sinkronisasi_unique` | UNIQUE | `tanggal_sinkronisasi` | `btree` |
 | `harga_emas_tanggal_sumber_index` | INDEX | `tanggal_sumber` | `btree` |
 | `primary` | PRIMARY KEY | `id` | `btree` |
 

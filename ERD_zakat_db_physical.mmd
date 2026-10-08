@@ -1,5 +1,5 @@
-%% ERD physical zakat_db, snapshot 2026-10-07 WIB.
-%% 42 tabel, 423 kolom, 55 foreign key. Nama dan relasi berasal dari metadata database aktif.
+%% ERD physical zakat_db, snapshot 2026-10-08 WIB.
+%% 42 tabel, 431 kolom, 55 foreign key. Nama dan relasi berasal dari metadata database aktif.
 %% Tipe SQL persis berada di komentar atribut; UK hanya untuk unique satu kolom.
 %% Unique gabungan, default, semua indeks, CHECK, dan aturan FK dicatat di ERD_zakat_db.md.
 erDiagram
@@ -342,6 +342,14 @@ erDiagram
         bigint_unsigned dicatat_oleh FK "bigint(20) unsigned; NULL"
         timestamp created_at "timestamp; NULL"
         timestamp updated_at "timestamp; NULL"
+        varchar jenis_sumber "varchar(20); NOT NULL"
+        decimal harga_usd_per_troy_ounce "decimal(20,8); NULL"
+        decimal kurs_usd_idr "decimal(20,8); NULL"
+        varchar sumber_kurs "varchar(255); NULL"
+        timestamp waktu_harga_emas "timestamp; NULL"
+        date tanggal_kurs "date; NULL"
+        timestamp diambil_at "timestamp; NULL"
+        date tanggal_sinkronisasi UK "date; NULL"
     }
     perjalanan_pengiriman {
         bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"

@@ -2,6 +2,15 @@
 
 return [
 
+    'gold_price' => [
+        'enabled' => env('GOLD_PRICE_SYNC_ENABLED', true),
+        'gold_url' => 'https://api.gold-api.com/price/XAU',
+        'exchange_url' => 'https://api.frankfurter.dev/v2/rate/usd/idr',
+        'daily_at' => '09:30',
+        'timezone' => 'Asia/Jakarta',
+        'max_age_days' => 7,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

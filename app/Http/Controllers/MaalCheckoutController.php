@@ -16,8 +16,8 @@ class MaalCheckoutController extends Controller
 {
     public function index(Request $request): View
     {
-        $hargaEmas = DB::table('harga_emas')->latest('tanggal_sumber')->first();
-        $hargaBerlaku = $hargaEmas && CarbonImmutable::parse($hargaEmas->tanggal_sumber)->greaterThanOrEqualTo(now()->subDays(7));
+        $hargaEmas = DB::table('harga_emas')->latest('id')->first();
+        $hargaBerlaku = $hargaEmas && CarbonImmutable::parse($hargaEmas->tanggal_sumber)->greaterThanOrEqualTo(now()->subDays((int) config('services.gold_price.max_age_days')));
         $panti = DB::table('yayasan')
             ->where('status_verif', 'verified')
             ->where('is_active', true)
@@ -61,10 +61,19 @@ class MaalCheckoutController extends Controller
         $data['yayasan_id'] = $request->validate([
             'yayasan_id' => ['nullable', 'integer', Rule::exists('yayasan', 'id')],
         ])['yayasan_id'] ?? null;
+        $data['harga_emas_id'] = $request->validate([
+            'harga_emas_id' => ['required', 'integer', Rule::exists('harga_emas', 'id')],
+        ])['harga_emas_id'];
 
         $id = DB::transaction(function () use ($request, $data): int {
-            $hargaEmas = DB::table('harga_emas')->latest('tanggal_sumber')->first();
-            abort_unless($hargaEmas && CarbonImmutable::parse($hargaEmas->tanggal_sumber)->greaterThanOrEqualTo(now()->subDays(7)), 422, 'Harga emas acuan tidak tersedia atau lebih dari tujuh hari.');
+            $hargaEmas = DB::table('harga_emas')->latest('id')->first();
+            if (! $hargaEmas || CarbonImmutable::parse($hargaEmas->tanggal_sumber)->lessThan(now()->subDays((int) config('services.gold_price.max_age_days')))) {
+                throw ValidationException::withMessages(['harga_emas_id' => 'Harga emas acuan belum tersedia atau lebih dari tujuh hari. Tunggu pembaruan otomatis atau hubungi admin. Isian Anda tetap tersimpan di form.']);
+            }
+
+            if ((int) $data['harga_emas_id'] !== (int) $hargaEmas->id) {
+                throw ValidationException::withMessages(['harga_emas_id' => 'Harga acuan berubah saat Anda mengisi form. Tinjau harga dan nisab terbaru di atas, lalu kirim kembali jika setuju. Belum ada pesanan yang dibuat.']);
+            }
 
             $pantiLayak = DB::table('yayasan')
                 ->where('status_verif', 'verified')

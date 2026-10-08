@@ -159,9 +159,13 @@
 
         <section class="app-card" style="padding: 1.5rem; margin-top: 1.5rem;">
             <h2 class="app-card-title">Harga emas acuan maal</h2>
-            <p>Masukkan harga 1 gram dari sumber resmi dengan tanggal publikasinya. Checkout maal memakai data paling baru yang belum lebih dari 7 hari.</p>
+            <p>Harga emas dunia dikonversi ke rupiah per gram otomatis setiap hari pukul 09.30 WIB melalui Gold API dan kurs Frankfurter. Harga ini dapat berbeda dari harga jual ANTAM. Checkout memakai catatan terakhir yang sumbernya belum lebih dari 7 hari.</p>
+            <p>Status pembaruan otomatis: <strong>{{ config('services.gold_price.enabled') ? 'aktif' : 'nonaktif' }}</strong>. Form manual di bawah tersedia sebagai cadangan; pembaruan otomatis berikutnya akan menjadi acuan baru.</p>
             @if ($hargaEmas)
                 <p>Terakhir: Rp{{ number_format($hargaEmas->harga_per_gram, 2, ',', '.') }} / gram · {{ $hargaEmas->sumber }} · {{ \Carbon\Carbon::parse($hargaEmas->tanggal_sumber)->timezone('Asia/Jakarta')->format('d M Y') }}</p>
+                @if ($hargaEmas->jenis_sumber === 'api')
+                    <p>Emas: USD {{ number_format($hargaEmas->harga_usd_per_troy_ounce, 8, '.', ',') }}/troy ounce ({{ \Carbon\Carbon::parse($hargaEmas->waktu_harga_emas)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB). Kurs: Rp{{ number_format($hargaEmas->kurs_usd_idr, 2, ',', '.') }}/USD, tanggal {{ $hargaEmas->tanggal_kurs }}. Diambil server: {{ \Carbon\Carbon::parse($hargaEmas->diambil_at)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB.</p>
+                @endif
             @endif
             <form method="POST" action="{{ route('admin.harga-emas.store') }}">
                 @csrf

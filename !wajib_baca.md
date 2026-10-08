@@ -11,13 +11,15 @@
 
 # 📖 Handout & Dokumentasi Desain Database: Sistem Pengelolaan Zakat
 
-> **Panduan belajar lengkap (8 Oktober 2026):** Baca [PANDUAN_LENGKAP_PORTAL_ZAKAT.md](PANDUAN_LENGKAP_PORTAL_ZAKAT.md) untuk memahami alur seluruh role, status pembayaran dan penyaluran, contoh perhitungan/stok, arti 42 tabel dan 423 kolom database aktif `zakat_db`, peta route, serta tugas setiap file aplikasi dan method controller. Panduan menandai kode lama dan fitur yang belum lengkap. Penulisan ini hanya mengubah dokumentasi; kode, skema, data, dan perubahan tampilan yang sudah ada tidak dimasukkan ke perubahan ini.
+> **Pembaruan harga emas otomatis — 8 Oktober 2026:** Harga acuan maal kini memakai emas dunia dari Gold API dan kurs USD/IDR dari Frankfurter, dikonversi ke rupiah per gram sekali sehari pukul **09.30 WIB**. Scheduler sudah dipasang pada crontab akun `keli`. Harga pertama sudah tersimpan; pesanan lama tetap memakai snapshot. Baca [Bagian 12](#12-harga-acuan-emas-dunia-otomatis-8-oktober-2026) untuk alur, kolom database, command, dan pemulihan.
+
+> **Panduan belajar lengkap (8 Oktober 2026):** Baca [PANDUAN_LENGKAP_PORTAL_ZAKAT.md](PANDUAN_LENGKAP_PORTAL_ZAKAT.md) untuk memahami alur seluruh role, status pembayaran dan penyaluran, contoh perhitungan/stok, arti 42 tabel dan 431 kolom database aktif `zakat_db`, peta route, serta tugas setiap file aplikasi dan method controller. Panduan menandai kode lama dan fitur yang belum lengkap. Panduan awal dibuat tanpa perubahan aplikasi; pembaruan integrasi emas pada Bagian 12 mencatat perubahan kode dan skema berikutnya.
 
 Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pengelolaan & Pembayaran Zakat (Fitrah & Maal)**. Database ini dirancang dengan standar industri (menggunakan MySQL/MariaDB Engine: `InnoDB`, Charset: `utf8mb4`) agar **anti-banting, aman dari selisih pembulatan uang, konsisten secara audit finansial, dan sesuai prinsip syariah**.
 
 > **Arah pengembangan terbaru:** Lihat [Bagian 11: Rencana perubahan dan checklist](#11-rencana-perubahan-dan-checklist-2026-09-27), khususnya [Bagian 11.14: Catatan implementasi](#1114-catatan-implementasi-bertahap) dan [Bagian 11.15: Menjalankan versi pengembangan](#1115-menjalankan-versi-pengembangan). Bagian 1–9 menggambarkan skema dan alur lama, **bukan spesifikasi implementasi baru**. Khususnya, uraian QRIS/payment gateway nyata, harga tetap, pemotongan stok langsung saat pembayaran, dan akun panitia sebagai pengelola seluruh situs sudah perlu direvisi. Banyak bagian checklist telah diimplementasikan sebagian; kotak kosong berarti pekerjaan atau pemeriksaan masih tersisa, bukan berarti semua kode pada bagian itu belum ada.
 
-> **ERD database baru (7 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 42 tabel, 423 kolom, 55 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Dokumentasi ini memakai metadata saja dan tidak mengubah skema atau data. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
+> **ERD database baru (diperbarui 8 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 42 tabel, 431 kolom, 55 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Diagram memakai metadata skema; diperbarui setelah migration emas harian pada Bagian 12. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
 
 ---
 
@@ -757,7 +759,7 @@ Pengaturan Proxmox ini berlaku saat host boot; pengaturan systemd berlaku setela
 - [ ] Pembatalan/kedaluwarsa tidak menghapus riwayat dan melepas reservasi fitrah. Draft **maal keluarga** kini dapat disimpan terpisah dari transaksi, dengan nisab/harga dihitung ulang saat checkout; draft fitrah untuk tahun berikutnya belum dibuat.
 - [ ] Form maal tidak meminta ulang umur, tanggal lahir, atau pekerjaan; `0` awal dibersihkan saat fokus. Format ribuan dalam input saat mengetik belum dibuat, sedangkan server menerima angka desimal bersih dan hasil ditampilkan dengan format Rupiah.
 - [x] Form maal memisahkan tabungan, emas gram, investasi, dagang, piutang, utang, dan pemilik diri/istri/anak. Pengguna dapat menambah baris anak hingga total 10 pemilik; nama tampilan default **Hamba Allah** dan akun pembayar tetap dicatat. Setiap pemilik diperiksa terpisah terhadap nisab serta pernyataan haul sebelum zakat wajibnya dijumlahkan.
-- [ ] Admin memasukkan harga emas acuan bertanggal dan sumber; form menampilkan harga/nisab 85 gram. Checkout ditolak bila sumber lebih dari 7 hari, dan tiap pemilik menyatakan sendiri apakah haul terpenuhi. Sumber, harga, nisab, aset, dan hasil kalkulasi kini disimpan sebagai snapshot. Validasi sumber resmi dan peninjauan haul untuk penggunaan nyata masih diperlukan.
+- [x] Harga emas diperbarui otomatis sekali sehari melalui Gold API + Frankfurter, dengan input manual admin sebagai cadangan; form menampilkan harga/nisab 85 gram. Checkout ditolak bila sumber lebih dari 7 hari, dan tiap pemilik menyatakan sendiri apakah haul terpenuhi. Sumber, harga, nisab, aset, dan hasil kalkulasi kini disimpan sebagai snapshot. Validasi sumber resmi dan peninjauan haul untuk penggunaan nyata masih diperlukan.
 - [ ] Jika perhitungan belum wajib zakat maal, tampilkan hasil tersebut secara jelas. Donasi sukarela jika nanti diadakan harus memakai kategori terpisah, bukan dicatat sebagai zakat maal wajib.
 - [x] Pilihan panti maal default acak di antara panti layak yang belum memiliki transaksi maal berstatus dibayar simulasi. Jika semuanya pernah menerima, acak di seluruh panti layak. Hasil pilihan otomatis dicatat di audit; pengguna tetap dapat memilih sendiri.
 - [ ] Pop-up panti maal dapat diurutkan menurut lokasi terdekat lalu jumlah maal yang diterima. Jarak kilometer hanya ditampilkan bila koordinat panti tersedia dan pengguna mengizinkan akses lokasi; provinsi/kota saja tidak cukup untuk km yang akurat.
@@ -882,7 +884,7 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 - [x] **Penamaan akun:** pertahankan tabel aplikasi bernama `user` (tunggal) agar selaras dengan model `User` yang sekarang. Saat membuat migration baru untuk database pengembangan, ubah migration bawaan yang masih membuat `users` (jamak) dan jangan membuat dua tabel akun berbeda tanpa alasan.
 - [x] Susun migration dari tabel induk ke anak: `user` → `yayasan`/vendor/gudang/katalog → lot, data panti, dan harga → transaksi/detail/reservasi → alokasi/perjalanan/bukti. Tipe `DECIMAL`, indeks unik, foreign key, dan nilai awal status sudah dibuat; aturan bisnis lintas tabel tetap harus ditegakkan oleh kode aplikasi.
 - [ ] Buat seeder **data uji saja** setelah struktur ada: satu admin, satu panitia, satu PJ dengan panti contoh, satu muzakki, vendor, lot beras, dan harga emas contoh. Jangan menaruh kata sandi tetap di repo; admin awal dibuat sekali melalui proses bootstrap terbatas.
-- [x] **Harga emas untuk tugas:** admin memasukkan harga emas 1 gram yang terakhir dipublikasikan di [situs resmi ANTAM Logam Mulia](https://www.logammulia.com/id/home), beserta tanggal/sumber; sistem tidak melakukan scraping setiap detik. Harga terakhir tetap terlihat saat belum ada publikasi baru, dengan tanggal yang jelas. Bila data lebih dari **7 hari kalender**, checkout maal ditahan sampai admin memperbaruinya. Setiap transaksi menyimpan snapshot harga yang dipakai. Harga ini adalah parameter simulasi dan perlu peninjauan sebelum layanan nyata.
+- [x] **Harga emas untuk tugas (direvisi 8 Oktober 2026):** memakai harga emas dunia dari [Gold API](https://gold-api.com/docs) dan kurs harian [Frankfurter](https://frankfurter.dev/), bukan harga jual ANTAM. Server mengonversi USD/troy ounce menjadi Rp/gram setiap 09.30 WIB. Riwayat menyimpan kedua sumber dan tanggalnya; admin dapat mengisi manual sebagai cadangan. Lebih dari 7 hari menahan checkout, dan setiap pesanan menyimpan snapshot.
 - [x] **Ongkir simulasi:** gunakan jarak jalan dari gudang Surabaya ke panti yang dicatat admin saat panti diverifikasi. Rumus awal `Rp3.000 + (Rp8 × km jalan × kg beras)`, dibulatkan ke Rupiah penuh. Tarif dan jarak tersimpan sebagai data dengan masa berlaku; perubahan hanya memengaruhi checkout baru. Jika jarak rute belum ada, panti tidak dapat dipilih untuk fitrah sampai admin mengisinya.
 - [x] **Tenggat simulasi dari tanggal Idulfitri yang ditetapkan admin:** Jawa Timur H-5, Jawa Tengah/DI Yogyakarta H-7, dan Jawa Barat/DKI Jakarta/Banten H-10. Admin dapat menutup tujuan tertentu lebih awal jika kapasitas/rute belum siap. Ini contoh aturan konservatif untuk tugas, bukan janji pengiriman nyata. [BAZNAS menyebut penyaluran fitrah sebelum salat Idulfitri](https://www.baznas.go.id/zakatfitrah).
 - [x] **Akun panitia:** hanya admin yang dapat membuat, menonaktifkan, dan mengatur akun panitia. Panitia tidak muncul sebagai opsi pendaftaran publik. Akun baru memakai email unik, kata sandi sementara yang disimpan sebagai hash, kewajiban mengganti kata sandi saat masuk pertama, serta catatan siapa admin pembuatnya. Nonaktifkan akun untuk mempertahankan audit tindakan lama.
@@ -903,7 +905,7 @@ Bagian 11.8 dan 11.11 **sudah berisi rencana perubahan database**, tetapi masih 
 | Vendor, katalog, dan lot masuk | Kode dasar selesai | Panitia dapat menambah vendor/jenis beras dan mencatat penerimaan barang sebagai pembelian, lot, mutasi masuk, stok katalog, serta riwayat harga. Harga katalog mengikuti HPP lot FIFO terlama yang masih tersedia plus margin operasional; checkout menghitung biaya sebenarnya dari seluruh lot yang dipakai. Koreksi stok per lot memerlukan alasan, menghasilkan mutasi, dan menolak pengurangan di bawah reservasi aktif; sisa lot, stok katalog, dan harga dihitung ulang dalam satu transaksi. Bukti faktur PDF/foto hingga 5 MB bisa diunggah saat penerimaan atau dilengkapi kemudian, disimpan privat, dan hanya panitia yang dapat membukanya; faktur yang sudah ada tidak dapat ditimpa. |
 | Pengaturan admin | Kode dasar selesai | Admin dapat menetapkan tanggal Idulfitri, tarif admin, margin, berat fitrah per jiwa, membuka/menutup enam zona, mengubah tarif kirim dengan riwayat berlaku, dan mencatat harga emas beserta sumber/tanggal. Perubahan margin langsung menghitung ulang harga katalog dari lot FIFO tersedia dan menyimpan riwayat; transaksi lama tetap memakai snapshot. Semua zona awalnya nonaktif sampai admin menilai rute dan kapasitas. Tanggal Idulfitri wajib disimpan terlebih dahulu; bila tenggat zona kosong/lewat, checkbox aktivasi dinonaktifkan dan submit buatan sendiri mendapat pesan validasi di halaman admin. |
 | Checkout fitrah & QR simulasi | Kode dasar selesai | Server memilih lot FIFO, mengunci harga pokok/margin/admin/ongkir, membuat reservasi aktif tanpa mengurangi stok fisik, lalu menampilkan QR SVG lokal dan halaman bayar uji. Token terbatas 30 menit; pemindai ponsel tanpa login dapat membuka halaman QR mandiri dan mencatat bayar simulasi, tetapi rincian pesanan tetap memerlukan akun pemilik. Siapa pun yang melihat token dapat menekan tombol simulasi selama QR berlaku. Status dibayar simulasi tetap terpisah dari penyaluran. Kedaluwarsa dilepas saat halaman terkait dibuka dan lewat command terjadwal setiap menit bila scheduler Laravel dijalankan. Katalog muzakki menampilkan stok fisik dikurangi reservasi aktif, menyembunyikan yang habis, dan mengurutkan harga katalog terendah; harga akhir bisa berbeda bila beberapa lot digunakan. Tidak ada akun/panti/stok contoh otomatis; admin, PJ, panitia, dan muzakki perlu dibuat melalui alur masing-masing. |
-| Kalkulator maal keluarga | Kode dasar selesai | Setiap pemilik harta dinilai terhadap nisab 85 gram dan pernyataan haul masing-masing; transaksi menyimpan rincian dan snapshot agregat. Harga emas sumber admin lebih dari 7 hari menahan checkout. Panti otomatis diacak dari panti layak yang belum menerima maal, lalu memakai QR uji yang sama. Tidak ada tagihan bila belum ada kewajiban. |
+| Kalkulator maal keluarga | Kode dasar selesai | Setiap pemilik harta dinilai terhadap nisab 85 gram dan pernyataan haul masing-masing; transaksi menyimpan rincian dan snapshot agregat. Data emas atau kurs lebih dari 7 hari menahan checkout; pembaruan otomatis harian dan input manual cadangan tersedia. Panti otomatis diacak dari panti layak yang belum menerima maal, lalu memakai QR uji yang sama. Tidak ada tagihan bila belum ada kewajiban. |
 | Draft maal keluarga | Kode dasar selesai | Muzakki dapat menyimpan hingga 10 pemilik harta ke baris `subjek_zakat_maal` miliknya dengan `is_snapshot=false` dan `transaksi_id=NULL`, juga ketika harga emas kedaluwarsa atau belum ada panti. Draft berikutnya menimpa draft lama secara atomik; snapshot transaksi sebelumnya tidak berubah. Draft hanya menyimpan input, bukan hasil nisab/harga/kewajiban. Pernyataan haul tidak dicentang otomatis saat draft dimuat, dan checkout selalu menghitung ulang. |
 | Alokasi & perjalanan panitia | Kode dasar selesai | Panitia dapat membuat perjalanan, beberapa titik panti, mengalokasikan pesanan fitrah yang sudah dibayar simulasi dengan pemeriksaan kapasitas, dan mencatat keberangkatan. Stok berkurang pada keberangkatan manual, bukan saat klik bayar. Pesanan maal memakai alokasi nominal terpisah. Bukti kedua pihak, waktu tiba, ongkir aktual, dan penyelesaian masih dikerjakan. |
 | Bukti dua pihak & status selesai | Kode dasar selesai | Panitia dan PJ dapat mengunggah foto privat dan mengonfirmasi kg/nominal masing-masing. Bila dua bukti ada dan jumlah sama dengan alokasi, penyaluran, titik, dan perjalanan ditandai selesai; selisih masuk perlu tinjauan dan foto dapat diganti. Muzakki hanya dapat melihat bukti untuk transaksi miliknya. Asumsi tugas: konfirmasi panti dianggap sampai penerima akhir. Ongkir aktual dan laporan statistik masih perlu dibuat. |
@@ -945,3 +947,92 @@ Status saat pemeriksaan 2026-09-27: koneksi MariaDB berfungsi, seluruh 9 migrati
 Prioritas berikutnya: pemeriksaan alur penuh dengan akun/data contoh, perapian tampilan di browser dan ponsel, daftar panti yang lebih informatif, preferensi pengingat, penanganan selisih bukti, serta peninjauan syariah dan operasional sebelum pembayaran nyata. Komit lokal menyimpan kode, tetapi belum menggantikan cadangan database atau hasil pemeriksaan alur.
 
 **Catatan error aktivasi Jawa Timur (2026-09-27):** permintaan sebelumnya ditolak dengan HTTP 422 karena `tanggal_idulfitri` dan `batas_checkout_at` Jawa Timur masih `NULL`, bukan karena MariaDB mati. Pada saat itu `is_active` Jawa Timur tetap `0`; tidak ada perubahan status parsial. Halaman admin sekarang menjelaskan urutan pengisian dan menampilkan pesan validasi. Situs diakses melalui domain publik dengan `APP_DEBUG=true`, sehingga detail kode terlihat di browser; nilai lokal `.env` telah diubah menjadi `APP_DEBUG=false` dan cache konfigurasi dibersihkan. `.env` tetap tidak masuk Git.
+
+
+## 12. Harga acuan emas dunia otomatis (8 Oktober 2026)
+
+### 12.1 Keputusan dan alur
+
+Pengguna menyetujui sumber gratis harga emas dunia + kurs rupiah, diperbarui **sekali sehari**. Tidak memerlukan API key atau paket baru. Harga ini merupakan parameter proyek simulasi; labelnya **harga acuan emas dunia**, dapat berbeda dari harga ritel ANTAM.
+
+1. Cron akun `keli` memanggil scheduler Laravel setiap menit.
+2. Pada **09.30 Asia/Jakarta**, scheduler menjalankan `app:sync-gold-price`.
+3. Command mengunci proses selama maksimal 180 detik. Jika sudah ada sinkronisasi sukses pada tanggal WIB tersebut, command berhenti tanpa mengambil API lagi. Indeks unik tanggal sinkronisasi juga mencegah catatan otomatis ganda.
+4. GET `https://api.gold-api.com/price/XAU` mengambil harga emas XAU/USD; GET `https://api.frankfurter.dev/v2/rate/usd/idr` mengambil kurs referensi USD/IDR.
+5. Respons harus memiliki pasangan yang benar, angka positif, timestamp/tanggal valid, dan kedua sumber belum lebih dari 7 hari. Timeout koneksi 5 detik dan respons 15 detik; maksimal dua percobaan untuk gangguan koneksi, HTTP 429, atau HTTP 5xx.
+6. Konversi menggunakan BCMath: **harga USD per troy ounce × kurs IDR per USD ÷ 31,1034768**, lalu dibulatkan ke dua desimal. Float dari respons JSON hanya dinormalisasi menjadi string; aritmetika nominal memakai BCMath.
+7. Setelah seluruh data valid, command menambah satu baris `harga_emas`. Riwayat sebelumnya tidak ditimpa dan tidak ada transaksi lama yang diperbarui.
+8. Bila API gagal, command mencatat kegagalan di log dan mempertahankan harga terakhir. Tidak membuat harga nol atau mengganti tanggal data lama dengan waktu pengambilan baru. Admin masih dapat mengisi acuan manual.
+
+Frankfurter memberikan kurs referensi harian, bukan kurs jual bank. Pada akhir pekan/libur tanggal kurs dapat lebih tua dari tanggal emas. Keduanya ditampilkan terpisah. `tanggal_sumber` untuk baris API adalah waktu yang lebih tua antara timestamp emas dan awal tanggal kurs dalam UTC, sehingga kurs lama tidak terlihat seolah baru. Harga kedaluwarsa tetap ditampilkan dengan peringatan dan checkout diblokir; draft masih dapat disimpan.
+
+Acuan aktif dipilih dengan ID terakhir, sehingga input manual cadangan yang baru langsung berlaku. Sinkronisasi otomatis sukses berikutnya menjadi catatan terbaru. Input manual tidak menonaktifkan scheduler; untuk menghentikan sinkronisasi otomatis gunakan konfigurasi di bawah.
+
+### 12.2 Database dan file yang berubah
+
+Migration [2026_10_08_082353_add_api_source_fields_to_harga_emas.php](database/migrations/2026_10_08_082353_add_api_source_fields_to_harga_emas.php) menambah delapan kolom tanpa menghapus tabel, akun, atau transaksi. Database sekarang **42 tabel, 431 kolom, 55 foreign key, 2 CHECK JSON**. Baris lama otomatis bertipe `manual`; kolom API boleh NULL.
+
+| Kolom baru | Fungsi |
+| --- | --- |
+| `jenis_sumber` | `manual` atau `api`, default `manual`. |
+| `harga_usd_per_troy_ounce` | Harga emas dunia sebelum dikonversi, DECIMAL(20,8). |
+| `kurs_usd_idr` | Rupiah per satu USD, DECIMAL(20,8). |
+| `sumber_kurs` | Nama sumber kurs. |
+| `waktu_harga_emas` | Timestamp sumber emas, disimpan UTC. |
+| `tanggal_kurs` | Tanggal data kurs; bukan tanggal server mengambilnya. |
+| `diambil_at` | Waktu server mengambil dan menyimpan hasil, UTC. |
+| `tanggal_sinkronisasi` | Tanggal eksekusi dalam WIB; unik untuk catatan API, NULL untuk manual. |
+
+| File | Perubahan |
+| --- | --- |
+| [SyncGoldPrice.php](app/Console/Commands/SyncGoldPrice.php) | `handle()` mengunci proses, mengambil/memvalidasi kedua API, menghitung dan menyimpan hasil; `httpClient()` mengatur timeout/retry; `positiveDecimal()`, `goldTimestamp()`, `exchangeDate()` memvalidasi angka dan tanggal. |
+| [services.php](config/services.php) | URL kedua API, jadwal 09.30 WIB, batas usia 7 hari, pengaturan aktif/nonaktif. |
+| [.env.example](.env.example) | Contoh `GOLD_PRICE_SYNC_ENABLED=true`; tidak ada API key. |
+| [console.php](routes/console.php) | Jadwal harian dan pencegahan proses tumpang tindih. |
+| [AdminController.php](app/Http/Controllers/AdminController.php) | Menampilkan catatan acuan terakhir berdasarkan ID; input manual tetap tersedia. |
+| [MaalCheckoutController.php](app/Http/Controllers/MaalCheckoutController.php) | Menggunakan catatan terakhir, batas usia bersama, dan memeriksa ID acuan yang dilihat pengguna. |
+| [Dashboard admin](resources/views/admin/dashboard.blade.php) | Menjelaskan pembaruan otomatis, harga sebelum konversi, kurs, tanggal sumber, dan waktu pengambilan. |
+| [Form maal](resources/views/muzakki/maal.blade.php) | Label acuan dunia/manual, tanggal emas dan kurs, serta hidden ID acuan. Perubahan tampilan lain milik pengguna tetap dipertahankan. |
+
+**Saat acuan berubah ketika mengisi form:** submit belum membuat pesanan. Aplikasi mengembalikan form dengan isian dan pilihan panti sebelumnya, menampilkan acuan/nisab terbaru serta pesan meminta tinjauan. Pengguna mengirim ulang jika setuju. Setelah pesanan dibuat, nilai yang disimpan pada `transaksi_mal` dan `subjek_zakat_maal` tetap memakai snapshot; pembaruan berikutnya tidak mengubah QR atau nominal pesanan tersebut. Form lama yang sudah dibuka sebelum deploy ini perlu dimuat ulang karena belum memiliki hidden ID acuan.
+
+### 12.3 Command dan scheduler yang dipasang
+
+Jalankan sebagai akun `keli` di server ini:
+
+```bash
+cd /var/www/basdatkeli
+php artisan app:sync-gold-price --no-interaction
+php artisan schedule:list --no-interaction
+crontab -l
+```
+
+Command sinkronisasi bisa dipakai untuk pengambilan pertama atau mengulang setelah kegagalan. Jika hari tersebut sudah sukses, command tidak memanggil API lagi. Tidak ada opsi yang menimpa riwayat harga atau mengubah snapshot pesanan.
+
+Cron akun `keli` sudah berisi:
+
+```cron
+* * * * * cd /var/www/basdatkeli && /usr/bin/php artisan schedule:run --no-interaction > /dev/null 2>&1
+```
+
+`* * * * *` berarti setiap menit; Laravel memilih task yang sudah waktunya, sehingga API emas tetap sekali sehari. Daemon `cron` pada server terpantau **active** dan **enabled**, sehingga tidak tergantung terminal SSH dan kembali berjalan setelah boot. Jangan menjalankan `schedule:work` bersamaan tanpa kebutuhan. Cron ini juga menjalankan pelepasan reservasi dan pengingat yang memang sudah terdaftar sebelumnya. Website `/var/www/basdatkeli` port 8020 tetap memakai `basdatkeli.service`; website `basdat` port 8000 berbeda.
+
+Jika server mati tepat pada 09.30 WIB, jadwal yang terlewat tidak dikejar otomatis. Setelah server menyala, gunakan command sinkronisasi di atas jika belum ada harga hari itu; hari berikutnya kembali sesuai jadwal.
+
+Menonaktifkan pengambilan otomatis: tambahkan/ubah `GOLD_PRICE_SYNC_ENABLED=false` di `.env` lokal, lalu jalankan `php artisan config:clear --no-interaction`. Setelah config cache dibersihkan, command dan jadwal menghormati nilai tersebut. Bila deployment memakai config cache, jalankan `php artisan config:cache --no-interaction` kembali setelah pengaturan final.
+
+Log keberhasilan/kegagalan ada di kanal log Laravel, pada konfigurasi server ini `storage/logs/laravel.log`. Output command cron dialihkan ke `/dev/null` agar tidak menambah berkas log setiap menit. Untuk mengubah crontab gunakan `crontab -e` sebagai `keli` dan sunting hanya baris scheduler proyek ini; jangan menghapus tugas lain.
+
+### 12.4 Penerapan dan pemulihan
+
+- [x] Membuat cadangan MySQL sebelum migration: `/var/tmp/zakat_db_before_gold_api_20261008_082747.sql`, izin 600, di luar Git. Pindahkan ke media cadangan persisten bila ingin menyimpannya lama; `/var/tmp` tidak dianggap backup permanen.
+- [x] Menjalankan migration tambahan pada `zakat_db`; database lama `zakat` tidak disentuh.
+- [x] Mengambil data asli dari kedua API dan menyimpan harga pertama **Rp2.374.461,82/gram**, dengan emas USD4.131/troy ounce dan kurs Rp17.878/USD pada 8 Oktober 2026. Angka ini contoh hasil pengambilan tersebut, bukan harga yang dijamin tetap.
+- [x] Memasang scheduler ke crontab akun `keli`; daemon cron active/enabled dan `schedule:list` menampilkan task emas 09.30 WIB (02.30 UTC).
+- [x] Mempertahankan snapshot pesanan lama dan menambahkan pemeriksaan perubahan acuan saat submit form.
+- [x] Menjalankan Pint untuk format PHP dan memperbarui panduan/ERD sesuai delapan kolom tambahan.
+- [ ] Pengujian otomatis dan alur browser lengkap untuk kegagalan API, pergantian harga ketika mengisi form, dan akhir pekan belum dijalankan pada perubahan ini.
+
+Perubahan disimpan dalam satu commit lokal untuk integrasi yang utuh, tanpa push otomatis. `git revert <hash-commit>` mengembalikan kode, bukan data MySQL atau crontab. Delapan kolom tambahan dan riwayat harga tetap ada di database setelah revert kode. Jangan memakai `migrate:fresh` untuk membatalkan perubahan. `down()` migration menghapus kolom metadata API sehingga datanya hilang; lakukan hanya bila memang ingin membuang metadata, setelah membuat cadangan. Snapshot transaksi dan nominal riwayat tidak perlu dihapus.
+
+Referensi sumber: [Gold API](https://gold-api.com/docs), [ketentuan Gold API](https://gold-api.com/terms), [Frankfurter](https://frankfurter.dev/), [rupiah di Frankfurter](https://frankfurter.dev/currencies/idr/).

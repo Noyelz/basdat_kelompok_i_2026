@@ -99,7 +99,7 @@ Urutan ini menjelaskan pekerjaan yang dibutuhkan ketika database baru belum memp
 3. Admin login dan membuat akun panitia. Kata sandi sementara diisi admin, minimum 12 karakter dengan huruf dan angka. Panitia harus menggantinya sebelum memakai panel.
 4. Admin mengisi tanggal Idulfitri untuk simulasi. Sistem menghitung batas checkout masing-masing wilayah.
 5. Admin mengaktifkan wilayah yang batas waktunya masih di masa depan dan mengatur tarif.
-6. Untuk maal, admin mencatat harga emas, sumber, dan tanggal sumber. Harga acuan lebih dari tujuh hari ditolak pada checkout.
+6. Untuk maal, command `app:sync-gold-price` mengambil harga emas dunia dan kurs rupiah otomatis setiap 09.30 WIB. Input manual admin tersedia sebagai cadangan. Data emas atau kurs lebih dari tujuh hari ditolak pada checkout.
 7. Panitia menambahkan vendor, jenis beras, dan penerimaan stok. Harga jenis beras baru belum bermakna sebelum lot pertama masuk.
 8. PJ mendaftarkan panti; panitia memeriksanya sebelum muzakki dapat memilihnya.
 
@@ -204,7 +204,7 @@ Ada dua halaman yang berbeda:
 2. Isi tepat satu subjek `diri`, paling banyak satu `istri`, dan tambahan `anak`; jumlah seluruh subjek maksimum 10.
 3. Per subjek, isi tabungan, emas gram, investasi, aset dagang, piutang, utang, tanggal haul opsional, serta pernyataan haul.
 4. Tombol **simpan draft** menyimpan data editable di `subjek_zakat_maal` tanpa membuat pesanan.
-5. Saat checkout, server menghitung ulang menggunakan harga emas yang tanggal sumbernya masih dalam tujuh hari.
+5. Saat checkout, server memeriksa bahwa ID acuan yang tampil masih sama dengan catatan terakhir dan data sumbernya masih dalam tujuh hari. Jika berubah, isian dikembalikan agar pengguna meninjau harga/nisab terbaru sebelum mengirim ulang; pesanan belum dibuat.
 6. Nisab dan kewajiban diuji **per pemilik**, lalu zakat wajib tiap pemilik dijumlahkan.
 7. Jika tidak ada zakat wajib positif, pesanan tidak dibuat.
 8. Jika pengguna memilih panti, pilihan diperiksa ulang. Jika otomatis, sistem mengacak panti layak yang belum mempunyai pesanan maal `simulated_paid`; jika semuanya pernah, mengacak seluruh panti layak.
@@ -482,7 +482,7 @@ JavaScript dalam view membantu interaksi: membuka password, pilihan domisili, me
 
 ### 6.1 Fakta skema aktif
 
-Metadata yang diperiksa: **42 tabel, 423 kolom, 55 foreign key, dan 2 CHECK untuk validitas JSON**. Koneksi bernama `mysql` dapat berbicara dengan server MariaDB; nama driver tidak berarti aplikasi sedang memakai SQLite.
+Metadata yang diperiksa: **42 tabel, 431 kolom, 55 foreign key, dan 2 CHECK untuk validitas JSON**. Koneksi bernama `mysql` dapat berbicara dengan server MariaDB; nama driver tidak berarti aplikasi sedang memakai SQLite.
 
 [ERD_zakat_db.md](ERD_zakat_db.md) berisi diagram konseptual, physical per kelompok, serta rincian teknis indeks/default/FK. [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd) adalah sumber Mermaid diagram physical lengkap. File `.mmd` berisi teks diagram, bukan data database.
 
@@ -1240,23 +1240,32 @@ Dibuat bersamaan dengan pesanan. token_hash adalah SHA-256 token acak; tidak sam
 
 #### Tabel `harga_emas` — Riwayat acuan harga emas
 
-Admin memasukkan harga/sumber/tanggal. Checkout mengambil yang tanggal_sumber paling baru dan mensyaratkan tidak lebih tua dari tujuh hari. Belum ada pengambilan harga harian dari API. Pesanan lama tetap menyimpan harga dan sumber snapshot.
+Command otomatis menambahkan harga emas dunia dan kurs USD/IDR setiap 09.30 WIB, dikonversi menjadi Rp/gram menggunakan BCMath. Input manual admin tersedia sebagai cadangan. Checkout mengambil ID catatan terakhir dan mensyaratkan kedua sumber tidak lebih tua dari tujuh hari; perubahan ID saat submit meminta pengguna meninjau ulang. Pesanan lama tetap menyimpan harga dan sumber snapshot. Detail operasional ada di [!wajib_baca.md Bagian 12](%21wajib_baca.md#12-harga-acuan-emas-dunia-otomatis-8-oktober-2026).
 
-**Kode yang menyebut tabel ini secara langsung:** [AdminController.php](app/Http/Controllers/AdminController.php), [MaalCheckoutController.php](app/Http/Controllers/MaalCheckoutController.php). Daftar ini mencakup pembacaan maupun penulisan; relasi Eloquent dapat mengaksesnya juga tanpa menyebut string tabel.
+**Kode yang menyebut tabel ini secara langsung:** [AdminController.php](app/Http/Controllers/AdminController.php), [MaalCheckoutController.php](app/Http/Controllers/MaalCheckoutController.php), [SyncGoldPrice.php](app/Console/Commands/SyncGoldPrice.php). Daftar ini mencakup pembacaan maupun penulisan; relasi Eloquent dapat mengaksesnya juga tanpa menyebut string tabel.
 
 | Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
 | --- | --- | --- | --- |
 | `id` | `bigint(20) unsigned` | Tidak | Identitas unik baris dalam tabel ini; bukan nama atau urutan proses. ID dibuat otomatis oleh database. |
 | `harga_per_gram` | `decimal(15,2)` | Tidak | Harga emas acuan rupiah per gram. |
-| `sumber` | `varchar(255)` | Tidak | Nama/rujukan sumber harga emas yang diinput admin. |
-| `tanggal_sumber` | `timestamp` | Tidak | Waktu sumber harga emas; dipakai menilai usia acuan dan memilih terbaru. |
+| `sumber` | `varchar(255)` | Tidak | Nama/rujukan sumber harga acuan otomatis atau manual. |
+| `tanggal_sumber` | `timestamp` | Tidak | Waktu acuan untuk menilai usia; pada API memakai waktu yang lebih tua dari emas dan awal tanggal kurs UTC. Acuan aktif dipilih berdasarkan ID terakhir. |
 | `dicatat_oleh` | `bigint(20) unsigned` | Ya | Rujukan akun pencatat. |
 | `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
+| `jenis_sumber` | `varchar(20)` | Tidak | Jenis acuan: manual atau api. |
+| `harga_usd_per_troy_ounce` | `decimal(20,8)` | Ya | Harga emas dunia dalam USD per troy ounce, sebelum konversi. |
+| `kurs_usd_idr` | `decimal(20,8)` | Ya | Rupiah per satu USD yang dipakai mengonversi harga emas. |
+| `sumber_kurs` | `varchar(255)` | Ya | Nama sumber kurs, terpisah dari sumber emas. |
+| `waktu_harga_emas` | `timestamp` | Ya | Timestamp sumber emas, disimpan UTC. |
+| `tanggal_kurs` | `date` | Ya | Tanggal publikasi/data kurs, bukan waktu pengambilan. |
+| `diambil_at` | `timestamp` | Ya | Timestamp pengambilan dan penyimpanan data oleh server, UTC. |
+| `tanggal_sinkronisasi` | `date` | Ya | Tanggal WIB eksekusi otomatis; unik, NULL untuk manual. |
 
 **Kunci dan hubungan:**
 
 - Primary key: `id`.
+- Unique: `tanggal_sinkronisasi` (NULL berulang diizinkan untuk input manual).
 - FK `dicatat_oleh` → `user.id`; saat induk dihapus: **SET NULL**.
 - Indeks nonunik: `dicatat_oleh`; `tanggal_sumber`.
 
@@ -2131,9 +2140,11 @@ Provider bukan controller halaman. Middleware bukan perhitungan harga. Keduanya 
 | [app/Console/Commands/ExpirePendingOrders.php](app/Console/Commands/ExpirePendingOrders.php) | `app:expire-pending-orders`; `handle()` | Memanggil TransaksiZakat::expirePending berulang selama satu batch mengembalikan 100, lalu menampilkan jumlah diproses. Membuat perubahan status database, bukan hapus riwayat. |
 | [app/Console/Commands/CreateZakatReminders.php](app/Console/Commands/CreateZakatReminders.php) | `app:create-zakat-reminders`; `handle()` | Memeriksa H-14 fitrah atau ulang tanggal haul draft, akun aktif dan preferensi. Membuat notifikasi dalam aplikasi; tidak mengirim email. |
 | File pengingat di atas | `buatJikaBelumAda()` | Helper privat mengunci preferensi, memeriksa pesan jenis yang sama sudah ada pada hari WIB tersebut, lalu membuat pesan sekali. |
-| [routes/console.php](routes/console.php) | Schedule dan `inspire` | Kedaluwarsa tiap menit; pengingat 08.00 Asia/Jakarta; keduanya withoutOverlapping. inspire adalah contoh kutipan bawaan, bukan proses zakat. |
+| [app/Console/Commands/SyncGoldPrice.php](app/Console/Commands/SyncGoldPrice.php) | `app:sync-gold-price`; `handle()` | Mengunci proses, melewati sinkronisasi yang sudah sukses hari ini, mengambil emas/kurs, validasi, konversi BCMath, menambah riwayat harga. Kegagalan mempertahankan harga terakhir. |
+| File sinkronisasi di atas | `httpClient()`, `positiveDecimal()`, `goldTimestamp()`, `exchangeDate()` | Timeout/retry HTTP yang terbatas serta validasi angka positif, timestamp UTC dan tanggal kurs. |
+| [routes/console.php](routes/console.php) | Schedule dan `inspire` | Kedaluwarsa tiap menit; pengingat 08.00 dan harga emas 09.30 Asia/Jakarta; ketiganya withoutOverlapping. inspire adalah contoh kutipan bawaan, bukan proses zakat. |
 
-Definisi jadwal tidak otomatis membuat sistem operasi memanggilnya. Scheduler/cron harus hidup. Menyalakan web via systemd dan menjalankan jadwal merupakan dua pekerjaan terpisah. Petunjuk sistem operasi tersedia di [!wajib_baca.md](%21wajib_baca.md) Bagian 10 dan 11.15.
+Definisi jadwal tidak otomatis membuat sistem operasi memanggilnya. Scheduler/cron harus hidup. Pada 8 Oktober 2026, crontab akun keli sudah dipasang untuk memanggil schedule:run setiap menit, dengan daemon cron active/enabled. Menyalakan web via systemd dan menjalankan jadwal merupakan dua pekerjaan terpisah. Petunjuk sistem operasi tersedia di [!wajib_baca.md](%21wajib_baca.md) Bagian 10 dan 11.15.
 
 ## 11. Migration, seeder, dan factory
 
@@ -2154,6 +2165,7 @@ Nama file berawalan waktu menentukan urutan. Tabel yang menjadi induk harus dibu
 | [2026_09_27_042024_create_d_zakat_distribution_tables.php](database/migrations/2026_09_27_042024_create_d_zakat_distribution_tables.php) | `perjalanan_pengiriman`, `titik_pengiriman`, `alokasi_transaksi`, `bukti_serah_terima`, `penyaluran`, `audit_log`, `notifikasi_aplikasi` | Perjalanan, titik, alokasi, bukti, penyaluran, audit dan notifikasi. Bukti unik per alokasi dan pihak. down menghapus tabel dalam urutan dependensi. |
 | [2026_09_27_062149_add_panti_need_fields_to_yayasan.php](database/migrations/2026_09_27_062149_add_panti_need_fields_to_yayasan.php) | `yayasan`, `verifikasi_panti` | Menambah jumlah_mustahik_diajukan, kebutuhan_saat_ini, kapasitas_penerimaan_kg pada yayasan serta kapasitas/kebutuhan_snapshot pada verifikasi_panti. Bukan membuat panti kedua. |
 | [2026_09_27_124232_create_notification_preferences_table.php](database/migrations/2026_09_27_124232_create_notification_preferences_table.php) | `preferensi_notifikasi` | Membuat preferensi_notifikasi satu baris per user dengan tiga boolean. |
+| [2026_10_08_082353_add_api_source_fields_to_harga_emas.php](database/migrations/2026_10_08_082353_add_api_source_fields_to_harga_emas.php) | `harga_emas` | Menambah delapan kolom metadata API emas/kurs dan indeks unik tanggal sinkronisasi. Riwayat lama tetap ada dan bertipe manual. down menghapus metadata tambahan, bukan nominal/snapshot transaksi. |
 
 ### 11.2 Data awal dan data contoh
 
@@ -2674,7 +2686,7 @@ Bagian ini memisahkan perilaku yang sudah ada di source dari hal yang belum dipe
 | Kebutuhan per periode | Kebutuhan teks dan kapasitas per kunjungan | Belum batas kuota kumulatif penerimaan bulanan/tahunan/Idulfitri. |
 | Pemilihan panti terdekat | Banyak daftar menurut provinsi/kota; dashboard provinsi sama | Belum pengurutan jarak pengguna→panti melalui geolokasi. Jangan menyebut rekomendasi provinsi sebagai jarak terdekat terukur. |
 | Harga katalog vs banyak lot | Penawaran lot tertua; checkout dapat kombinasi | Perlu pratinjau harga akhir lebih jelas jika pengguna harus tahu sebelum pesanan dibuat. |
-| Harga emas harian | Admin input manual, batas usia 7 hari | Belum job/API pembaruan harian dengan fallback sumber. |
+| Harga emas harian | API emas dunia + kurs harian, input manual cadangan, batas usia 7 hari | Pengambilan pertama berhasil. Pengujian otomatis kegagalan dan alur browser pergantian acuan belum dijalankan. |
 | Haul | Pernyataan pemilik dan tanggal draft, pengingat bulan/hari kalender | Belum perhitungan kalender Hijriah atau pembuktian historis kepemilikan. |
 | Mustahik individu | Tabel/model ada, operasi baru agregat | Penyelesaian tugas menganggap diterima panti = selesai penerima akhir, sesuai keputusan lingkup. |
 | Bukti | Dua pihak dan pencocokan angka | Foto belum diverifikasi isi/keasliannya otomatis; selisih perlu ditangani manusia. |
@@ -2721,4 +2733,4 @@ Saat menambah fitur nanti, perbarui: langkah alur, status yang mungkin, tabel/ko
 
 **Acuan utama penulisan:** source app/routes/resources/database/config/tests dalam workspace, hasil route:list, versi paket terpasang, serta metadata zakat_db melalui Laravel Boost. Dokumentasi tidak menjalankan checkout, seed, migration, penghapusan akun, atau pembayaran simulasi.
 
-**Catatan perubahan dokumentasi 8 Oktober 2026:** dibuat panduan baru untuk alur seluruh role, contoh hitungan/stok, kamus 42 tabel/423 kolom, peta 63 route aplikasi, penjelasan 17 controller dan seluruh methodnya, 12 model, middleware/provider/command, 9 migration, seeder/factory, 29 Blade, konfigurasi serta file pendukung. Ditautkan dekat bagian atas wajib baca. Perubahan aplikasi/aset yang sudah ada di workspace tidak termasuk perubahan dokumentasi ini.
+**Catatan perubahan dokumentasi 8 Oktober 2026:** dibuat panduan baru untuk alur seluruh role, contoh hitungan/stok, kamus 42 tabel/431 kolom, peta 63 route aplikasi, penjelasan 17 controller dan seluruh methodnya, 12 model, middleware/provider/command, 9 migration, seeder/factory, 29 Blade, konfigurasi serta file pendukung. Ditautkan dekat bagian atas wajib baca. Perubahan aplikasi/aset yang sudah ada di workspace tidak termasuk perubahan dokumentasi ini.

@@ -35,7 +35,7 @@ class AdminController extends Controller
                 return $item;
             });
         $pengaturan = DB::table('pengaturan_operasional')->pluck('nilai', 'kunci');
-        $hargaEmas = DB::table('harga_emas')->latest('tanggal_sumber')->first();
+        $hargaEmas = DB::table('harga_emas')->latest('id')->first();
 
         $kontenPublik = collect(LandingController::DEFAULT_CONTENT)
             ->mapWithKeys(fn (string $nilai, string $kunci): array => [$kunci => $pengaturan[$kunci] ?? $nilai]);

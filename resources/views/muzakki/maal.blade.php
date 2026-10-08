@@ -8,9 +8,19 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
     @if ($hargaEmas)
-        <div class="alert {{ $hargaBerlaku ? 'alert-info' : 'alert-warning' }}">Harga emas acuan: Rp{{ number_format($hargaEmas->harga_per_gram, 2, ',', '.') }}/gram, sumber {{ $hargaEmas->sumber }}, tanggal {{ \Carbon\Carbon::parse($hargaEmas->tanggal_sumber)->timezone('Asia/Jakarta')->format('d M Y') }}. Nisab: 85 gram = Rp{{ number_format($hargaEmas->harga_per_gram * 85, 2, ',', '.') }}. {{ $hargaBerlaku ? '' : 'Harga lebih dari tujuh hari; admin perlu memperbaruinya sebelum checkout.' }}</div>
+        <div class="alert {{ $hargaBerlaku ? 'alert-info' : 'alert-warning' }}">
+            {{ $hargaEmas->jenis_sumber === 'api' ? 'Harga acuan emas dunia' : 'Harga emas acuan manual' }}: Rp{{ number_format($hargaEmas->harga_per_gram, 2, ',', '.') }}/gram.
+            Sumber: {{ $hargaEmas->sumber }}. Nisab: 85 gram = Rp{{ number_format($hargaEmas->harga_per_gram * 85, 2, ',', '.') }}.
+            @if ($hargaEmas->jenis_sumber === 'api')
+                <span class="d-block">Data emas: {{ \Carbon\Carbon::parse($hargaEmas->waktu_harga_emas)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB; kurs tanggal {{ $hargaEmas->tanggal_kurs }}. Diambil server: {{ \Carbon\Carbon::parse($hargaEmas->diambil_at)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB.</span>
+                <span class="d-block">Acuan ini berasal dari harga emas dunia yang dikonversi ke rupiah dan dapat berbeda dari harga jual ANTAM.</span>
+            @else
+                <span class="d-block">Tanggal sumber: {{ \Carbon\Carbon::parse($hargaEmas->tanggal_sumber)->timezone('Asia/Jakarta')->format('d M Y') }}.</span>
+            @endif
+            @unless ($hargaBerlaku)<span class="d-block">Data emas atau kurs lebih dari tujuh hari; checkout menunggu pembaruan otomatis atau acuan baru dari admin.</span>@endunless
+        </div>
     @else
-        <div class="alert alert-warning">Harga emas acuan belum dicatat oleh admin. Checkout maal belum tersedia.</div>
+        <div class="alert alert-warning">Harga emas acuan belum tersedia. Tunggu pembaruan otomatis atau hubungi admin. Checkout maal belum tersedia.</div>
     @endif
 
     @if ($errors->any())
@@ -23,6 +33,7 @@
     @endif
         <form method="POST" action="{{ route('muzakki.maal.store') }}">
             @csrf
+            <input type="hidden" name="harga_emas_id" value="{{ $hargaEmas->id ?? '' }}">
             <div id="daftar-subjek">
                 @foreach ($subjekAwal as $nomor => $subjek)
                     <section class="card border-0 shadow-sm mb-3 subjek-card"><div class="card-body">
