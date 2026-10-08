@@ -110,11 +110,20 @@
 
 <section class="card border-0 shadow-sm mb-4"><div class="card-body">
     <h2 class="h5">Katalog & ketersediaan</h2>
-    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Beras</th><th>Harga penawaran/kg</th><th>Stok gudang</th><th>Reservasi aktif</th><th>Tersedia</th></tr></thead><tbody>
+    <p class="small text-muted">Jenis beras dapat dihapus hanya sebelum digunakan. Lot lama tetap dihitung sebagai riwayat meskipun sisa stoknya nol.</p>
+    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Beras</th><th>Harga penawaran/kg</th><th>Stok gudang</th><th>Reservasi aktif</th><th>Tersedia</th><th>Hapus</th></tr></thead><tbody>
         @forelse ($katalog as $item)
-            <tr><td>{{ $item->nama_beras }}</td><td>Rp{{ number_format($item->harga_per_kg, 2, ',', '.') }}</td><td>{{ number_format($item->stock, 2, ',', '.') }} kg</td><td>{{ number_format($item->reservasi_kg, 2, ',', '.') }} kg</td><td>{{ number_format(max(0, $item->stock - $item->reservasi_kg), 2, ',', '.') }} kg</td></tr>
+            <tr><td>{{ $item->nama_beras }}</td><td>Rp{{ number_format($item->harga_per_kg, 2, ',', '.') }}</td><td>{{ number_format($item->stock, 2, ',', '.') }} kg</td><td>{{ number_format($item->reservasi_kg, 2, ',', '.') }} kg</td><td>{{ number_format(max(0, $item->stock - $item->reservasi_kg), 2, ',', '.') }} kg</td><td>
+                @php($katalogBolehDihapus = bccomp((string) $item->stock, '0', 2) === 0 && $item->lot_count == 0 && $item->transaksi_count == 0 && $item->riwayat_harga_count == 0)
+                <form method="POST" action="{{ route('panitia.katalog.destroy', $item->id) }}" onsubmit="return confirm('Hapus jenis beras ini secara permanen? Jenis beras hanya dapat dihapus jika belum digunakan.');">
+                    @csrf
+                    @method('DELETE')
+                    <button class="btn btn-sm btn-outline-danger" type="submit" @disabled(! $katalogBolehDihapus)>Hapus jenis beras</button>
+                </form>
+                @unless ($katalogBolehDihapus)<small class="text-muted">Memiliki stok atau riwayat terkait.</small>@endunless
+            </td></tr>
         @empty
-            <tr><td colspan="5" class="text-muted">Belum ada jenis beras.</td></tr>
+            <tr><td colspan="6" class="text-muted">Belum ada jenis beras.</td></tr>
         @endforelse
     </tbody></table></div>
 </div></section>

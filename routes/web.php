@@ -90,6 +90,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/vendor/{id}', [InventoryController::class, 'updateVendor'])->whereNumber('id')->name('vendor.update');
         Route::delete('/vendor/{id}', [InventoryController::class, 'destroyVendor'])->whereNumber('id')->name('vendor.destroy');
         Route::post('/katalog', [InventoryController::class, 'storeKatalog'])->name('katalog.store');
+        Route::delete('/katalog/{id}', [InventoryController::class, 'destroyKatalog'])->whereNumber('id')->name('katalog.destroy');
         Route::post('/pembelian/terima', [InventoryController::class, 'receive'])->name('pembelian.receive');
         Route::post('/pembelian/{id}/faktur', [InventoryController::class, 'uploadInvoice'])->whereNumber('id')->name('pembelian.faktur.store');
         Route::get('/pembelian/{id}/faktur', [InventoryController::class, 'invoice'])->whereNumber('id')->name('pembelian.faktur.show');

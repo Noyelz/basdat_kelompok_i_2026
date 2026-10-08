@@ -37,6 +37,15 @@ class InventoryController extends Controller
                     ->where('reservasi_stok.status', 'active')
                     ->selectRaw('COALESCE(SUM(reservasi_stok.jumlah_kg), 0)');
             }, 'reservasi_kg')
+            ->selectSub(function ($query): void {
+                $query->from('lot_beras')->whereColumn('lot_beras.katalog_beras_id', 'katalog_beras.id')->selectRaw('COUNT(*)');
+            }, 'lot_count')
+            ->selectSub(function ($query): void {
+                $query->from('transaksi_fitrah')->whereColumn('transaksi_fitrah.katalog_beras_id', 'katalog_beras.id')->selectRaw('COUNT(*)');
+            }, 'transaksi_count')
+            ->selectSub(function ($query): void {
+                $query->from('riwayat_harga_katalog')->whereColumn('riwayat_harga_katalog.katalog_beras_id', 'katalog_beras.id')->selectRaw('COUNT(*)');
+            }, 'riwayat_harga_count')
             ->orderBy('nama_beras')
             ->get();
 
@@ -169,6 +178,36 @@ class InventoryController extends Controller
         return back()->with('success', 'Jenis beras ditambahkan. Harga muncul setelah stok pertama diterima.');
     }
 
+    public function destroyKatalog(Request $request, int $id): RedirectResponse
+    {
+        DB::transaction(function () use ($request, $id): void {
+            $produk = DB::table('katalog_beras')->where('id', $id)->lockForUpdate()->first();
+            abort_unless($produk, 404);
+
+            $sudahDigunakan = DB::table('lot_beras')->where('katalog_beras_id', $id)->exists()
+                || DB::table('transaksi_fitrah')->where('katalog_beras_id', $id)->exists()
+                || DB::table('riwayat_harga_katalog')->where('katalog_beras_id', $id)->exists();
+            if ($sudahDigunakan || bccomp((string) $produk->stock, '0', 2) !== 0) {
+                throw ValidationException::withMessages([
+                    'katalog' => 'Jenis beras hanya boleh dihapus jika stok nol dan belum memiliki lot, transaksi, atau riwayat harga. Stok habis tidak berarti riwayatnya boleh dihapus.',
+                ]);
+            }
+
+            DB::table('katalog_beras')->where('id', $id)->delete();
+            DB::table('audit_log')->insert([
+                'actor_user_id' => $request->user()->id,
+                'aksi' => 'katalog_beras.dihapus',
+                'jenis_objek' => 'katalog_beras',
+                'objek_id' => $id,
+                'detail' => json_encode(['nama_beras' => $produk->nama_beras], JSON_THROW_ON_ERROR),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        }, attempts: 3);
+
+        return redirect()->route('panitia.gudang.index')->with('success', 'Jenis beras yang belum digunakan berhasil dihapus.');
+    }
+
     public function receive(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -193,7 +232,9 @@ class InventoryController extends Controller
         try {
             DB::transaction(function () use ($request, $data, $buktiPath): void {
                 $produk = DB::table('katalog_beras')->where('id', $data['katalog_beras_id'])->lockForUpdate()->first();
-                abort_unless($produk && $produk->is_active, 422);
+                if (! $produk || ! $produk->is_active) {
+                    throw ValidationException::withMessages(['katalog_beras_id' => 'Jenis beras sudah dihapus atau dinonaktifkan. Pilih jenis beras aktif lain.']);
+                }
                 $vendor = DB::table('vendor')->where('id', $data['vendor_id'])->lockForUpdate()->first(['id', 'is_active']);
                 if (! $vendor || ! $vendor->is_active) {
                     throw ValidationException::withMessages(['vendor_id' => 'Vendor sudah dihapus atau dinonaktifkan. Pilih vendor aktif lain.']);

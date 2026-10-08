@@ -1088,3 +1088,13 @@ Untuk membatalkan kode gunakan `git revert <hash>`; rollback migration menghapus
 **File:** `InventoryController.php`, `routes/web.php`, `resources/views/panitia/gudang.blade.php`. Tidak ada migration atau database baru. Tidak ada data operasional yang dihapus saat pemasangan fitur. Penghapusan dari UI bersifat permanen; commit Git mengembalikan kode, bukan baris database yang sudah dihapus.
 
 **Pemeriksaan:** format PHP melalui Pint dan pemeriksaan diff; pengujian otomatis/alur browser belum dijalankan pada tahap ini.
+
+### 15.2 Hapus jenis beras yang belum digunakan
+
+- [x] Tombol **Hapus jenis beras** tersedia pada tabel Katalog & ketersediaan, dengan konfirmasi sebelum submit.
+- [x] Server mengunci katalog dan mensyaratkan stok tepat nol serta tidak adanya `lot_beras`, `transaksi_fitrah`, dan `riwayat_harga_katalog` yang merujuk jenis beras tersebut.
+- [x] Lot kosong/habis dan transaksi pending/batal tetap dianggap riwayat; data tidak dihapus berantai. Tombol dinonaktifkan jika syarat tidak terpenuhi dan server tetap memeriksa ulang.
+- [x] Reservasi/mutasi terlindungi melalui penolakan setiap lot terkait; penerimaan dan checkout juga mengunci katalog yang sama.
+- [x] Role panitia, CSRF, ValidationException untuk pesan di form, dan audit penghapusan diterapkan. Penerimaan memberi pesan jelas jika katalog dihapus/dinonaktifkan setelah form dibuka.
+
+**File:** `InventoryController.php`, `routes/web.php`, `resources/views/panitia/gudang.blade.php`. Skema dan jumlah kolom tetap; tidak ada penghapusan data saat memasang fitur. Ini penambahan Delete katalog, bukan klaim CRUD manual harga/stok; harga berasal dari lot dan stok dikoreksi lewat mutasi. Pemeriksaan format/diff dilakukan; alur browser dan pengujian otomatis belum dijalankan.
