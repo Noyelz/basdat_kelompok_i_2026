@@ -13,7 +13,7 @@
 
 > **Pembaruan harga emas otomatis — 8 Oktober 2026:** Harga acuan maal kini memakai emas dunia dari Gold API dan kurs USD/IDR dari Frankfurter, dikonversi ke rupiah per gram sekali sehari pukul **09.30 WIB**. Scheduler sudah dipasang pada crontab akun `keli`. Harga pertama sudah tersimpan; pesanan lama tetap memakai snapshot. Baca [Bagian 12](#12-harga-acuan-emas-dunia-otomatis-8-oktober-2026) untuk alur, kolom database, command, dan pemulihan.
 
-> **Panduan belajar lengkap (8 Oktober 2026):** Baca [PANDUAN_LENGKAP_PORTAL_ZAKAT.md](PANDUAN_LENGKAP_PORTAL_ZAKAT.md) untuk memahami alur seluruh role, status pembayaran dan penyaluran, contoh perhitungan/stok, arti 42 tabel dan 432 kolom database aktif `zakat_db`, peta route, serta tugas setiap file aplikasi dan method controller. Panduan menandai kode lama dan fitur yang belum lengkap. Panduan awal dibuat tanpa perubahan aplikasi; pembaruan integrasi emas pada Bagian 12 mencatat perubahan kode dan skema berikutnya.
+> **Panduan belajar lengkap (diperbarui 9 Oktober 2026):** Baca [PANDUAN_LENGKAP_PORTAL_ZAKAT.md](PANDUAN_LENGKAP_PORTAL_ZAKAT.md) untuk memahami alur seluruh role, status pembayaran dan penyaluran, contoh perhitungan/stok, arti 35 tabel dan 393 kolom database aktif `zakat_db`, peta route, serta tugas setiap file aplikasi dan method controller. Panduan menandai kode lama dan fitur yang belum lengkap. Panduan awal dibuat tanpa perubahan aplikasi; pembaruan integrasi emas pada Bagian 12 mencatat perubahan kode dan skema berikutnya.
 
 Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pengelolaan & Pembayaran Zakat (Fitrah & Maal)**. Database ini dirancang dengan standar industri (menggunakan MySQL/MariaDB Engine: `InnoDB`, Charset: `utf8mb4`) agar **anti-banting, aman dari selisih pembulatan uang, konsisten secara audit finansial, dan sesuai prinsip syariah**.
 
@@ -23,7 +23,7 @@ Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pen
 
 > **Teks tampilan terbaru:** Label simulasi, data pengembangan, dan pengembangan internal di antarmuka dirapikan pada 8 Oktober 2026. Lihat [Bagian 16](#16-perapian-teks-tampilan-dan-salinan-github-8-oktober-2026). Ini perubahan presentasi; QR masih mencatat konfirmasi tanpa transfer uang dan belum terhubung ke payment gateway.
 
-> **ERD database baru (diperbarui 8 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 42 tabel, 432 kolom, 55 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Diagram memakai metadata skema; diperbarui setelah migration emas harian dan kapasitas pengajuan PJ pada Bagian 12 dan 14. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
+> **ERD database baru (diperbarui 9 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 35 tabel, 393 kolom, 55 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Diagram memakai metadata skema; diperbarui setelah migration emas harian, kapasitas pengajuan PJ, dan cleanup infrastruktur pada Bagian 12, 14, dan 17. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
 
 ---
 
@@ -1149,7 +1149,7 @@ Fitur Delete lainnya: tambah jenis beras tanpa menerima stok lalu hapus; simpan 
 **Pemulihan:** gunakan git revert terhadap commit teks di repository utama, lalu salin kembali file yang diperlukan ke folder GitHub. Dokumentasi teknis tetap menyebut mode simulasi dan keterbatasan pembayaran agar kemampuan aplikasi tercatat dengan benar.
 
 
-## 17. Persiapan penghapusan tabel infrastruktur Laravel (9 Oktober 2026)
+## 17. Penghapusan tabel infrastruktur Laravel selesai (9 Oktober 2026)
 
 Pengguna meminta penghapusan tujuh tabel yang tidak dipakai: `sessions`, `password_reset_tokens`, `cache`, `cache_locks`, `jobs`, `job_batches`, dan `failed_jobs`. Seluruhnya kosong dan tidak menerima FK dari tabel lain. `migrations` dan seluruh 34 tabel domain tetap dipertahankan.
 
@@ -1158,7 +1158,16 @@ Pengguna meminta penghapusan tujuh tabel yang tidak dipakai: `sessions`, `passwo
 - [x] Membuat migration `2026_10_09_071031_remove_unused_framework_tables.php`; memeriksa driver dan seluruh tabel sebelum DROP pertama. Rollback membuat tabel kosong, bukan memulihkan data. Migration lama tetap dipertahankan.
 - [x] Pengujian cleanup/rollback dan regresi checkout lulus: 16 test, 138 assertion pada SQLite :memory: terpisah. Pint lulus; perubahan controller/test checkout milik pengguna tidak disentuh.
 - [x] Memeriksa SQL lewat --pretend dan mencoba menerapkan hanya migration cleanup.
-- [ ] Penghapusan pada MySQL aktif **belum berhasil**: akun database `'keli'@'%'` tidak memiliki izin DROP dan ditolak pada tabel sessions, sebelum tabel mana pun dihapus. Migration masih Pending; skema tetap 42 tabel, 432 kolom, 55 FK, dan 2 CHECK JSON. Jumlah baris semua tabel tetap sama setelah percobaan gagal.
+- [x] Percobaan awal penghapusan pada MySQL aktif ditolak: akun database `'keli'@'%'` tidak memiliki izin DROP dan ditolak pada tabel sessions, sebelum tabel mana pun dihapus. Saat percobaan awal itu migration masih Pending; skema tetap 42 tabel, 432 kolom, 55 FK, dan 2 CHECK JSON. Jumlah baris semua tabel tetap sama setelah percobaan gagal.
 - [x] Menyiapkan [handout prompt untuk admin/root database](HANDOFF_HAPUS_TABEL_LARAVEL.md), termasuk izin DROP sementara khusus tujuh tabel, migration, pencabutan izin, verifikasi, dan pembaruan ERD setelah berhasil.
 
-Target setelah admin menyelesaikan migration: **35 tabel, 393 kolom, 55 FK, dan 2 CHECK JSON**. ERD/kamus aktif tetap menampilkan 42 tabel sampai penghapusan benar-benar berhasil. Backup berisi data aplikasi; jangan memasukkannya ke Git.
+- [x] Membuat backup terbaru sebelum perubahan: `/var/tmp/basdatkeli-backups/zakat_db-before-framework-cleanup-20261009-072353.sql`, izin 0600, 94.482 byte, 42 definisi tabel dan penanda selesai. SHA-256: `f3e595d8198b9c90d92e729036c4744c5bcc58fa6bd438ce84c7d9b74cf19eb3`.
+- [x] Memeriksa ulang tujuh tabel kosong dan tidak menerima FK; konfigurasi aktif `file` / `file` / `sync` / `null`.
+- [x] Admin MariaDB lokal memberi izin DROP hanya pada tujuh tabel, lalu menjalankan migration sebagai pemilik aplikasi `keli`: **Ran, batch 6**, pada 9 Oktober 2026 pukul 14.24 WIB. Tidak ada DROP manual atau perubahan kredensial.
+- [x] Mencabut seluruh tujuh izin DROP sementara; hak akun `'keli'@'%'` cocok persis dengan catatan sebelum pemberian izin.
+- [x] Memverifikasi **35 tabel, 393 kolom, 55 FK, 2 CHECK JSON**. `migrations` tetap ada dan bertambah satu baris (11 → 12). Seluruh 34 tabel domain tetap ada, jumlah baris masing-masing tidak berubah (total 192); isi INSERT data bisnis cocok persis dengan backup sebelum migration.
+- [x] Menjalankan ulang test cleanup/rollback dan regresi checkout pada SQLite `:memory:`: **16 test, 138 assertion lulus**.
+- [x] Beranda/login melalui HTTP memberikan 200; dashboard muzakki, panitia, PJ dan admin melalui kernel aplikasi dengan autentikasi akun yang sudah ada memberikan 200 dalam transaksi database read-only. Cache file tulis/baca dan lock berhasil; `schedule:list` tetap memuat jadwal sinkronisasi emas. Sinkronisasi tidak dijalankan. Laravel Boost tetap dapat membaca database dan metadata aplikasi.
+- [x] Memperbarui ERD physical, kamus aktif, kedua panduan, dan status handout. ERD konseptual tidak terpengaruh; penjelasan migration lama tetap dipertahankan sebagai riwayat.
+
+**Hasil akhir:** tujuh tabel kosong telah dihapus; seluruh tabel bisnis dan data tetap utuh. Backup dan catatan izin/jumlah baris berada di luar repository. Dokumentasi terkait disimpan sebagai commit lokal tanpa push; perubahan lokal controller, Blade, CSS, aset, PDF, test checkout, `.env` dan APP_KEY milik pengguna dipertahankan.

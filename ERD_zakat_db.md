@@ -1,10 +1,10 @@
 # ERD database zakat_db
 
-Snapshot skema **8 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQL aktif `zakat_db`, bukan ERD lama database `zakat` pada Bagian 2 di `!wajib_baca.md`. Server memakai MariaDB 10.6.23; seluruh 42 tabel memakai InnoDB dan collation `utf8mb4_unicode_ci`. Snapshot mencakup **432 kolom, 55 foreign key, dan 2 CHECK constraint JSON**.
+Snapshot skema **9 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQL aktif `zakat_db`, bukan ERD lama database `zakat` pada Bagian 2 di `!wajib_baca.md`. Server memakai MariaDB 10.6.23; seluruh 35 tabel memakai InnoDB dan collation `utf8mb4_unicode_ci`. Snapshot mencakup **393 kolom, 55 foreign key, dan 2 CHECK constraint JSON**.
 
 Dokumen ini dibuat dengan pembacaan skema dan metadata saja. Nama kolom seperti `pass_hash`, `token`, atau `no_rek` merupakan definisi skema; tidak ada kata sandi, hash milik pengguna, nomor rekening, maupun baris data transaksi yang disalin ke dokumentasi.
 
-> **Status 9 Oktober 2026:** penghapusan tujuh tabel infrastruktur telah disiapkan, tetapi belum diterapkan karena izin DROP tidak tersedia. Diagram masih menampilkan seluruh 42 tabel yang benar-benar ada. Setelah migration berhasil, ERD perlu diperbarui menjadi 35 tabel dan 393 kolom. [Instruksi admin](HANDOFF_HAPUS_TABEL_LARAVEL.md).
+> **Status 9 Oktober 2026:** migration `2026_10_09_071031_remove_unused_framework_tables` berhasil diterapkan sebagai batch 6. Tujuh tabel infrastruktur kosong telah dihapus; `migrations` dan seluruh 34 tabel domain tetap ada. Data bisnis tidak berubah, dan izin DROP sementara sudah dicabut. [Catatan pelaksanaan admin](HANDOFF_HAPUS_TABEL_LARAVEL.md).
 
 ## Memilih diagram
 
@@ -19,7 +19,7 @@ Diagram menggunakan Mermaid dan notasi crow's foot. Blok `mermaid` dapat ditampi
 
 ## ERD konseptual
 
-Model ini menyederhanakan skema menjadi entitas bisnis utama dan hubungan yang relevan. Pengguna memiliki peran muzakki, PJ, panitia, atau admin; keempatnya tetap berasal dari satu entitas pengguna. Detail harga, dokumen verifikasi, notifikasi, audit, dan tabel teknis Laravel dibaca pada model physical.
+Model ini menyederhanakan skema menjadi entitas bisnis utama dan hubungan yang relevan. Pengguna memiliki peran muzakki, PJ, panitia, atau admin; keempatnya tetap berasal dari satu entitas pengguna. Detail harga, dokumen verifikasi, notifikasi, audit, dan riwayat migration dibaca pada model physical.
 
 Hubungan ini diturunkan dari skema saat ini, kemudian diberi nama bisnis. Label peran dan aturan dua bukti adalah aturan aplikasi; diagram konseptual tidak membuktikan bahwa semuanya dibatasi oleh constraint database.
 
@@ -337,32 +337,12 @@ erDiagram
 
 ### 5. Infrastruktur Laravel
 
+Tabel `migrations` tetap menyimpan riwayat skema. Session dan cache memakai file, queue memakai `sync`, serta penyimpanan failed jobs memakai `null`. Tujuh tabel backend database yang tidak dipakai telah dihapus; jangan mengaktifkan backend tersebut tanpa membuat kembali tabel pendukungnya.
+
 ```mermaid
 erDiagram
-    cache {
-        varchar key PK "varchar(255); NOT NULL"
-    }
-    cache_locks {
-        varchar key PK "varchar(255); NOT NULL"
-    }
-    jobs {
-        bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
-    }
-    job_batches {
-        varchar id PK "varchar(255); NOT NULL"
-    }
-    failed_jobs {
-        bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
-        varchar uuid UK "varchar(255); NOT NULL"
-    }
     migrations {
         int_unsigned id PK "int(10) unsigned; NOT NULL; AUTO_INCREMENT"
-    }
-    password_reset_tokens {
-        varchar email PK "varchar(255); NOT NULL"
-    }
-    sessions {
-        varchar id PK "varchar(255); NOT NULL"
     }
 ```
 
@@ -372,7 +352,6 @@ erDiagram
 - UNIQUE `yayasan.pj_user_id` membatasi satu akun PJ maksimal satu panti pada skema sekarang. FK ke `user` tidak membatasi nilai perannya menjadi PJ; aplikasi yang memeriksanya.
 - UNIQUE `transaksi_fitrah.transaksi_id` dan `transaksi_mal.transaksi_id` membatasi satu detail pada masing-masing tabel. Database sendiri tidak memaksa setiap transaksi mempunyai detail dan tidak melarang satu transaksi mempunyai kedua jenis detail sekaligus.
 - UNIQUE `(alokasi_transaksi_id, pihak)` mencegah duplikasi bukti untuk nilai pihak yang sama. Jumlah dua pihak serta kecocokan jumlah dan foto adalah aturan aplikasi.
-- `sessions.user_id` memiliki indeks tetapi **tidak mempunyai foreign key**. `password_reset_tokens.email` juga tidak mempunyai FK ke `user.email`; keduanya tidak digambar seolah memiliki relasi FK.
 - `audit_log.jenis_objek` dan `objek_id` adalah referensi generik, bukan FK ke semua tabel domain. Hanya `actor_user_id` yang memiliki FK.
 - `pemberi_zakat_mal`, `pemberi_zakat_fitrah`, dan kolom bukti lama masih ada pada skema sehingga tetap ditampilkan. Snapshot ini menggambarkan tabel yang tersedia, bukan menyatakan semua tabel lama digunakan oleh alur terbaru.
 - Ada dua constraint JSON pada MariaDB: `audit_log.detail` dan `notifikasi_aplikasi.payload` memakai `LONGTEXT` dengan `CHECK(json_valid(...))`. Tidak digambarkan sebagai tipe JSON native MySQL.
@@ -1506,116 +1485,6 @@ CHECK constraint:
 
 - `detail`: `json_valid(`detail`)`.
 
-### Tabel `cache`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `key` | `varchar(255)` | Tidak | — | PK | Tidak |
-| `value` | `mediumtext` | Tidak | — | — | Tidak |
-| `expiration` | `bigint(20)` | Tidak | — | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `cache_expiration_index` | INDEX | `expiration` | `btree` |
-| `primary` | PRIMARY KEY | `key` | `btree` |
-
-Tidak memiliki foreign key.
-
-### Tabel `cache_locks`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `key` | `varchar(255)` | Tidak | — | PK | Tidak |
-| `owner` | `varchar(255)` | Tidak | — | — | Tidak |
-| `expiration` | `bigint(20)` | Tidak | — | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `cache_locks_expiration_index` | INDEX | `expiration` | `btree` |
-| `primary` | PRIMARY KEY | `key` | `btree` |
-
-Tidak memiliki foreign key.
-
-### Tabel `jobs`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `bigint(20) unsigned` | Tidak | — | PK | Ya |
-| `queue` | `varchar(255)` | Tidak | — | — | Tidak |
-| `payload` | `longtext` | Tidak | — | — | Tidak |
-| `attempts` | `smallint(5) unsigned` | Tidak | — | — | Tidak |
-| `reserved_at` | `int(10) unsigned` | Ya | `NULL` | — | Tidak |
-| `available_at` | `int(10) unsigned` | Tidak | — | — | Tidak |
-| `created_at` | `int(10) unsigned` | Tidak | — | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `jobs_queue_index` | INDEX | `queue` | `btree` |
-| `primary` | PRIMARY KEY | `id` | `btree` |
-
-Tidak memiliki foreign key.
-
-### Tabel `job_batches`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `varchar(255)` | Tidak | — | PK | Tidak |
-| `name` | `varchar(255)` | Tidak | — | — | Tidak |
-| `total_jobs` | `int(11)` | Tidak | — | — | Tidak |
-| `pending_jobs` | `int(11)` | Tidak | — | — | Tidak |
-| `failed_jobs` | `int(11)` | Tidak | — | — | Tidak |
-| `failed_job_ids` | `longtext` | Tidak | — | — | Tidak |
-| `options` | `mediumtext` | Ya | `NULL` | — | Tidak |
-| `cancelled_at` | `int(11)` | Ya | `NULL` | — | Tidak |
-| `created_at` | `int(11)` | Tidak | — | — | Tidak |
-| `finished_at` | `int(11)` | Ya | `NULL` | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `primary` | PRIMARY KEY | `id` | `btree` |
-
-Tidak memiliki foreign key.
-
-### Tabel `failed_jobs`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `bigint(20) unsigned` | Tidak | — | PK | Ya |
-| `uuid` | `varchar(255)` | Tidak | — | UK | Tidak |
-| `connection` | `varchar(255)` | Tidak | — | — | Tidak |
-| `queue` | `varchar(255)` | Tidak | — | — | Tidak |
-| `payload` | `longtext` | Tidak | — | — | Tidak |
-| `exception` | `longtext` | Tidak | — | — | Tidak |
-| `failed_at` | `timestamp` | Tidak | `current_timestamp()` | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `failed_jobs_connection_queue_failed_at_index` | INDEX | `connection`, `queue`, `failed_at` | `btree` |
-| `failed_jobs_uuid_unique` | UNIQUE | `uuid` | `btree` |
-| `primary` | PRIMARY KEY | `id` | `btree` |
-
-Tidak memiliki foreign key.
-
 ### Tabel `migrations`
 
 Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
@@ -1631,46 +1500,5 @@ Indeks (urutan kolom dipertahankan):
 | Nama | Jenis | Kolom | Metode |
 | --- | --- | --- | --- |
 | `primary` | PRIMARY KEY | `id` | `btree` |
-
-Tidak memiliki foreign key.
-
-### Tabel `password_reset_tokens`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `email` | `varchar(255)` | Tidak | — | PK | Tidak |
-| `token` | `varchar(255)` | Tidak | — | — | Tidak |
-| `created_at` | `timestamp` | Ya | `NULL` | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `primary` | PRIMARY KEY | `email` | `btree` |
-
-Tidak memiliki foreign key.
-
-### Tabel `sessions`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `varchar(255)` | Tidak | — | PK | Tidak |
-| `user_id` | `bigint(20) unsigned` | Ya | `NULL` | — | Tidak |
-| `ip_address` | `varchar(45)` | Ya | `NULL` | — | Tidak |
-| `user_agent` | `text` | Ya | `NULL` | — | Tidak |
-| `payload` | `longtext` | Tidak | — | — | Tidak |
-| `last_activity` | `int(11)` | Tidak | — | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `primary` | PRIMARY KEY | `id` | `btree` |
-| `sessions_last_activity_index` | INDEX | `last_activity` | `btree` |
-| `sessions_user_id_index` | INDEX | `user_id` | `btree` |
 
 Tidak memiliki foreign key.

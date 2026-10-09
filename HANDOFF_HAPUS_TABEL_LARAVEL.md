@@ -1,4 +1,23 @@
-# Handout prompt untuk admin/root database
+# Handout admin/root database — selesai
+
+## Status pelaksanaan — 9 Oktober 2026 (WIB)
+
+**Selesai.** Migration `2026_10_09_071031_remove_unused_framework_tables` dijalankan sebagai pemilik aplikasi `keli` dan tercatat **Ran, batch 6**, pada pukul 14.24 WIB. Tujuh tabel kosong yang dihapus: `sessions`, `password_reset_tokens`, `cache`, `cache_locks`, `jobs`, `job_batches`, dan `failed_jobs`.
+
+- Skema akhir `zakat_db`: **35 tabel, 393 kolom, 55 foreign key, 2 CHECK JSON**. `migrations` tetap ada (12 baris); seluruh 34 tabel domain tetap ada.
+- Jumlah baris setiap tabel domain tidak berubah, total **192 baris**. Isi INSERT data bisnis pada dump sesudah migration cocok persis dengan backup sebelum perubahan.
+- Backup terbaru: `/var/tmp/basdatkeli-backups/zakat_db-before-framework-cleanup-20261009-072353.sql`; izin **0600**, ukuran **94.482 byte**, memuat seluruh 42 definisi tabel sebelum cleanup dan penanda selesai. SHA-256: `f3e595d8198b9c90d92e729036c4744c5bcc58fa6bd438ce84c7d9b74cf19eb3`.
+- Catatan izin awal disimpan privat di `/var/tmp/basdatkeli-backups/keli-grants-before-framework-cleanup-20261009-072353.txt`; jumlah baris sebelum perubahan di `zakat_db-row-counts-before-20261009-072353.json` pada direktori yang sama. File-file ini tidak masuk Git.
+- Admin MariaDB melalui socket lokal memberi DROP hanya pada tujuh tabel sasaran. Seluruh izin sementara dicabut setelah migration; hasil hak akun `'keli'@'%'` cocok persis dengan keadaan awal.
+- Konfigurasi aktif: session **file**, cache **file**, queue **sync**, failed-job storage **null**. `.env`, APP_KEY, dependensi, database lama `zakat`, dan perubahan lokal pengguna tidak diubah.
+- Test cleanup/rollback dan regresi checkout: **16 test, 138 assertion lulus**, memakai SQLite `:memory:` terpisah.
+- Beranda dan login melalui HTTP: **200**. Dashboard empat peran melalui kernel aplikasi, autentikasi akun yang sudah ada, dan transaksi database read-only: **200**. Pemeriksaan ini memverifikasi respons/render server, bukan interaksi visual browser.
+- Cache file tulis/baca dan lock berhasil. Tiga jadwal Artisan tetap terdaftar, termasuk harga emas; sinkronisasi emas tidak dijalankan. Query dan metadata Laravel Boost tetap berfungsi.
+- ERD physical/kamus aktif dan panduan sudah diperbarui. ERD konseptual tidak terpengaruh. Perubahan dokumentasi terkait disimpan sebagai commit lokal tanpa push; source migration/test/config yang disiapkan sebelumnya tetap dipertahankan.
+
+## Arsip prompt sebelum pelaksanaan
+
+Bagian di bawah mempertahankan keadaan awal dan prosedur yang sudah dilaksanakan sebagai riwayat. Status Pending, hitungan 42/432, dan instruksi pemberian izin di arsip bukan keadaan aktif atau pekerjaan yang perlu diulang.
 
 Salin seluruh bagian **Prompt siap diberikan** di bawah ke akun/asisten root yang menangani database. Root Linux dan root MySQL adalah akun berbeda: menjalankan Artisan sebagai root Linux tetap memakai akun database dari konfigurasi Laravel. Yang dibutuhkan di sini adalah akses admin MySQL/MariaDB untuk memberikan izin DROP terbatas.
 

@@ -1,5 +1,5 @@
-%% ERD physical zakat_db, snapshot 2026-10-08 WIB.
-%% 42 tabel, 432 kolom, 55 foreign key. Nama dan relasi berasal dari metadata database aktif.
+%% ERD physical zakat_db, snapshot 2026-10-09 WIB.
+%% 35 tabel, 393 kolom, 55 foreign key, 2 CHECK JSON. Nama dan relasi berasal dari metadata database aktif.
 %% Tipe SQL persis berada di komentar atribut; UK hanya untuk unique satu kolom.
 %% Unique gabungan, default, semua indeks, CHECK, dan aturan FK dicatat di ERD_zakat_db.md.
 erDiagram
@@ -461,63 +461,10 @@ erDiagram
         varchar ip_address "varchar(45); NULL"
         timestamp created_at "timestamp; NOT NULL"
     }
-    cache {
-        varchar key PK "varchar(255); NOT NULL"
-        mediumtext value "mediumtext; NOT NULL"
-        bigint expiration "bigint(20); NOT NULL"
-    }
-    cache_locks {
-        varchar key PK "varchar(255); NOT NULL"
-        varchar owner "varchar(255); NOT NULL"
-        bigint expiration "bigint(20); NOT NULL"
-    }
-    jobs {
-        bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
-        varchar queue "varchar(255); NOT NULL"
-        longtext payload "longtext; NOT NULL"
-        smallint_unsigned attempts "smallint(5) unsigned; NOT NULL"
-        int_unsigned reserved_at "int(10) unsigned; NULL"
-        int_unsigned available_at "int(10) unsigned; NOT NULL"
-        int_unsigned created_at "int(10) unsigned; NOT NULL"
-    }
-    job_batches {
-        varchar id PK "varchar(255); NOT NULL"
-        varchar name "varchar(255); NOT NULL"
-        int total_jobs "int(11); NOT NULL"
-        int pending_jobs "int(11); NOT NULL"
-        int failed_jobs "int(11); NOT NULL"
-        longtext failed_job_ids "longtext; NOT NULL"
-        mediumtext options "mediumtext; NULL"
-        int cancelled_at "int(11); NULL"
-        int created_at "int(11); NOT NULL"
-        int finished_at "int(11); NULL"
-    }
-    failed_jobs {
-        bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
-        varchar uuid UK "varchar(255); NOT NULL"
-        varchar connection "varchar(255); NOT NULL"
-        varchar queue "varchar(255); NOT NULL"
-        longtext payload "longtext; NOT NULL"
-        longtext exception "longtext; NOT NULL"
-        timestamp failed_at "timestamp; NOT NULL"
-    }
     migrations {
         int_unsigned id PK "int(10) unsigned; NOT NULL; AUTO_INCREMENT"
         varchar migration "varchar(255); NOT NULL"
         int batch "int(11); NOT NULL"
-    }
-    password_reset_tokens {
-        varchar email PK "varchar(255); NOT NULL"
-        varchar token "varchar(255); NOT NULL"
-        timestamp created_at "timestamp; NULL"
-    }
-    sessions {
-        varchar id PK "varchar(255); NOT NULL"
-        bigint_unsigned user_id "bigint(20) unsigned; NULL"
-        varchar ip_address "varchar(45); NULL"
-        text user_agent "text; NULL"
-        longtext payload "longtext; NOT NULL"
-        int last_activity "int(11); NOT NULL"
     }
     user |o..o{ user : "created_by_admin_id"
     bank |o..o{ yayasan : "bank_id"

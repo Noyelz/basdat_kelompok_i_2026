@@ -2,9 +2,9 @@
 
 Dokumentasi pembelajaran berbahasa Indonesia, diperiksa pada **9 Oktober 2026 (WIB)**. Urutan pembahasan: tujuan sistem → MVC dan alur kode → penjelasan file dan cuplikan penting → CRUD → database beserta tabel, kolom, PK/FK, dan alasan relasinya.
 
-Sumber utama adalah **kode di workspace saat dokumen dibuat**, daftar route yang benar-benar terdaftar, serta metadata database aktif melalui Laravel Boost. Kamus kolom dari panduan proyek yang sudah ada dicocokkan ulang: **42 tabel, 432 kolom, 55 foreign key**, tanpa perbedaan nama kolom, tipe, nullable, atau FK. Paket terpasang yang relevan: **Laravel 13.32.0** dan **endroid/qr-code 5.1.0**. Versi rentang pada `composer.json` bukan selalu versi terpasang.
+Sumber utama adalah **kode di workspace saat dokumen dibuat**, daftar route yang benar-benar terdaftar, serta metadata database aktif melalui Laravel Boost. Kamus kolom dari panduan proyek yang sudah ada dicocokkan ulang: **35 tabel, 393 kolom, 55 foreign key**, tanpa perbedaan nama kolom, tipe, nullable, atau FK. Paket terpasang yang relevan: **Laravel 13.32.0** dan **endroid/qr-code 5.1.0**. Versi rentang pada `composer.json` bukan selalu versi terpasang.
 
-Dokumen memuat 17 controller (termasuk class dasar bawaan), 12 model, 4 command aplikasi, 1 middleware khusus, 1 provider yang disesuaikan, 12 file migration (11 sudah diterapkan, 1 masih pending), 2 seeder, 1 factory, dan 29 template Blade. File bawaan Laravel yang belum mempunyai logika bisnis cukup ditandai sebagai bawaan. Kode di `vendor/`, `node_modules/`, hasil kompilasi/cache, dan isi paket tidak diuraikan ulang. Gambar adalah aset, bukan kode PHP/JavaScript.
+Dokumen memuat 17 controller (termasuk class dasar bawaan), 12 model, 4 command aplikasi, 1 middleware khusus, 1 provider yang disesuaikan, 12 file migration (seluruhnya sudah diterapkan), 2 seeder, 1 factory, dan 29 template Blade. File bawaan Laravel yang belum mempunyai logika bisnis cukup ditandai sebagai bawaan. Kode di `vendor/`, `node_modules/`, hasil kompilasi/cache, dan isi paket tidak diuraikan ulang. Gambar adalah aset, bukan kode PHP/JavaScript.
 
 **Penting untuk memahami implementasi saat ini:** QR pembayaran hanya mencatat **simulasi**, belum menerima uang atau berkomunikasi dengan payment gateway. Teks UI “pembayaran tercatat” berasal dari status `simulated_paid`. Model/halaman lama tetap diterangkan dan ditandai agar tidak dianggap sebagai fitur aktif.
 
@@ -1306,7 +1306,7 @@ Migration adalah **kode pembentuk struktur**, bukan tempat transaksi pengguna. `
 
 **Mengapa di `database/migrations/`:** Laravel mendeteksi resep skema di folder ini. Migration adalah lapisan database pendukung MVC, bukan Model. Menambahkan class model tidak membuat tabel; menjalankan migration yang membuat/mengubah tabel.
 
-Pembuatan awal dokumentasi tidak mengubah database. Pada 9 Oktober 2026 ditambahkan migration penghapusan tujuh tabel infrastruktur atas permintaan pengguna. Migration tersebut **masih pending** karena akun MySQL aplikasi tidak memiliki izin DROP; skema aktif masih 42 tabel. Istilah “database baru” merujuk desain operasional `zakat_db` yang sudah dipakai proyek.
+Pembuatan awal dokumentasi tidak mengubah database. Pada 9 Oktober 2026 ditambahkan migration penghapusan tujuh tabel infrastruktur atas permintaan pengguna. Migration tersebut **sudah diterapkan pada batch 6** dengan izin DROP sementara khusus tujuh tabel; skema aktif kini 35 tabel. Izin sementara sudah dicabut. Istilah “database baru” merujuk desain operasional `zakat_db` yang sudah dipakai proyek.
 
 ### `database/migrations/0001_01_01_000000_create_users_table.php`
 
@@ -1543,7 +1543,7 @@ foreach ($this->tables as $table) {
 
 Seluruh tabel diperiksa sebelum DROP pertama agar tabel berisi data menghentikan proses tanpa penghapusan sebagian. `up()` juga menolak session/cache/queue berbasis database, queue failover, dan penyimpanan failed jobs berbasis database. `down()` membuat kembali struktur tujuh tabel kosong beserta indeksnya; isi data hanya dapat dipulihkan dari cadangan.
 
-**Status aktual:** percobaan penerapan ditolak pada DROP pertama karena izin MySQL. Tidak ada tabel terhapus dan migration belum tercatat sebagai Ran. Jika berhasil diterapkan kemudian, skema menjadi **35 tabel, 393 kolom, 55 FK, dan 2 CHECK JSON**. Instruksi admin tersedia di [HANDOFF_HAPUS_TABEL_LARAVEL.md](HANDOFF_HAPUS_TABEL_LARAVEL.md).
+**Status aktual:** migration berhasil diterapkan pada 9 Oktober 2026 sebagai batch 6. Skema menjadi **35 tabel, 393 kolom, 55 FK, dan 2 CHECK JSON**. Seluruh 34 tabel domain dan isi data bisnis tetap utuh; izin DROP sementara telah dicabut. Catatan pelaksanaan tersedia di [HANDOFF_HAPUS_TABEL_LARAVEL.md](HANDOFF_HAPUS_TABEL_LARAVEL.md).
 
 ### `database/seeders/DatabaseSeeder.php`
 
@@ -2462,15 +2462,15 @@ Vendor memiliki CRUD lengkap dengan Delete terbatas. Katalog/perjalanan punya pe
 
 ### 11.1 Fakta skema yang diperiksa
 
-Koneksi aktif memakai driver MySQL; skema bisnis bernama `zakat_db`. Metadata yang dibaca menunjukkan **42 tabel, 432 kolom, 55 FK dan 2 CHECK JSON**. Tidak ada database view, trigger, stored procedure atau function tersimpan pada metadata yang diperiksa. Istilah **View MVC** berarti template Blade, berbeda dari **database view**.
+Koneksi aktif memakai driver MySQL; skema bisnis bernama `zakat_db`. Metadata yang dibaca menunjukkan **35 tabel, 393 kolom, 55 FK dan 2 CHECK JSON**. Tidak ada database view, trigger, stored procedure atau function tersimpan pada metadata yang diperiksa. Istilah **View MVC** berarti template Blade, berbeda dari **database view**.
 
-Sebanyak **34 tabel** mendukung domain zakat/referensi/notifikasi/audit; **8 tabel** adalah infrastruktur Laravel: migrations, password_reset_tokens, sessions, cache, cache_locks, jobs, job_batches, failed_jobs. Tabel user memakai struktur khusus proyek, sehingga dibahas bersama domain akun.
+Sebanyak **34 tabel** mendukung domain zakat/referensi/notifikasi/audit; **1 tabel** adalah infrastruktur Laravel: `migrations`. Tujuh tabel backend database yang kosong dan tidak dipakai telah dihapus; session/cache memakai file, queue memakai sync, dan penyimpanan failed jobs memakai null. Tabel user memakai struktur khusus proyek, sehingga dibahas bersama domain akun.
 
 Struktur lama `gudang_beras` dan `pengajuan_yayasans` tidak ada pada skema aktif. Tabel `mustahik` dan profil pemberi lama masih ada, tetapi tidak mempunyai CRUD individu aktif.
 
 ### 11.2 PK, FK, UNIQUE, indeks, NULL, dan tipe
 
-- **PK/Primary Key:** identitas unik satu baris. Biasanya `id` angka otomatis; exceptions seperti sessions/job_batches memakai ID teks, cache memakai key, password_reset_tokens memakai email.
+- **PK/Primary Key:** identitas unik satu baris. Pada skema aktif, tabel memakai `id` angka otomatis.
 - **FK/Foreign Key:** kolom anak harus merujuk induk yang ada; contohnya transaksi.user_id harus menunjuk user.id yang sah. Membantu mencegah pesanan tanpa pemilik.
 - **UNIQUE:** melarang nilai/kombinasi duplikat; transaksi_id pada detail membuat relasi maksimal satu detail per header. FK sendiri tidak membuat hubungan satu-ke-satu.
 - **Indeks nonunik:** membantu pencarian/join/urut, tanpa melarang duplikasi. Indeks gabungan disesuaikan pencarian, misalnya user_id + created_at untuk riwayat.
@@ -2641,7 +2641,7 @@ Identitas muzakki, PJ, panitia, dan admin. AuthController menulis akun publik; A
 | `must_change_password` | `tinyint(1)` | Tidak | Memaksa pergantian kata sandi sebelum memakai halaman ber-role. |
 | `created_by_admin_id` | `bigint(20) unsigned` | Ya | Rujukan akun admin pembuat. |
 | `remember_token` | `varchar(100)` | Ya | Token mekanisme remember login Laravel; bukan token QR. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2663,7 +2663,7 @@ Master bank yang diisi seeder/admin. Yayasan dan permohonan rekening mengacu ke 
 | `kode` | `varchar(20)` | Tidak | Kode singkat unik untuk membedakan entitas. |
 | `nama` | `varchar(255)` | Tidak | Nama yang ditampilkan untuk entitas tabel ini. |
 | `is_active` | `tinyint(1)` | Tidak | Penanda aktif 1/true atau nonaktif 0/false; makna operasional mengikuti jenis tabel. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2700,7 +2700,7 @@ Dibuat PJ lalu diperiksa panitia. Menggabungkan identitas, rekening aktif, jumla
 | `jarak_jalan_km` | `decimal(10,2)` | Ya | Jarak perjalanan jalan dari gudang ke panti yang dicatat panitia. |
 | `jumlah_mustahik_layak` | `int(10) unsigned` | Tidak | Jumlah penerima agregat yang disetujui panitia. |
 | `pict_id` | `varchar(255)` | Ya | Kolom referensi gambar rancangan lama; bukan FK foto aktif. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 | `jumlah_mustahik_diajukan` | `int(10) unsigned` | Tidak | Jumlah calon penerima yang dinyatakan PJ. |
 | `kebutuhan_saat_ini` | `text` | Ya | Deskripsi kebutuhan dari PJ, bukan target kuantitas periode yang dihitung otomatis. |
@@ -2731,7 +2731,7 @@ Struktur untuk data individu dan kategori asnaf. Model relasinya tersedia, tetap
 | `tggl_lahir` | `date` | Ya | Tanggal lahir pengguna/penerima. |
 | `kategori_asnaf` | `varchar(30)` | Tidak | Kategori penerima dalam struktur individu. |
 | `is_verified` | `tinyint(1)` | Tidak | Penanda verifikasi individu; tidak otomatis sama dengan verifikasi panti. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2753,7 +2753,7 @@ YayasanController menulis satu baris per foto. Berkas tersimpan di storage/app/p
 | `diunggah_oleh` | `bigint(20) unsigned` | Tidak | Rujukan akun pengunggah. |
 | `path_private` | `varchar(255)` | Tidak | Lokasi relatif berkas pada disk local privat; database menyimpan path, bukan byte gambar. |
 | `keterangan` | `varchar(255)` | Ya | Teks penjelasan tambahan foto. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2778,7 +2778,7 @@ Satu panti dapat diperiksa berulang kali. Setiap update pemeriksaan menambah bar
 | `jumlah_mustahik_layak` | `int(10) unsigned` | Tidak | Jumlah penerima agregat yang disetujui panitia. |
 | `catatan` | `text` | Ya | Catatan tambahan tindakan/bukti/pemeriksaan. |
 | `diperiksa_at` | `timestamp` | Tidak | Waktu pemeriksa memberikan keputusan. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 | `kapasitas_penerimaan_kg` | `decimal(12,2)` | Ya | Batas beras yang dapat diterima panti per kunjungan. |
 | `kebutuhan_snapshot` | `text` | Ya | Salinan kebutuhan panti ketika pemeriksaan dilakukan. |
@@ -2808,7 +2808,7 @@ BankChangeRequestController menyimpan pengajuan PJ dan keputusan panitia. Data d
 | `diperiksa_oleh` | `bigint(20) unsigned` | Ya | Rujukan akun panitia pemeriksa. |
 | `catatan` | `text` | Ya | Catatan tambahan tindakan/bukti/pemeriksaan. |
 | `diperiksa_at` | `timestamp` | Ya | Waktu pemeriksa memberikan keputusan. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2831,7 +2831,7 @@ Menghubungkan kepala keluarga dan jumlah anggota. Tabel masih dibuat migration d
 | `id` | `bigint(20) unsigned` | Tidak | Identitas unik baris dalam tabel ini; bukan nama atau urutan proses. ID dibuat otomatis oleh database. |
 | `id_kepala` | `bigint(20) unsigned` | Tidak | FK akun kepala keluarga pada profil fitrah lama. |
 | `jum_anggota` | `int(10) unsigned` | Tidak | Jumlah anggota keluarga pada profil fitrah lama; bukan otomatis jumlah jiwa pesanan baru. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2861,7 +2861,7 @@ Menyimpan pemilik dan aset pada profil lama. Controller maal aktif memakai subje
 | `total_harta_bersih` | `decimal(18,2)` | Tidak | Ringkasan nilai aset bersih setelah utang; pada transaksi mal dijumlah dari tiap subjek. |
 | `apakah_wajib_zakat` | `tinyint(1)` | Tidak | Penanda hasil kewajiban dalam struktur profil lama. |
 | `tanggal_haul` | `date` | Ya | Tanggal acuan haul yang dicatat pemilik; pengingat draft memakai pengulangan bulan/hari. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2883,7 +2883,7 @@ MuzakkiController menyimpan satu baris per akun lewat upsert. Command pengingat 
 | `ingatkan_fitrah` | `tinyint(1)` | Tidak | Pilihan menerima pengingat fitrah di aplikasi. |
 | `ingatkan_haul_maal` | `tinyint(1)` | Tidak | Pilihan menerima pengingat peninjauan haul maal di aplikasi. |
 | `email_bukti_penyaluran` | `tinyint(1)` | Tidak | Pilihan email bukti yang tersimpan; pengiriman email belum aktif. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2906,7 +2906,7 @@ Dibuat saat penyaluran selesai dan oleh command pengingat. payload memuat JSON k
 | `payload` | `longtext` | Tidak | JSON keterangan pesan, misalnya kode transaksi atau teks pengingat. |
 | `dibaca_at` | `timestamp` | Ya | Waktu pesan ditandai dibaca; NULL berarti belum dibaca. |
 | `dikirim_at` | `timestamp` | Ya | Waktu pengiriman yang disediakan; tidak membuktikan email sudah aktif. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2933,7 +2933,7 @@ Seeder membuat Gudang Pusat Surabaya. Pembelian dan perjalanan mengacu gudang; w
 | `kota_kabupaten` | `varchar(100)` | Tidak | Nama kota/kabupaten; disimpan sebagai teks. |
 | `alamat_lengkap` | `text` | Ya | Alamat rinci entitas. |
 | `is_active` | `tinyint(1)` | Tidak | Penanda aktif 1/true atau nonaktif 0/false; makna operasional mengikuti jenis tabel. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2956,7 +2956,7 @@ InventoryController membuat pemasok yang dapat dipilih saat penerimaan. Nama/kon
 | `email` | `varchar(191)` | Ya | Alamat email kontak; pada user juga dipakai login. |
 | `alamat` | `text` | Ya | Alamat vendor. |
 | `is_active` | `tinyint(1)` | Tidak | Penanda aktif 1/true atau nonaktif 0/false; makna operasional mengikuti jenis tabel. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -2981,7 +2981,7 @@ Dibuat bersama lot dan mutasi masuk oleh InventoryController::receive. status ya
 | `nomor_faktur` | `varchar(100)` | Ya | Nomor faktur vendor opsional. |
 | `bukti_path` | `varchar(255)` | Ya | Path privat berkas faktur vendor. |
 | `status` | `varchar(20)` | Tidak | Status dokumen penerimaan; alur form menulis diterima. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3007,7 +3007,7 @@ Satu baris per nama jenis. stock merupakan saldo gudang tercatat, belum dikurang
 | `stock` | `decimal(12,2)` | Tidak | Saldo beras gabungan jenis dalam kg, sebelum mengurangi reservasi aktif. |
 | `pict_id` | `varchar(255)` | Ya | Kolom referensi gambar rancangan lama; bukan FK foto aktif. |
 | `is_active` | `tinyint(1)` | Tidak | Penanda aktif 1/true atau nonaktif 0/false; makna operasional mengikuti jenis tabel. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3033,7 +3033,7 @@ Dibuat tiap penerimaan. jumlah_masuk_kg mencatat awal, sisa_kg berubah ketika ke
 | `tanggal_masuk` | `date` | Tidak | Tanggal lot masuk; dipakai urutan FIFO. |
 | `tanggal_kedaluwarsa` | `date` | Ya | Tanggal kedaluwarsa opsional; belum difilter oleh checkout FIFO. |
 | `is_simulation` | `tinyint(1)` | Tidak | Penanda data proses ini simulasi pengembangan. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3061,7 +3061,7 @@ Jenis alur aktif: masuk_pembelian, keluar_pengiriman, koreksi_stok. perubahan_kg
 | `alasan` | `text` | Ya | Alasan koreksi persediaan. |
 | `referensi` | `varchar(100)` | Ya | Rujukan teks kejadian seperti perjalanan_pengiriman:ID; bukan FK. |
 | `is_simulation` | `tinyint(1)` | Tidak | Penanda data proses ini simulasi pengembangan. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3086,7 +3086,7 @@ Ditulis ketika penerimaan/koreksi/pengiriman/pengaturan margin membuat harga pen
 | `harga_penawaran_per_kg` | `decimal(15,2)` | Tidak | Harga pokok per kg setelah ditambah keuntungan. |
 | `berlaku_mulai` | `timestamp` | Tidak | Waktu mulai berlakunya tarif/harga. |
 | `ditetapkan_oleh` | `bigint(20) unsigned` | Ya | Rujukan akun penetap aturan/harga. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3125,7 +3125,7 @@ Header bersama fitrah dan maal: siapa memesan, panti mana, total, komponen harga
 | `catatan_doa` | `text` | Ya | Catatan doa opsional muzakki ketika pesan fitrah. |
 | `expired_at` | `timestamp` | Ya | Waktu berakhir masa berlaku pembayaran pending/QR. |
 | `paid_at` | `timestamp` | Ya | Waktu pembayaran simulasi dicatat. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3155,7 +3155,7 @@ Satu detail maksimum per master melalui transaksi_id unik. Menjelaskan produk, n
 | `total_biaya_fitrah` | `decimal(18,2)` | Tidak | Pokok+keuntungan beras; belum admin dan ongkir. |
 | `jarak_jalan_km_snapshot` | `decimal(10,2)` | Ya | Jarak yang dipakai menghitung ongkir checkout. |
 | `bukti_pict_id` | `varchar(255)` | Ya | Kolom bukti gambar lama, belum dipakai alur bukti dua pihak. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3191,7 +3191,7 @@ Berisi jumlah aset dari seluruh subjek, acuan emas, nisab, dan jumlah zakat waji
 | `persentase_zakat` | `decimal(5,2)` | Tidak | Persentase zakat maal; kode checkout menggunakan 2,5 persen. |
 | `total_zakat_wajib` | `decimal(18,2)` | Tidak | Jumlah zakat wajib dari pemilik yang memenuhi syarat, bukan 2,5% agregat tanpa pemeriksaan per orang. |
 | `bukti_pict_id` | `varchar(255)` | Ya | Kolom bukti gambar lama, belum dipakai alur bukti dua pihak. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3228,7 +3228,7 @@ Dua penggunaan dalam satu tabel: draft transaksi_id=NULL dan is_snapshot=false; 
 | `tanggal_haul` | `date` | Ya | Tanggal acuan haul yang dicatat pemilik; pengingat draft memakai pengulangan bulan/hari. |
 | `sudah_haul` | `tinyint(1)` | Tidak | Pernyataan pengguna bahwa haul terpenuhi, bukan hasil pembuktian otomatis. |
 | `is_snapshot` | `tinyint(1)` | Tidak | true berarti riwayat transaksi; false berarti draft keluarga. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3253,7 +3253,7 @@ Dibuat pada checkout fitrah, bukan pada pembayaran. Status active berarti tetap 
 | `harga_beli_per_kg_snapshot` | `decimal(15,2)` | Tidak | Harga beli lot yang dicadangkan saat checkout. |
 | `status` | `varchar(20)` | Tidak | active menahan, fulfilled sudah keluar, cancelled/expired dilepas. |
 | `released_at` | `timestamp` | Ya | Waktu reservasi berhenti active karena batal, expired, atau fulfilled. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3278,7 +3278,7 @@ Dibuat bersamaan dengan pesanan. token_hash adalah SHA-256 token acak; tidak sam
 | `status` | `varchar(25)` | Tidak | pending, simulated_paid, cancelled, expired. |
 | `expired_at` | `timestamp` | Tidak | Waktu berakhir masa berlaku pembayaran pending/QR. |
 | `completed_at` | `timestamp` | Ya | Waktu percobaan pembayaran berhasil dicatat. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3301,7 +3301,7 @@ Command otomatis menambahkan harga emas dunia dan kurs USD/IDR setiap 09.30 WIB,
 | `sumber` | `varchar(255)` | Tidak | Nama/rujukan sumber harga acuan otomatis atau manual. |
 | `tanggal_sumber` | `timestamp` | Tidak | Waktu acuan untuk menilai usia; pada API memakai waktu yang lebih tua dari emas dan awal tanggal kurs UTC. Acuan aktif dipilih berdasarkan ID terakhir. |
 | `dicatat_oleh` | `bigint(20) unsigned` | Ya | Rujukan akun pencatat. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 | `jenis_sumber` | `varchar(20)` | Tidak | Jenis acuan: manual atau api. |
 | `harga_usd_per_troy_ounce` | `decimal(20,8)` | Ya | Harga emas dunia dalam USD per troy ounce, sebelum konversi. |
@@ -3340,7 +3340,7 @@ Dibuat panitia berisi gudang asal, kendaraan, kapasitas, jadwal, dan penanggung 
 | `berangkat_at` | `timestamp` | Ya | Waktu operator mencatat perjalanan berangkat. |
 | `status` | `varchar(30)` | Tidak | direncanakan, dikirim, selesai. |
 | `is_simulation` | `tinyint(1)` | Tidak | Penanda data proses ini simulasi pengembangan. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3368,7 +3368,7 @@ Mengelompokkan beberapa alokasi pesanan untuk panti yang sama pada perjalanan. u
 | `status` | `varchar(30)` | Tidak | dijadwalkan, dikirim, diterima. |
 | `tiba_at` | `timestamp` | Ya | Waktu kedatangan yang dicatat ketika panitia mengunggah bukti. |
 | `diterima_at` | `timestamp` | Ya | Waktu seluruh alokasi tujuan dinyatakan selesai. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3395,7 +3395,7 @@ Fitrah mengisi titik_pengiriman_id dan jumlah_kg; maal mengisi nominal dengan ti
 | `nominal` | `decimal(18,2)` | Ya | Nilai rupiah alokasi/bukti maal; tidak untuk berat fitrah. |
 | `status` | `varchar(30)` | Tidak | dijadwalkan, dikirim, menunggu_bukti, perlu_tinjauan, selesai. |
 | `is_simulation` | `tinyint(1)` | Tidak | Penanda data proses ini simulasi pengembangan. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3424,7 +3424,7 @@ Satu alokasi maksimum satu baris per pihak melalui UNIQUE(alokasi_transaksi_id,p
 | `jumlah_sesuai` | `tinyint(1)` | Ya | Hasil perbandingan angka bukti terhadap alokasi. |
 | `catatan` | `text` | Ya | Catatan tambahan tindakan/bukti/pemeriksaan. |
 | `is_simulation` | `tinyint(1)` | Tidak | Penanda data proses ini simulasi pengembangan. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3453,7 +3453,7 @@ Ditulis HandoverEvidenceController setelah bukti panitia dan yayasan lengkap dan
 | `satuan` | `varchar(20)` | Tidak | Satuan bantuan, kg atau rupiah pada alur aktif. |
 | `status` | `varchar(30)` | Tidak | Keadaan hasil penyaluran; controller aktif menulis selesai. |
 | `bukti_pict_id` | `varchar(255)` | Ya | Kolom bukti gambar lama, belum dipakai alur bukti dua pihak. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3479,7 +3479,7 @@ Enam provinsi Jawa awal diisi seeder dalam keadaan nonaktif. hari_batas_fitrah m
 | `hari_batas_fitrah` | `tinyint(3) unsigned` | Tidak | Jumlah hari sebelum tanggal Idulfitri untuk menutup checkout zona. |
 | `batas_checkout_at` | `timestamp` | Ya | Batas waktu pemesanan fitrah zona. |
 | `is_active` | `tinyint(1)` | Tidak | Penanda aktif 1/true atau nonaktif 0/false; makna operasional mengikuti jenis tabel. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3503,7 +3503,7 @@ Rumus biaya_tetap + biaya_per_km_kg × jarak × berat. Saat tarif berubah, tarif
 | `berlaku_mulai` | `timestamp` | Tidak | Waktu mulai berlakunya tarif/harga. |
 | `berlaku_sampai` | `timestamp` | Ya | Waktu akhir tarif lama; NULL berarti interval masih terbuka. |
 | `ditetapkan_oleh` | `bigint(20) unsigned` | Ya | Rujukan akun penetap aturan/harga. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3526,7 +3526,7 @@ Pola key-value: kunci unik, nilai berupa string. Berisi biaya_admin_rupiah, pers
 | `nilai` | `text` | Tidak | Isi pengaturan berbentuk string; controller menentukan cara membacanya. |
 | `satuan` | `varchar(30)` | Ya | Label satuan pengaturan, misalnya kg/persen/rupiah/tanggal; opsional. |
 | `diubah_oleh` | `bigint(20) unsigned` | Ya | Rujukan akun pengubah. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
 | `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
 
 **Kunci dan hubungan:**
@@ -3551,7 +3551,7 @@ Berisi pelaku opsional, aksi, tipe/ID objek, JSON detail dan IP. Pembayaran QR p
 | `objek_id` | `bigint(20) unsigned` | Ya | ID objek audit, rujukan generik tanpa FK ke setiap jenis objek. |
 | `detail` | `longtext` | Ya | Rincian JSON tindakan audit. |
 | `ip_address` | `varchar(45)` | Ya | IP permintaan/perangkat; konteks tergantung tabel. |
-| `created_at` | `timestamp` | Tidak | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
+| `created_at` | `timestamp` | Tidak | Waktu baris dibuat. |
 
 **Kunci dan hubungan:**
 
@@ -3562,7 +3562,7 @@ Berisi pelaku opsional, aksi, tipe/ID objek, JSON detail dan IP. Pembayaran QR p
 
 ### 12.5 Infrastruktur Laravel
 
-**Status 9 Oktober 2026:** tujuh tabel selain `migrations` di bawah telah disiapkan untuk dihapus, tetapi masih ada pada database aktif karena izin DROP belum tersedia. Kamus ini tetap menggambarkan skema aktual. Laravel Boost tidak membutuhkan tabel tersebut; cache mengikuti driver file aplikasi.
+**Status 9 Oktober 2026:** hanya `migrations` yang tetap tersedia sebagai infrastruktur Laravel. Tujuh tabel backend database sudah dihapus melalui migration batch 6. Laravel Boost tetap bekerja dengan cache file aplikasi. Jangan mengaktifkan backend session/cache/queue database atau batching tanpa membuat kembali tabel pendukungnya.
 
 #### Tabel `migrations` — Riwayat migration yang sudah dijalankan
 
@@ -3578,135 +3578,6 @@ Dikelola Laravel berisi nama migration dan batch. Tidak menyimpan source migrati
 
 - Primary key: `id`.
 - Tidak ada foreign key eksplisit pada tabel ini.
-
-#### Tabel `sessions` — Sesi login bila driver database
-
-Session ID string menunjuk payload session/cookie browser, aktivitas dan info perangkat. user_id dapat kosong untuk pengunjung. Ada indeks user_id tetapi tidak ada FK eksplisit. Hapus session berbeda dari hapus akun; konfigurasi menentukan apakah tabel ini benar-benar menjadi tempat sesi.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `id` | `varchar(255)` | Tidak | Identitas unik berupa string; bukan ID auto increment angka. |
-| `user_id` | `bigint(20) unsigned` | Ya | Rujukan akun terkait. |
-| `ip_address` | `varchar(45)` | Ya | IP permintaan/perangkat; konteks tergantung tabel. |
-| `user_agent` | `text` | Ya | Identitas perangkat/browser untuk session. |
-| `payload` | `longtext` | Tidak | Data teknis/rincian terserialisasi; pada notifikasi berupa JSON. |
-| `last_activity` | `int(11)` | Tidak | Waktu aktivitas terakhir session dalam detik Unix. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `id`.
-- Tidak ada foreign key eksplisit pada tabel ini.
-- Indeks nonunik: `last_activity`; `user_id`.
-
-#### Tabel `password_reset_tokens` — Token reset password Laravel
-
-Struktur bawaan untuk alur reset. Tabel tersedia, tetapi route/view lupa password belum diimplementasikan. Token di sini berbeda dari pass_hash dan token QR. email adalah primary key tanpa FK eksplisit ke user.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `email` | `varchar(255)` | Tidak | Email pemohon reset, sekaligus primary key tanpa FK eksplisit. |
-| `token` | `varchar(255)` | Tidak | Token reset password tersimpan, terpisah dari password akun dan QR. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat; pada jobs/job_batches berupa detik Unix, bukan timestamp SQL. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `email`.
-- Tidak ada foreign key eksplisit pada tabel ini.
-
-#### Tabel `cache` — Cache berbasis database
-
-Penyimpanan nilai sementara bila konfigurasi cache memakai database. Bisa membantu cache aplikasi dan pembatasan frekuensi. Bukan tabel transaksi; nilai terserialisasi bukan untuk diedit manual sebagai data bisnis.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `key` | `varchar(255)` | Tidak | Kunci unik nilai cache/kunci proses. |
-| `value` | `mediumtext` | Tidak | Isi cache yang diserialisasi. |
-| `expiration` | `bigint(20)` | Tidak | Batas kedaluwarsa cache/lock dalam detik Unix. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `key`.
-- Tidak ada foreign key eksplisit pada tabel ini.
-- Indeks nonunik: `expiration`.
-
-#### Tabel `cache_locks` — Kunci proses/cache
-
-Dipakai mekanisme cache lock bila backend database dipilih, misalnya mencegah tugas overlap. owner mengidentifikasi pemegang kunci dan expiration adalah batas umur. Berbeda dari lockForUpdate yang mengunci baris saat transaksi SQL.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `key` | `varchar(255)` | Tidak | Kunci unik nilai cache/kunci proses. |
-| `owner` | `varchar(255)` | Tidak | Identitas pemegang cache lock. |
-| `expiration` | `bigint(20)` | Tidak | Batas kedaluwarsa cache/lock dalam detik Unix. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `key`.
-- Tidak ada foreign key eksplisit pada tabel ini.
-- Indeks nonunik: `expiration`.
-
-#### Tabel `jobs` — Antrean pekerjaan Laravel
-
-Menyimpan pekerjaan tertunda bila queue connection database. Adanya tabel tidak berarti worker hidup atau alur pembayaran memakai queue. Kode operasional inti saat ini menjalankan perubahan database langsung dalam request.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `id` | `bigint(20) unsigned` | Tidak | Identitas unik baris dalam tabel ini; bukan nama atau urutan proses. ID dibuat otomatis oleh database. |
-| `queue` | `varchar(255)` | Tidak | Nama antrean pekerjaan. |
-| `payload` | `longtext` | Tidak | Data teknis/rincian terserialisasi; pada notifikasi berupa JSON. |
-| `attempts` | `smallint(5) unsigned` | Tidak | Jumlah percobaan menjalankan pekerjaan antrean. |
-| `reserved_at` | `int(10) unsigned` | Ya | Waktu Unix pekerjaan queue diambil worker, bukan reservasi beras. |
-| `available_at` | `int(10) unsigned` | Tidak | Waktu Unix pekerjaan queue boleh mulai diproses. |
-| `created_at` | `int(10) unsigned` | Tidak | Waktu pembuatan sebagai bilangan detik Unix. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `id`.
-- Tidak ada foreign key eksplisit pada tabel ini.
-- Indeks nonunik: `queue`.
-
-#### Tabel `job_batches` — Kelompok pekerjaan antrean
-
-Mencatat kelompok jobs, jumlah belum selesai/gagal, opsi, dan waktu selesai/batal. Disediakan migration Laravel; bukan batch truk beras. Pengiriman fitrah memakai perjalanan_pengiriman.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `id` | `varchar(255)` | Tidak | Identitas unik berupa string; bukan ID auto increment angka. |
-| `name` | `varchar(255)` | Tidak | Nama kelompok jobs. |
-| `total_jobs` | `int(11)` | Tidak | Jumlah pekerjaan dalam kelompok antrean. |
-| `pending_jobs` | `int(11)` | Tidak | Jumlah pekerjaan belum selesai dalam kelompok. |
-| `failed_jobs` | `int(11)` | Tidak | Jumlah pekerjaan gagal dalam kelompok. |
-| `failed_job_ids` | `longtext` | Tidak | Daftar ID jobs gagal dalam bentuk tersimpan. |
-| `options` | `mediumtext` | Ya | Opsi eksekusi kelompok antrean. |
-| `cancelled_at` | `int(11)` | Ya | Waktu Unix kelompok antrean dibatalkan. |
-| `created_at` | `int(11)` | Tidak | Waktu pembuatan sebagai bilangan detik Unix. |
-| `finished_at` | `int(11)` | Ya | Waktu Unix kelompok antrean selesai. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `id`.
-- Tidak ada foreign key eksplisit pada tabel ini.
-
-#### Tabel `failed_jobs` — Pekerjaan antrean yang gagal
-
-Menyimpan error/payload pekerjaan queue untuk penelusuran dan retry. Berbeda dari error HTTP yang dicatat log. Belum ada job bisnis khusus dalam app/Jobs pada inventaris ini.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `id` | `bigint(20) unsigned` | Tidak | Identitas unik baris dalam tabel ini; bukan nama atau urutan proses. ID dibuat otomatis oleh database. |
-| `uuid` | `varchar(255)` | Tidak | Identitas UUID unik pekerjaan gagal. |
-| `connection` | `varchar(255)` | Tidak | Nama koneksi antrean ketika pekerjaan gagal. |
-| `queue` | `varchar(255)` | Tidak | Nama antrean pekerjaan. |
-| `payload` | `longtext` | Tidak | Data teknis/rincian terserialisasi; pada notifikasi berupa JSON. |
-| `exception` | `longtext` | Tidak | Rincian kesalahan pekerjaan antrean. |
-| `failed_at` | `timestamp` | Tidak | Waktu pekerjaan gagal dicatat. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `id`.
-- UNIQUE: `uuid`. Jika beberapa kolom digabung, yang harus unik adalah kombinasinya.
-- Tidak ada foreign key eksplisit pada tabel ini.
-- Indeks nonunik: `connection` + `queue` + `failed_at`.
 
 ## 13. Mengikuti satu fitur dari kode sampai database
 
