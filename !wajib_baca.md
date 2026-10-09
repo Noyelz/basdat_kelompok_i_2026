@@ -13,7 +13,7 @@
 
 > **Pembaruan harga emas otomatis — 8 Oktober 2026:** Harga acuan maal kini memakai emas dunia dari Gold API dan kurs USD/IDR dari Frankfurter, dikonversi ke rupiah per gram sekali sehari pukul **09.30 WIB**. Scheduler sudah dipasang pada crontab akun `keli`. Harga pertama sudah tersimpan; pesanan lama tetap memakai snapshot. Baca [Bagian 12](#12-harga-acuan-emas-dunia-otomatis-8-oktober-2026) untuk alur, kolom database, command, dan pemulihan.
 
-> **Panduan belajar lengkap (diperbarui 9 Oktober 2026):** Baca [PANDUAN_LENGKAP_PORTAL_ZAKAT.md](PANDUAN_LENGKAP_PORTAL_ZAKAT.md) untuk memahami alur seluruh role, status pembayaran dan penyaluran, contoh perhitungan/stok, arti 35 tabel dan 393 kolom database aktif `zakat_db`, peta route, serta tugas setiap file aplikasi dan method controller. Panduan menandai kode lama dan fitur yang belum lengkap. Panduan awal dibuat tanpa perubahan aplikasi; pembaruan integrasi emas pada Bagian 12 mencatat perubahan kode dan skema berikutnya.
+> **Panduan belajar lengkap (diperbarui 9 Oktober 2026):** Baca [PANDUAN_LENGKAP_PORTAL_ZAKAT.md](PANDUAN_LENGKAP_PORTAL_ZAKAT.md) untuk memahami alur seluruh role, status pembayaran dan penyaluran, contoh perhitungan/stok, arti 33 tabel dan 373 kolom database aktif `zakat_db`, peta route, serta tugas setiap file aplikasi dan method controller. Panduan menandai kode lama dan fitur yang belum lengkap. Panduan awal dibuat tanpa perubahan aplikasi; pembaruan integrasi emas pada Bagian 12 mencatat perubahan kode dan skema berikutnya.
 
 Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pengelolaan & Pembayaran Zakat (Fitrah & Maal)**. Database ini dirancang dengan standar industri (menggunakan MySQL/MariaDB Engine: `InnoDB`, Charset: `utf8mb4`) agar **anti-banting, aman dari selisih pembulatan uang, konsisten secara audit finansial, dan sesuai prinsip syariah**.
 
@@ -23,7 +23,7 @@ Dokumen ini berisi dokumentasi teknis dan arsitektur database untuk **Sistem Pen
 
 > **Teks tampilan terbaru:** Label simulasi, data pengembangan, dan pengembangan internal di antarmuka dirapikan pada 8 Oktober 2026. Lihat [Bagian 16](#16-perapian-teks-tampilan-dan-salinan-github-8-oktober-2026). Ini perubahan presentasi; QR masih mencatat konfirmasi tanpa transfer uang dan belum terhubung ke payment gateway.
 
-> **ERD database baru (diperbarui 9 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 35 tabel, 393 kolom, 55 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Diagram memakai metadata skema; diperbarui setelah migration emas harian, kapasitas pengajuan PJ, dan cleanup infrastruktur pada Bagian 12, 14, dan 17. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
+> **ERD database baru (diperbarui 9 Oktober 2026):** [ERD_zakat_db.md](ERD_zakat_db.md) memuat ERD konseptual, diagram physical per kelompok, dan kamus skema dari MySQL aktif `zakat_db`: 33 tabel, 373 kolom, 53 foreign key, serta 2 CHECK constraint JSON. Sumber diagram lengkap tersedia di [ERD_zakat_db_conceptual.mmd](ERD_zakat_db_conceptual.mmd) dan [ERD_zakat_db_physical.mmd](ERD_zakat_db_physical.mmd). Diagram memakai metadata skema; diperbarui setelah migration emas harian, kapasitas pengajuan PJ, dan cleanup infrastruktur/profil pada Bagian 12, 14, 17, dan 18. ERD pada Bagian 2 di bawah tetap merupakan gambaran skema lama `zakat`.
 
 ---
 
@@ -1171,3 +1171,20 @@ Pengguna meminta penghapusan tujuh tabel yang tidak dipakai: `sessions`, `passwo
 - [x] Memperbarui ERD physical, kamus aktif, kedua panduan, dan status handout. ERD konseptual tidak terpengaruh; penjelasan migration lama tetap dipertahankan sebagai riwayat.
 
 **Hasil akhir:** tujuh tabel kosong telah dihapus; seluruh tabel bisnis dan data tetap utuh. Backup dan catatan izin/jumlah baris berada di luar repository. Dokumentasi terkait disimpan sebagai commit lokal tanpa push; perubahan lokal controller, Blade, CSS, aset, PDF, test checkout, `.env` dan APP_KEY milik pengguna dipertahankan.
+
+
+## 18. Penghapusan dua tabel profil pemberi lama (9 Oktober 2026)
+
+Pengguna menyetujui penghapusan `pemberi_zakat_fitrah` dan `pemberi_zakat_mal` yang kosong dan tidak dipakai alur aktif. **Mustahik dipertahankan sesuai pilihan pengguna**, beserta FK penyaluran.mustahik_id. Riwayat batch 6 pada Bagian 17 tetap menggambarkan keadaan sebelum cleanup profil ini.
+
+- [x] Memastikan kedua tabel kosong, tidak menerima FK dari tabel lain, dan tidak dibaca/ditulis controller atau view aktif.
+- [x] Membuat backup lengkap terbaru: `/var/tmp/basdatkeli-backups/zakat_db-before-payer-profile-cleanup-20261009-080701.sql`, izin 0600, 88.750 byte; 35 definisi tabel sebelum cleanup dan penanda selesai. SHA-256: `56b7fa0d56b95591ec1f41f23e6b80c589bda07e107dc0437c6d2efc9fd151ef`.
+- [x] Membuat migration `2026_10_09_080247_remove_unused_payer_profile_tables.php`; seluruh tabel diperiksa sebelum DROP pertama. Rollback membuat struktur kosong, bukan memulihkan data; migration lama tetap dipertahankan.
+- [x] Menghapus model PemberiZakatFitrah/PemberiZakatMal serta relasi profilFitrah/catatanMal dari User. Relasi akun/yayasan/transaksi aktif tetap tersedia.
+- [x] Menerapkan migration sebagai keli pada **batch 7**. Admin MariaDB memberikan DROP hanya pada dua tabel, kemudian mencabutnya; hak akun database cocok persis dengan keadaan awal.
+- [x] Memverifikasi **33 tabel, 373 kolom, 53 FK, 2 CHECK JSON**. Dua FK yang hilang berasal dari profil yang dihapus; FK mustahik tetap ada. Migrations bertambah satu baris (12 → 13). Jumlah baris setiap tabel bisnis yang tersisa tidak berubah (total 192); skema dan isi INSERT seluruh 32 tabel bisnis yang tersisa cocok persis dengan backup.
+- [x] Pengujian cleanup, penolakan profil berisi data, rollback, halaman muzakki, draft/checkout maal, regresi checkout fitrah, dan cleanup infrastruktur: **26 test, 191 assertion lulus** di SQLite :memory:. Pint lulus.
+- [x] Beranda, login, dan phpMyAdmin memberikan HTTP 200. Dashboard empat peran berhasil dirender melalui kernel aplikasi dengan akun yang sudah ada dalam transaksi database read-only. Scheduler tetap terdaftar; sinkronisasi harga emas tidak dijalankan.
+- [x] ERD physical/kamus aktif, peta konseptual ke tabel, dan kedua panduan diperbarui. Diagram konseptual tetap sama karena entitas bisnis utamanya tidak berubah.
+
+Backup dan catatan izin tetap berada di luar repository. Perubahan ini disimpan sebagai commit lokal tanpa push; perubahan lokal pengguna pada controller, Blade, CSS, aset, PDF, serta test checkout dan .env dipertahankan.

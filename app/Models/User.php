@@ -104,16 +104,6 @@ class User extends Authenticatable
         return $this->hasOne(Yayasan::class, 'pj_user_id');
     }
 
-    public function profilFitrah()
-    {
-        return $this->hasOne(PemberiZakatFitrah::class, 'id_kepala');
-    }
-
-    public function catatanMal()
-    {
-        return $this->hasMany(PemberiZakatMal::class, 'user_id');
-    }
-
     public function transaksiZakat()
     {
         return $this->hasMany(TransaksiZakat::class, 'user_id');

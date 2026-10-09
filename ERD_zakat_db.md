@@ -1,10 +1,10 @@
 # ERD database zakat_db
 
-Snapshot skema **9 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQL aktif `zakat_db`, bukan ERD lama database `zakat` pada Bagian 2 di `!wajib_baca.md`. Server memakai MariaDB 10.6.23; seluruh 35 tabel memakai InnoDB dan collation `utf8mb4_unicode_ci`. Snapshot mencakup **393 kolom, 55 foreign key, dan 2 CHECK constraint JSON**.
+Snapshot skema **9 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQL aktif `zakat_db`, bukan ERD lama database `zakat` pada Bagian 2 di `!wajib_baca.md`. Server memakai MariaDB 10.6.23; seluruh 33 tabel memakai InnoDB dan collation `utf8mb4_unicode_ci`. Snapshot mencakup **373 kolom, 53 foreign key, dan 2 CHECK constraint JSON**.
 
 Dokumen ini dibuat dengan pembacaan skema dan metadata saja. Nama kolom seperti `pass_hash`, `token`, atau `no_rek` merupakan definisi skema; tidak ada kata sandi, hash milik pengguna, nomor rekening, maupun baris data transaksi yang disalin ke dokumentasi.
 
-> **Status 9 Oktober 2026:** migration `2026_10_09_071031_remove_unused_framework_tables` berhasil diterapkan sebagai batch 6. Tujuh tabel infrastruktur kosong telah dihapus; `migrations` dan seluruh 34 tabel domain tetap ada. Data bisnis tidak berubah, dan izin DROP sementara sudah dicabut. [Catatan pelaksanaan admin](HANDOFF_HAPUS_TABEL_LARAVEL.md).
+> **Status 9 Oktober 2026:** cleanup infrastruktur selesai pada batch 6, dilanjutkan penghapusan dua profil pemberi lama melalui `2026_10_09_080247_remove_unused_payer_profile_tables` pada batch 7. Skema aktif kini 33 tabel; `mustahik`, seluruh data bisnis, dan riwayat `migrations` tetap dipertahankan. Izin DROP sementara sudah dicabut. Lihat [catatan cleanup profil](%21wajib_baca.md#18-penghapusan-dua-tabel-profil-pemberi-lama-9-oktober-2026).
 
 ## Memilih diagram
 
@@ -55,7 +55,7 @@ erDiagram
 
 | Entitas konseptual | Implementasi physical |
 | --- | --- |
-| PENGGUNA | `user`; profil keluarga `pemberi_zakat_fitrah` dan catatan harta lama `pemberi_zakat_mal` |
+| PENGGUNA | `user`; jumlah jiwa pada `transaksi_fitrah`, rincian pemilik harta pada `subjek_zakat_maal` |
 | PANTI dan MUSTAHIK | `yayasan` dan `mustahik` |
 | VENDOR, GUDANG, PRODUK_BERAS | `vendor`, `gudang`, `katalog_beras` |
 | PEMBELIAN_BERAS dan LOT_BERAS | `pembelian_beras` dan `lot_beras` |
@@ -116,14 +116,6 @@ erDiagram
         bigint_unsigned bank_id FK "bigint(20) unsigned; NOT NULL"
         bigint_unsigned diperiksa_oleh FK "bigint(20) unsigned; NULL"
     }
-    pemberi_zakat_fitrah {
-        bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
-        bigint_unsigned id_kepala FK, UK "bigint(20) unsigned; NOT NULL"
-    }
-    pemberi_zakat_mal {
-        bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
-        bigint_unsigned user_id FK "bigint(20) unsigned; NOT NULL"
-    }
     preferensi_notifikasi {
         bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
         bigint_unsigned user_id FK, UK "bigint(20) unsigned; NOT NULL"
@@ -146,8 +138,6 @@ erDiagram
     user ||..o{ permohonan_perubahan_rekening : "diajukan_oleh"
     user |o..o{ permohonan_perubahan_rekening : "diperiksa_oleh"
     yayasan ||..o{ permohonan_perubahan_rekening : "yayasan_id"
-    user ||..o| pemberi_zakat_fitrah : "id_kepala"
-    user ||..o{ pemberi_zakat_mal : "user_id"
     user ||..o| preferensi_notifikasi : "user_id"
     user ||..o{ notifikasi_aplikasi : "user_id"
 ```
@@ -353,7 +343,7 @@ erDiagram
 - UNIQUE `transaksi_fitrah.transaksi_id` dan `transaksi_mal.transaksi_id` membatasi satu detail pada masing-masing tabel. Database sendiri tidak memaksa setiap transaksi mempunyai detail dan tidak melarang satu transaksi mempunyai kedua jenis detail sekaligus.
 - UNIQUE `(alokasi_transaksi_id, pihak)` mencegah duplikasi bukti untuk nilai pihak yang sama. Jumlah dua pihak serta kecocokan jumlah dan foto adalah aturan aplikasi.
 - `audit_log.jenis_objek` dan `objek_id` adalah referensi generik, bukan FK ke semua tabel domain. Hanya `actor_user_id` yang memiliki FK.
-- `pemberi_zakat_mal`, `pemberi_zakat_fitrah`, dan kolom bukti lama masih ada pada skema sehingga tetap ditampilkan. Snapshot ini menggambarkan tabel yang tersedia, bukan menyatakan semua tabel lama digunakan oleh alur terbaru.
+- `mustahik` tetap tersedia untuk rancangan pendataan penerima per orang, tetapi alur aktif mencatat penerima secara agregat di yayasan. Kolom bukti lama yang masih ada tetap ditampilkan sebagai bagian skema aktual.
 - Ada dua constraint JSON pada MariaDB: `audit_log.detail` dan `notifikasi_aplikasi.payload` memakai `LONGTEXT` dengan `CHECK(json_valid(...))`. Tidak digambarkan sebagai tipe JSON native MySQL.
 - Kebutuhan memakai `gudang` pusat Surabaya, tarif berdasarkan jarak, snapshot harga, dan konfirmasi panti dianggap penerima akhir tetap mengikuti keputusan proyek di `!wajib_baca.md`. Lokasi gudang dan nilai tarif adalah data, bukan definisi relasi.
 - ERD dapat diperbarui setelah migration mengubah skema. Dokumen ini tidak otomatis mengikuti perubahan database.
@@ -606,66 +596,6 @@ Foreign key:
 | `permohonan_perubahan_rekening_diajukan_oleh_foreign` | `diajukan_oleh` | `user(id)` | `RESTRICT` | `RESTRICT` |
 | `permohonan_perubahan_rekening_diperiksa_oleh_foreign` | `diperiksa_oleh` | `user(id)` | `SET NULL` | `RESTRICT` |
 | `permohonan_perubahan_rekening_yayasan_id_foreign` | `yayasan_id` | `yayasan(id)` | `RESTRICT` | `RESTRICT` |
-
-### Tabel `pemberi_zakat_fitrah`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `bigint(20) unsigned` | Tidak | — | PK | Ya |
-| `id_kepala` | `bigint(20) unsigned` | Tidak | — | FK, UK | Tidak |
-| `jum_anggota` | `int(10) unsigned` | Tidak | `1` | — | Tidak |
-| `created_at` | `timestamp` | Ya | `NULL` | — | Tidak |
-| `updated_at` | `timestamp` | Ya | `NULL` | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `pemberi_zakat_fitrah_id_kepala_unique` | UNIQUE | `id_kepala` | `btree` |
-| `primary` | PRIMARY KEY | `id` | `btree` |
-
-Foreign key:
-
-| Constraint | Kolom anak | Rujukan | ON DELETE | ON UPDATE |
-| --- | --- | --- | --- | --- |
-| `pemberi_zakat_fitrah_id_kepala_foreign` | `id_kepala` | `user(id)` | `CASCADE` | `RESTRICT` |
-
-### Tabel `pemberi_zakat_mal`
-
-Engine: `InnoDB`; collation: `utf8mb4_unicode_ci`.
-
-| Kolom | Tipe SQL | Nullable | Default | Key | Auto increment |
-| --- | --- | --- | --- | --- | --- |
-| `id` | `bigint(20) unsigned` | Tidak | — | PK | Ya |
-| `user_id` | `bigint(20) unsigned` | Tidak | — | FK | Tidak |
-| `kepemilikan` | `varchar(100)` | Ya | `NULL` | — | Tidak |
-| `atas_nama` | `varchar(255)` | Ya | `NULL` | — | Tidak |
-| `nominal_tabungan` | `decimal(18,2)` | Tidak | `0.00` | — | Tidak |
-| `emas_gram` | `decimal(10,2)` | Tidak | `0.00` | — | Tidak |
-| `nilai_invest` | `decimal(18,2)` | Tidak | `0.00` | — | Tidak |
-| `nilai_aset_dagang` | `decimal(18,2)` | Tidak | `0.00` | — | Tidak |
-| `piutang` | `decimal(18,2)` | Tidak | `0.00` | — | Tidak |
-| `utang` | `decimal(18,2)` | Tidak | `0.00` | — | Tidak |
-| `total_harta_bersih` | `decimal(18,2)` | Tidak | `0.00` | — | Tidak |
-| `apakah_wajib_zakat` | `tinyint(1)` | Tidak | `0` | — | Tidak |
-| `tanggal_haul` | `date` | Ya | `NULL` | — | Tidak |
-| `created_at` | `timestamp` | Ya | `NULL` | — | Tidak |
-| `updated_at` | `timestamp` | Ya | `NULL` | — | Tidak |
-
-Indeks (urutan kolom dipertahankan):
-
-| Nama | Jenis | Kolom | Metode |
-| --- | --- | --- | --- |
-| `pemberi_zakat_mal_user_id_foreign` | INDEX | `user_id` | `btree` |
-| `primary` | PRIMARY KEY | `id` | `btree` |
-
-Foreign key:
-
-| Constraint | Kolom anak | Rujukan | ON DELETE | ON UPDATE |
-| --- | --- | --- | --- | --- |
-| `pemberi_zakat_mal_user_id_foreign` | `user_id` | `user(id)` | `CASCADE` | `RESTRICT` |
 
 ### Tabel `preferensi_notifikasi`
 

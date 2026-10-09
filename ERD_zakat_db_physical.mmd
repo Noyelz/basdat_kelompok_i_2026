@@ -1,5 +1,5 @@
 %% ERD physical zakat_db, snapshot 2026-10-09 WIB.
-%% 35 tabel, 393 kolom, 55 foreign key, 2 CHECK JSON. Nama dan relasi berasal dari metadata database aktif.
+%% 33 tabel, 373 kolom, 53 foreign key, 2 CHECK JSON. Nama dan relasi berasal dari metadata database aktif.
 %% Tipe SQL persis berada di komentar atribut; UK hanya untuk unique satu kolom.
 %% Unique gabungan, default, semua indeks, CHECK, dan aturan FK dicatat di ERD_zakat_db.md.
 erDiagram
@@ -105,30 +105,6 @@ erDiagram
         bigint_unsigned diperiksa_oleh FK "bigint(20) unsigned; NULL"
         text catatan "text; NULL"
         timestamp diperiksa_at "timestamp; NULL"
-        timestamp created_at "timestamp; NULL"
-        timestamp updated_at "timestamp; NULL"
-    }
-    pemberi_zakat_fitrah {
-        bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
-        bigint_unsigned id_kepala FK, UK "bigint(20) unsigned; NOT NULL"
-        int_unsigned jum_anggota "int(10) unsigned; NOT NULL"
-        timestamp created_at "timestamp; NULL"
-        timestamp updated_at "timestamp; NULL"
-    }
-    pemberi_zakat_mal {
-        bigint_unsigned id PK "bigint(20) unsigned; NOT NULL; AUTO_INCREMENT"
-        bigint_unsigned user_id FK "bigint(20) unsigned; NOT NULL"
-        varchar kepemilikan "varchar(100); NULL"
-        varchar atas_nama "varchar(255); NULL"
-        decimal nominal_tabungan "decimal(18,2); NOT NULL"
-        decimal emas_gram "decimal(10,2); NOT NULL"
-        decimal nilai_invest "decimal(18,2); NOT NULL"
-        decimal nilai_aset_dagang "decimal(18,2); NOT NULL"
-        decimal piutang "decimal(18,2); NOT NULL"
-        decimal utang "decimal(18,2); NOT NULL"
-        decimal total_harta_bersih "decimal(18,2); NOT NULL"
-        tinyint apakah_wajib_zakat "tinyint(1); NOT NULL"
-        date tanggal_haul "date; NULL"
         timestamp created_at "timestamp; NULL"
         timestamp updated_at "timestamp; NULL"
     }
@@ -479,8 +455,6 @@ erDiagram
     user ||..o{ permohonan_perubahan_rekening : "diajukan_oleh"
     user |o..o{ permohonan_perubahan_rekening : "diperiksa_oleh"
     yayasan ||..o{ permohonan_perubahan_rekening : "yayasan_id"
-    user ||..o| pemberi_zakat_fitrah : "id_kepala"
-    user ||..o{ pemberi_zakat_mal : "user_id"
     user ||..o| preferensi_notifikasi : "user_id"
     user ||..o{ notifikasi_aplikasi : "user_id"
     user ||..o{ pembelian_beras : "dicatat_oleh"

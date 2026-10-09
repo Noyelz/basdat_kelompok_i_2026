@@ -2,9 +2,9 @@
 
 Dokumentasi pembelajaran berbahasa Indonesia, diperiksa pada **9 Oktober 2026 (WIB)**. Urutan pembahasan: tujuan sistem → MVC dan alur kode → penjelasan file dan cuplikan penting → CRUD → database beserta tabel, kolom, PK/FK, dan alasan relasinya.
 
-Sumber utama adalah **kode di workspace saat dokumen dibuat**, daftar route yang benar-benar terdaftar, serta metadata database aktif melalui Laravel Boost. Kamus kolom dari panduan proyek yang sudah ada dicocokkan ulang: **35 tabel, 393 kolom, 55 foreign key**, tanpa perbedaan nama kolom, tipe, nullable, atau FK. Paket terpasang yang relevan: **Laravel 13.32.0** dan **endroid/qr-code 5.1.0**. Versi rentang pada `composer.json` bukan selalu versi terpasang.
+Sumber utama adalah **kode di workspace saat dokumen dibuat**, daftar route yang benar-benar terdaftar, serta metadata database aktif melalui Laravel Boost. Kamus kolom dari panduan proyek yang sudah ada dicocokkan ulang: **33 tabel, 373 kolom, 53 foreign key**, tanpa perbedaan nama kolom, tipe, nullable, atau FK. Paket terpasang yang relevan: **Laravel 13.32.0** dan **endroid/qr-code 5.1.0**. Versi rentang pada `composer.json` bukan selalu versi terpasang.
 
-Dokumen memuat 17 controller (termasuk class dasar bawaan), 12 model, 4 command aplikasi, 1 middleware khusus, 1 provider yang disesuaikan, 12 file migration (seluruhnya sudah diterapkan), 2 seeder, 1 factory, dan 29 template Blade. File bawaan Laravel yang belum mempunyai logika bisnis cukup ditandai sebagai bawaan. Kode di `vendor/`, `node_modules/`, hasil kompilasi/cache, dan isi paket tidak diuraikan ulang. Gambar adalah aset, bukan kode PHP/JavaScript.
+Dokumen memuat 17 controller (termasuk class dasar bawaan), 10 model, 4 command aplikasi, 1 middleware khusus, 1 provider yang disesuaikan, 13 file migration (seluruhnya sudah diterapkan), 2 seeder, 1 factory, dan 29 template Blade. File bawaan Laravel yang belum mempunyai logika bisnis cukup ditandai sebagai bawaan. Kode di `vendor/`, `node_modules/`, hasil kompilasi/cache, dan isi paket tidak diuraikan ulang. Gambar adalah aset, bukan kode PHP/JavaScript.
 
 **Penting untuk memahami implementasi saat ini:** QR pembayaran hanya mencatat **simulasi**, belum menerima uang atau berkomunikasi dengan payment gateway. Teks UI “pembayaran tercatat” berasal dari status `simulated_paid`. Model/halaman lama tetap diterangkan dan ditandai agar tidak dianggap sebagai fitur aktif.
 
@@ -860,8 +860,6 @@ Aktif untuk login, registrasi, akun panitia dan profil. Menerjemahkan nama/passw
 | `getProvinsiNamaAttribute()` | Alias baca provinsi_nama ke provinsi. |
 | `getAlamatAttribute()` | Alias baca alamat ke alamat_lengkap. |
 | `yayasan()` | Relasi ke panti; pada User hasOne melalui pj_user_id, pada detail lain belongsTo melalui yayasan_id. |
-| `profilFitrah()` | HasOne profil fitrah lama melalui id_kepala. |
-| `catatanMal()` | HasMany catatan aset maal lama melalui user_id. |
 | `transaksiZakat()` | HasMany pesanan milik akun atau panti melalui FK yang sesuai. |
 
 **MVC:** M. **Mengapa di sini:** memetakan objek/tabel dan relasinya. **CRUD:** akses data model tidak otomatis menyediakan tindakan atau halaman CRUD; route/controller menentukan fitur.
@@ -1056,53 +1054,6 @@ public function penyaluran()
 ```
 
 Penerima individu dimiliki satu panti dan dapat mempunyai banyak penyaluran; belum ada CRUD halaman individu.
-
-### `app/Models/PemberiZakatFitrah.php`
-
-**File:** [app/Models/PemberiZakatFitrah.php](app/Models/PemberiZakatFitrah.php); tabel `pemberi_zakat_fitrah`.
-
-Profil keluarga lama, relasi kepalaKeluarga. Checkout aktif tidak memakai profil ini sebagai tempat jumlah jiwa pesanan.
-
-| Method | Fungsi |
-| --- | --- |
-| `kepalaKeluarga()` | BelongsTo akun kepala keluarga lewat id_kepala. |
-
-**MVC:** M. **Mengapa di sini:** memetakan objek/tabel dan relasinya. **CRUD:** akses data model tidak otomatis menyediakan tindakan atau halaman CRUD; route/controller menentukan fitur.
-
-**Cuplikan asli — app/Models/PemberiZakatFitrah.php, mulai baris 19:**
-
-```php
-public function kepalaKeluarga()
-{
-    return $this->belongsTo(User::class, 'id_kepala');
-}
-```
-
-Profil lama mengacu akun kepala keluarga; jumlah jiwa aktif berada pada detail transaksi.
-
-### `app/Models/PemberiZakatMal.php`
-
-**File:** [app/Models/PemberiZakatMal.php](app/Models/PemberiZakatMal.php); tabel `pemberi_zakat_mal`.
-
-Profil aset lama. Checkout aktif memakai subjek_zakat_maal, bukan otomatis memperbarui tabel ini.
-
-| Method | Fungsi |
-| --- | --- |
-| `casts()` | Menyatakan cara konversi nilai database ke PHP (tanggal, boolean, decimal). Tidak menciptakan kolom atau memvalidasi input. |
-| `user()` | BelongsTo pemilik akun melalui user_id. |
-
-**MVC:** M. **Mengapa di sini:** memetakan objek/tabel dan relasinya. **CRUD:** akses data model tidak otomatis menyediakan tindakan atau halaman CRUD; route/controller menentukan fitur.
-
-**Cuplikan asli — app/Models/PemberiZakatMal.php, mulai baris 42:**
-
-```php
-public function user()
-{
-    return $this->belongsTo(User::class, 'user_id');
-}
-```
-
-Catatan aset lama milik satu akun; kalkulator keluarga baru menggunakan subjek_zakat_maal.
 
 ### `app/Models/Penyaluran.php`
 
@@ -1306,7 +1257,7 @@ Migration adalah **kode pembentuk struktur**, bukan tempat transaksi pengguna. `
 
 **Mengapa di `database/migrations/`:** Laravel mendeteksi resep skema di folder ini. Migration adalah lapisan database pendukung MVC, bukan Model. Menambahkan class model tidak membuat tabel; menjalankan migration yang membuat/mengubah tabel.
 
-Pembuatan awal dokumentasi tidak mengubah database. Pada 9 Oktober 2026 ditambahkan migration penghapusan tujuh tabel infrastruktur atas permintaan pengguna. Migration tersebut **sudah diterapkan pada batch 6** dengan izin DROP sementara khusus tujuh tabel; skema aktif kini 35 tabel. Izin sementara sudah dicabut. Istilah “database baru” merujuk desain operasional `zakat_db` yang sudah dipakai proyek.
+Pembuatan awal dokumentasi tidak mengubah database. Pada 9 Oktober 2026 ditambahkan migration penghapusan tujuh tabel infrastruktur atas permintaan pengguna. Migration tersebut **sudah diterapkan pada batch 6** dengan izin DROP sementara khusus tujuh tabel; saat batch 6 menghasilkan 35 tabel. Cleanup profil pada batch 7 selanjutnya menghasilkan 33 tabel. Izin sementara sudah dicabut. Istilah “database baru” merujuk desain operasional `zakat_db` yang sudah dipakai proyek.
 
 ### `database/migrations/0001_01_01_000000_create_users_table.php`
 
@@ -1399,7 +1350,7 @@ Satu lot terkait pembelian dan katalog. sisa_kg berbeda dari jumlah_masuk_kg seh
 
 ### `database/migrations/2026_09_27_042023_create_c_zakat_transaction_tables.php`
 
-**Jenis:** migration, pendukung data/MVC. **Isi dan tujuan:** Membuat pemberi_zakat_fitrah, pemberi_zakat_mal, transaksi_zakat, transaksi_fitrah, transaksi_mal, subjek_zakat_maal, reservasi_stok dan percobaan_pembayaran. Dua tabel pemberi lama tetap ada; checkout keluarga aktif memakai subjek_zakat_maal.
+**Jenis:** migration, pendukung data/MVC. **Isi dan tujuan:** Membuat pemberi_zakat_fitrah, pemberi_zakat_mal, transaksi_zakat, transaksi_fitrah, transaksi_mal, subjek_zakat_maal, reservasi_stok dan percobaan_pembayaran. Dua tabel pemberi lama dibuat oleh migration historis ini, lalu dihapus oleh cleanup profil pada batch 7; checkout keluarga aktif memakai subjek_zakat_maal.
 
 **Arah:** migration → struktur tabel/kolom → digunakan model/controller.
 
@@ -1543,7 +1494,13 @@ foreach ($this->tables as $table) {
 
 Seluruh tabel diperiksa sebelum DROP pertama agar tabel berisi data menghentikan proses tanpa penghapusan sebagian. `up()` juga menolak session/cache/queue berbasis database, queue failover, dan penyimpanan failed jobs berbasis database. `down()` membuat kembali struktur tujuh tabel kosong beserta indeksnya; isi data hanya dapat dipulihkan dari cadangan.
 
-**Status aktual:** migration berhasil diterapkan pada 9 Oktober 2026 sebagai batch 6. Skema menjadi **35 tabel, 393 kolom, 55 FK, dan 2 CHECK JSON**. Seluruh 34 tabel domain dan isi data bisnis tetap utuh; izin DROP sementara telah dicabut. Catatan pelaksanaan tersedia di [HANDOFF_HAPUS_TABEL_LARAVEL.md](HANDOFF_HAPUS_TABEL_LARAVEL.md).
+**Hasil batch 6 sebelum cleanup profil:** migration berhasil diterapkan pada 9 Oktober 2026 sebagai batch 6. Skema menjadi **35 tabel, 393 kolom, 55 FK, dan 2 CHECK JSON**. Seluruh 34 tabel domain dan isi data bisnis tetap utuh; izin DROP sementara telah dicabut. Catatan pelaksanaan tersedia di [HANDOFF_HAPUS_TABEL_LARAVEL.md](HANDOFF_HAPUS_TABEL_LARAVEL.md).
+
+### `database/migrations/2026_10_09_080247_remove_unused_payer_profile_tables.php`
+
+Migration cleanup profil pemberi lama, **Ran batch 7**. `up()` memeriksa kedua tabel sebelum DROP pertama dan menolak jika ada data. Hanya `pemberi_zakat_fitrah` serta `pemberi_zakat_mal` yang dihapus; `mustahik` tetap ada. `down()` membuat kembali dua tabel kosong dengan indeks, default, dan FK ke `user`; pemulihan isi data memerlukan backup. Dua model lama serta relasi `User::profilFitrah()`/`catatanMal()` dibersihkan karena tidak digunakan alur aktif.
+
+Hasil akhir kedua cleanup: **33 tabel, 373 kolom, 53 FK, 2 CHECK JSON**. Akun, data transaksi fitrah/maal, rincian harta per pemilik, dan seluruh data bisnis yang tersisa tidak berubah.
 
 ### `database/seeders/DatabaseSeeder.php`
 
@@ -2462,11 +2419,11 @@ Vendor memiliki CRUD lengkap dengan Delete terbatas. Katalog/perjalanan punya pe
 
 ### 11.1 Fakta skema yang diperiksa
 
-Koneksi aktif memakai driver MySQL; skema bisnis bernama `zakat_db`. Metadata yang dibaca menunjukkan **35 tabel, 393 kolom, 55 FK dan 2 CHECK JSON**. Tidak ada database view, trigger, stored procedure atau function tersimpan pada metadata yang diperiksa. Istilah **View MVC** berarti template Blade, berbeda dari **database view**.
+Koneksi aktif memakai driver MySQL; skema bisnis bernama `zakat_db`. Metadata yang dibaca menunjukkan **33 tabel, 373 kolom, 53 FK dan 2 CHECK JSON**. Tidak ada database view, trigger, stored procedure atau function tersimpan pada metadata yang diperiksa. Istilah **View MVC** berarti template Blade, berbeda dari **database view**.
 
-Sebanyak **34 tabel** mendukung domain zakat/referensi/notifikasi/audit; **1 tabel** adalah infrastruktur Laravel: `migrations`. Tujuh tabel backend database yang kosong dan tidak dipakai telah dihapus; session/cache memakai file, queue memakai sync, dan penyimpanan failed jobs memakai null. Tabel user memakai struktur khusus proyek, sehingga dibahas bersama domain akun.
+Sebanyak **32 tabel** mendukung domain zakat/referensi/notifikasi/audit; **1 tabel** adalah infrastruktur Laravel: `migrations`. Tujuh tabel backend database yang kosong dan tidak dipakai telah dihapus; session/cache memakai file, queue memakai sync, dan penyimpanan failed jobs memakai null. Tabel user memakai struktur khusus proyek, sehingga dibahas bersama domain akun.
 
-Struktur lama `gudang_beras` dan `pengajuan_yayasans` tidak ada pada skema aktif. Tabel `mustahik` dan profil pemberi lama masih ada, tetapi tidak mempunyai CRUD individu aktif.
+Struktur lama `gudang_beras` dan `pengajuan_yayasans` tidak ada pada skema aktif. Tabel `mustahik` masih ada, tetapi belum mempunyai CRUD individu aktif. Dua profil pemberi lama sudah dihapus; akun, jumlah jiwa fitrah, serta rincian harta memakai user dan tabel transaksi/subjek aktif.
 
 ### 11.2 PK, FK, UNIQUE, indeks, NULL, dan tipe
 
@@ -2567,8 +2524,6 @@ Berikut tujuan setiap relasi dan perilaku penghapusan dari skema aktif. FK menja
 | `pembelian_beras.dicatat_oleh` → `user.id` | RESTRICT | Menelusuri akun pencatat; harga otomatis mengizinkan NULL. |
 | `pembelian_beras.gudang_id` → `gudang.id` | RESTRICT | Mengaitkan data pembelian_beras dengan lokasi asal/penerimaan yang menjadi cakupan operasional. |
 | `pembelian_beras.vendor_id` → `vendor.id` | RESTRICT | Mengaitkan data pembelian_beras dengan pemasok pembelian, agar dokumen/faktur tetap dapat ditelusuri. |
-| `pemberi_zakat_fitrah.id_kepala` → `user.id` | CASCADE | Menghubungkan profil lama dengan kepala keluarga; UNIQUE membatasi satu profil per akun. |
-| `pemberi_zakat_mal.user_id` → `user.id` | CASCADE | Menelusuri akun pemilik data, pesanan, draft atau kotak pesan. |
 | `pengaturan_operasional.diubah_oleh` → `user.id` | SET NULL | Menelusuri akun pengubah pengaturan. |
 | `penyaluran.alokasi_transaksi_id` → `alokasi_transaksi.id` | RESTRICT | Menelusuri hasil selesai ke alokasi dan bukti; nullable untuk kompatibilitas catatan lama. |
 | `penyaluran.mustahik_id` → `mustahik.id` | RESTRICT | Mengaitkan data penyaluran dengan penerima individu; NULL pada penyaluran agregat ke panti. |
@@ -2819,56 +2774,6 @@ BankChangeRequestController menyimpan pengajuan PJ dan keputusan panitia. Data d
 - FK `diperiksa_oleh` → `user.id`; saat induk dihapus: **SET NULL**.
 - FK `yayasan_id` → `yayasan.id`; saat induk dihapus: **RESTRICT**.
 - Indeks nonunik: `bank_id`; `diajukan_oleh`; `diperiksa_oleh`; `yayasan_id`.
-
-#### Tabel `pemberi_zakat_fitrah` — Profil keluarga dari rancangan awal
-
-Menghubungkan kepala keluarga dan jumlah anggota. Tabel masih dibuat migration dan modelnya tersedia, tetapi checkout fitrah sekarang mengambil jumlah jiwa dari form lalu menyimpan di transaksi_fitrah. Jangan menganggap tabel ini otomatis berubah ketika membuat pesanan baru.
-
-**Kode yang menyebut tabel ini secara langsung:** [PemberiZakatFitrah.php](app/Models/PemberiZakatFitrah.php). Daftar ini mencakup pembacaan maupun penulisan; relasi Eloquent dapat mengaksesnya juga tanpa menyebut string tabel.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `id` | `bigint(20) unsigned` | Tidak | Identitas unik baris dalam tabel ini; bukan nama atau urutan proses. ID dibuat otomatis oleh database. |
-| `id_kepala` | `bigint(20) unsigned` | Tidak | FK akun kepala keluarga pada profil fitrah lama. |
-| `jum_anggota` | `int(10) unsigned` | Tidak | Jumlah anggota keluarga pada profil fitrah lama; bukan otomatis jumlah jiwa pesanan baru. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
-| `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `id`.
-- UNIQUE: `id_kepala`. Jika beberapa kolom digabung, yang harus unik adalah kombinasinya.
-- FK `id_kepala` → `user.id`; saat induk dihapus: **CASCADE**.
-
-#### Tabel `pemberi_zakat_mal` — Catatan aset dari rancangan awal
-
-Menyimpan pemilik dan aset pada profil lama. Controller maal aktif memakai subjek_zakat_maal untuk draft dan snapshot keluarga. Data atau model tabel lama tidak otomatis tersinkron dengan alur maal baru.
-
-**Kode yang menyebut tabel ini secara langsung:** [PemberiZakatMal.php](app/Models/PemberiZakatMal.php). Daftar ini mencakup pembacaan maupun penulisan; relasi Eloquent dapat mengaksesnya juga tanpa menyebut string tabel.
-
-| Kolom | Tipe aktual | Boleh NULL | Arti dan penggunaan |
-| --- | --- | --- | --- |
-| `id` | `bigint(20) unsigned` | Tidak | Identitas unik baris dalam tabel ini; bukan nama atau urutan proses. ID dibuat otomatis oleh database. |
-| `user_id` | `bigint(20) unsigned` | Tidak | Rujukan akun terkait. |
-| `kepemilikan` | `varchar(100)` | Ya | Hubungan/pemilik aset pada profil maal lama. |
-| `atas_nama` | `varchar(255)` | Ya | Nama pemilik aset pada profil maal lama. |
-| `nominal_tabungan` | `decimal(18,2)` | Tidak | Nilai tabungan rupiah pada profil maal lama. |
-| `emas_gram` | `decimal(10,2)` | Tidak | Berat emas dalam gram; pada ringkasan mal jumlah seluruh subjek. |
-| `nilai_invest` | `decimal(18,2)` | Tidak | Nilai investasi rupiah pada profil maal lama. |
-| `nilai_aset_dagang` | `decimal(18,2)` | Tidak | Nilai aset perdagangan rupiah. |
-| `piutang` | `decimal(18,2)` | Tidak | Nilai uang yang menjadi piutang pemilik. |
-| `utang` | `decimal(18,2)` | Tidak | Nilai utang yang dikurangkan dari aset menurut rumus aplikasi. |
-| `total_harta_bersih` | `decimal(18,2)` | Tidak | Ringkasan nilai aset bersih setelah utang; pada transaksi mal dijumlah dari tiap subjek. |
-| `apakah_wajib_zakat` | `tinyint(1)` | Tidak | Penanda hasil kewajiban dalam struktur profil lama. |
-| `tanggal_haul` | `date` | Ya | Tanggal acuan haul yang dicatat pemilik; pengingat draft memakai pengulangan bulan/hari. |
-| `created_at` | `timestamp` | Ya | Waktu baris dibuat. |
-| `updated_at` | `timestamp` | Ya | Waktu baris terakhir diperbarui. |
-
-**Kunci dan hubungan:**
-
-- Primary key: `id`.
-- FK `user_id` → `user.id`; saat induk dihapus: **CASCADE**.
-- Indeks nonunik: `user_id`.
 
 #### Tabel `preferensi_notifikasi` — Pilihan pengingat per akun
 
@@ -3742,7 +3647,7 @@ Berikut **68 route aplikasi** hasil route:list --except-vendor. Setiap baris men
 | MuzakkiController::showMaal | Tidak dipakai route maal aktif dan tidak menyiapkan variabel yang dibutuhkan view baru. |
 | Penyaluran::getStatusAttribute | Accessor lama dapat menutupi kolom status; status selesai di alur aktif dibaca dengan Query Builder. |
 | TransaksiZakat::getBuktiPembayaranAttribute | qr_payload aktif berisi token terenkripsi, bukan path foto bukti transfer lama. |
-| Tabel mustahik dan pemberi_zakat_* lama tetap ada | Struktur tersedia, tetapi tidak ada CRUD individu/profil tersebut melalui route aktif. |
+| Tabel mustahik tetap ada | Struktur tersedia, tetapi belum ada CRUD penerima per orang; dua tabel profil pemberi lama telah dihapus. |
 | Nama jenis zakat SQL memakai mal; UI menulis maal | Keduanya merujuk jenis yang sama; pencarian SQL harus mengikuti nilai source. |
 | email_bukti_penyaluran hanya preferensi | Pengiriman email bukti belum diimplementasikan; pengingat/penyelesaian yang ada berupa notifikasi dalam aplikasi. |
 | tanggal_kedaluwarsa lot tersedia | FIFO aktif mengurutkan tanggal_masuk dan ID; keberadaan kolom kedaluwarsa tidak berarti otomatis FEFO atau otomatis menolak semua lot lewat kedaluwarsa. |

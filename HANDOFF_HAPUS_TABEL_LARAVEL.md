@@ -1,5 +1,7 @@
 # Handout admin/root database — selesai
 
+> **Pembaruan berikutnya:** cleanup profil pemberi pada batch 7 telah menghapus dua tabel lama tambahan. Skema aktif kini **33 tabel, 373 kolom, 53 FK, 2 CHECK JSON**; `mustahik` tetap dipertahankan. Catatan 35/393/55 di bawah adalah hasil historis batch 6. Lihat [catatan batch 7](%21wajib_baca.md#18-penghapusan-dua-tabel-profil-pemberi-lama-9-oktober-2026).
+
 ## Status pelaksanaan — 9 Oktober 2026 (WIB)
 
 **Selesai.** Migration `2026_10_09_071031_remove_unused_framework_tables` dijalankan sebagai pemilik aplikasi `keli` dan tercatat **Ran, batch 6**, pada pukul 14.24 WIB. Tujuh tabel kosong yang dihapus: `sessions`, `password_reset_tokens`, `cache`, `cache_locks`, `jobs`, `job_batches`, dan `failed_jobs`.
