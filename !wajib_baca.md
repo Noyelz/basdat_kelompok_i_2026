@@ -1147,3 +1147,18 @@ Fitur Delete lainnya: tambah jenis beras tanpa menerima stok lalu hapus; simpan 
 - [ ] Pengujian otomatis dan pemeriksaan tampilan melalui browser belum dijalankan untuk perubahan ini.
 
 **Pemulihan:** gunakan git revert terhadap commit teks di repository utama, lalu salin kembali file yang diperlukan ke folder GitHub. Dokumentasi teknis tetap menyebut mode simulasi dan keterbatasan pembayaran agar kemampuan aplikasi tercatat dengan benar.
+
+
+## 17. Persiapan penghapusan tabel infrastruktur Laravel (9 Oktober 2026)
+
+Pengguna meminta penghapusan tujuh tabel yang tidak dipakai: `sessions`, `password_reset_tokens`, `cache`, `cache_locks`, `jobs`, `job_batches`, dan `failed_jobs`. Seluruhnya kosong dan tidak menerima FK dari tabel lain. `migrations` dan seluruh 34 tabel domain tetap dipertahankan.
+
+- [x] Membuat backup lengkap di luar repository: `/var/tmp/basdatkeli-backups/zakat_db-before-framework-cleanup-20261009-071030.sql`, izin 0600, 94.385 byte; memuat seluruh 42 tabel.
+- [x] Menyesuaikan default konfigurasi dan `.env.example`: session file, cache file, queue sync, failed-job storage null. `.env` lokal tidak diubah. Laravel Boost tetap memakai layanan cache dengan store file.
+- [x] Membuat migration `2026_10_09_071031_remove_unused_framework_tables.php`; memeriksa driver dan seluruh tabel sebelum DROP pertama. Rollback membuat tabel kosong, bukan memulihkan data. Migration lama tetap dipertahankan.
+- [x] Pengujian cleanup/rollback dan regresi checkout lulus: 16 test, 138 assertion pada SQLite :memory: terpisah. Pint lulus; perubahan controller/test checkout milik pengguna tidak disentuh.
+- [x] Memeriksa SQL lewat --pretend dan mencoba menerapkan hanya migration cleanup.
+- [ ] Penghapusan pada MySQL aktif **belum berhasil**: akun database `'keli'@'%'` tidak memiliki izin DROP dan ditolak pada tabel sessions, sebelum tabel mana pun dihapus. Migration masih Pending; skema tetap 42 tabel, 432 kolom, 55 FK, dan 2 CHECK JSON. Jumlah baris semua tabel tetap sama setelah percobaan gagal.
+- [x] Menyiapkan [handout prompt untuk admin/root database](HANDOFF_HAPUS_TABEL_LARAVEL.md), termasuk izin DROP sementara khusus tujuh tabel, migration, pencabutan izin, verifikasi, dan pembaruan ERD setelah berhasil.
+
+Target setelah admin menyelesaikan migration: **35 tabel, 393 kolom, 55 FK, dan 2 CHECK JSON**. ERD/kamus aktif tetap menampilkan 42 tabel sampai penghapusan benar-benar berhasil. Backup berisi data aplikasi; jangan memasukkannya ke Git.

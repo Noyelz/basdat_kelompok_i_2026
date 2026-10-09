@@ -4,7 +4,7 @@ Dokumentasi pembelajaran berbahasa Indonesia, diperiksa pada **9 Oktober 2026 (W
 
 Sumber utama adalah **kode di workspace saat dokumen dibuat**, daftar route yang benar-benar terdaftar, serta metadata database aktif melalui Laravel Boost. Kamus kolom dari panduan proyek yang sudah ada dicocokkan ulang: **42 tabel, 432 kolom, 55 foreign key**, tanpa perbedaan nama kolom, tipe, nullable, atau FK. Paket terpasang yang relevan: **Laravel 13.32.0** dan **endroid/qr-code 5.1.0**. Versi rentang pada `composer.json` bukan selalu versi terpasang.
 
-Dokumen memuat 17 controller (termasuk class dasar bawaan), 12 model, 4 command aplikasi, 1 middleware khusus, 1 provider yang disesuaikan, 11 migration, 2 seeder, 1 factory, dan 29 template Blade. File bawaan Laravel yang belum mempunyai logika bisnis cukup ditandai sebagai bawaan. Kode di `vendor/`, `node_modules/`, hasil kompilasi/cache, dan isi paket tidak diuraikan ulang. Gambar adalah aset, bukan kode PHP/JavaScript.
+Dokumen memuat 17 controller (termasuk class dasar bawaan), 12 model, 4 command aplikasi, 1 middleware khusus, 1 provider yang disesuaikan, 12 file migration (11 sudah diterapkan, 1 masih pending), 2 seeder, 1 factory, dan 29 template Blade. File bawaan Laravel yang belum mempunyai logika bisnis cukup ditandai sebagai bawaan. Kode di `vendor/`, `node_modules/`, hasil kompilasi/cache, dan isi paket tidak diuraikan ulang. Gambar adalah aset, bukan kode PHP/JavaScript.
 
 **Penting untuk memahami implementasi saat ini:** QR pembayaran hanya mencatat **simulasi**, belum menerima uang atau berkomunikasi dengan payment gateway. Teks UI “pembayaran tercatat” berasal dari status `simulated_paid`. Model/halaman lama tetap diterangkan dan ditandai agar tidak dianggap sebagai fitur aktif.
 
@@ -1306,7 +1306,7 @@ Migration adalah **kode pembentuk struktur**, bukan tempat transaksi pengguna. `
 
 **Mengapa di `database/migrations/`:** Laravel mendeteksi resep skema di folder ini. Migration adalah lapisan database pendukung MVC, bukan Model. Menambahkan class model tidak membuat tabel; menjalankan migration yang membuat/mengubah tabel.
 
-Pada dokumentasi ini **tidak ada database, tabel, atau migration baru yang dibuat**. Istilah “database baru” di sini merujuk desain operasional `zakat_db` yang sudah dipakai proyek.
+Pembuatan awal dokumentasi tidak mengubah database. Pada 9 Oktober 2026 ditambahkan migration penghapusan tujuh tabel infrastruktur atas permintaan pengguna. Migration tersebut **masih pending** karena akun MySQL aplikasi tidak memiliki izin DROP; skema aktif masih 42 tabel. Istilah “database baru” merujuk desain operasional `zakat_db` yang sudah dipakai proyek.
 
 ### `database/migrations/0001_01_01_000000_create_users_table.php`
 
@@ -1520,6 +1520,30 @@ Schema::table('yayasan', function (Blueprint $table) {
 Penambahan kolom cukup untuk memisahkan pengajuan dan persetujuan; tidak perlu database atau tabel baru.
 
 **Pembalikan:** `down()` menghapus tabel/kolom yang dibuat oleh file ini. Mengembalikan skema tidak otomatis memulihkan data yang terhapus.
+
+### `database/migrations/2026_10_09_071031_remove_unused_framework_tables.php`
+
+**Jenis:** migration khusus proyek, pendukung lapisan database/MVC. **Tujuan:** menghapus `sessions`, `password_reset_tokens`, `cache`, `cache_locks`, `jobs`, `job_batches`, dan `failed_jobs` karena tidak dipakai konfigurasi saat ini. Tabel `migrations` dan seluruh 34 tabel domain dipertahankan. File migration lama tetap ada agar riwayat dan urutan instalasi konsisten.
+
+**Arah:** Artisan → pemeriksaan konfigurasi dan isi semua tabel → penghapusan tujuh tabel. Ini operasi skema oleh pengembang, bukan CRUD halaman pengguna.
+
+**Cuplikan asli — pemeriksaan data sebelum penghapusan:**
+
+```php
+foreach ($this->tables as $table) {
+    if (Schema::hasTable($table) && DB::table($table)->exists()) {
+        throw new RuntimeException("Tabel {$table} masih berisi data; tidak ada tabel yang dihapus.");
+    }
+}
+
+foreach ($this->tables as $table) {
+    Schema::dropIfExists($table);
+}
+```
+
+Seluruh tabel diperiksa sebelum DROP pertama agar tabel berisi data menghentikan proses tanpa penghapusan sebagian. `up()` juga menolak session/cache/queue berbasis database, queue failover, dan penyimpanan failed jobs berbasis database. `down()` membuat kembali struktur tujuh tabel kosong beserta indeksnya; isi data hanya dapat dipulihkan dari cadangan.
+
+**Status aktual:** percobaan penerapan ditolak pada DROP pertama karena izin MySQL. Tidak ada tabel terhapus dan migration belum tercatat sebagai Ran. Jika berhasil diterapkan kemudian, skema menjadi **35 tabel, 393 kolom, 55 FK, dan 2 CHECK JSON**. Instruksi admin tersedia di [HANDOFF_HAPUS_TABEL_LARAVEL.md](HANDOFF_HAPUS_TABEL_LARAVEL.md).
 
 ### `database/seeders/DatabaseSeeder.php`
 
@@ -2301,13 +2325,13 @@ Tidak semua aset yang tersedia harus dipanggil template. Foto panti, faktur dan 
 | [config/app.php](config/app.php) | Nama, environment, debug, URL, timezone UTC, locale, key enkripsi, maintenance | Nama Portal Zakat dan APP_URL untuk tautan/QR; APP_KEY dipakai mengenkripsi token. |
 | [config/auth.php](config/auth.php) | Guard session web, provider Eloquent User, reset broker | Nama provider users tidak berarti tabel harus users; model User menentukan tabel user. Konfigurasi reset bukan bukti route lupa password sudah ada. |
 | [config/database.php](config/database.php) | Koneksi SQLite/MySQL/MariaDB/PostgreSQL/SQL Server dan Redis | Default fallback source adalah sqlite, tetapi environment aktif yang diperiksa memilih mysql menuju zakat_db. Tidak semua driver yang tersedia dipakai. |
-| [config/cache.php](config/cache.php) | Store cache dan lock serta prefix | Default source database, dapat dioverride env. Cache sementara tidak sama dengan stok/history bisnis. |
+| [config/cache.php](config/cache.php) | Store cache dan lock serta prefix | Default source file, dapat dioverride env. Cache dan lock memakai filesystem, termasuk lock scheduler/harga emas dan cache Laravel Boost; tidak memerlukan tabel cache. |
 | [config/filesystems.php](config/filesystems.php) | Disk local/private, public, S3 dan link storage | Disk local berakar storage/app/private, dipakai foto/faktur; public berakar storage/app/public. storage:link hanya untuk public, tidak membuat bukti privat menjadi publik. |
 | [config/logging.php](config/logging.php) | Channel log, level, tujuan/rotasi | Tempat error aplikasi dicatat, terpisah dari audit_log bisnis dan journal systemd/MariaDB. |
 | [config/mail.php](config/mail.php) | Driver dan koneksi pengiriman email | Default source log; belum ada kode pengiriman bukti aktif walaupun kolom preferensi tersedia. |
-| [config/queue.php](config/queue.php) | Backend antrean, retry, batches, failed jobs | Default source database; worker diperlukan untuk pekerjaan queue, tetapi operasi checkout utama sekarang langsung dalam request. |
+| [config/queue.php](config/queue.php) | Backend antrean, retry, batches, failed jobs | Default source sync: pekerjaan dijalankan langsung. queue.failed.driver default null sehingga failed_jobs tidak dipakai. Konfigurasi batching tersedia sebagai bawaan, tetapi aplikasi tidak memakai job batch. |
 | [config/services.php](config/services.php) | Konfigurasi gold_price buatan proyek dan kredensial layanan skeleton | URL Gold API/Frankfurter, enabled, jadwal 09.30 WIB, timezone, max_age_days=7. Dipakai SyncGoldPrice dan MaalCheckoutController. Tidak ada callback payment gateway aktif. |
-| [config/session.php](config/session.php) | Driver session, umur, cookie, domain, secure, same-site | Mengatur sesi login komputer/HP. Sesi HP terpisah; QR publik sengaja tidak memerlukan sesi akun. |
+| [config/session.php](config/session.php) | Driver session, umur, cookie, domain, secure, same-site | Default source file; sesi login disimpan di storage/framework/sessions. Sesi HP terpisah; QR publik sengaja tidak memerlukan sesi akun. |
 
 File `.env` lokal memasok environment yang dibaca config; tidak dimasukkan Git dan isinya tidak disalin ke panduan. Config yang di-cache dapat membuat edit env belum terasa sampai cache diperbarui. APP_KEY jangan diganti sembarang pada database dengan token terenkripsi: token lama memerlukan key yang sesuai.
 
@@ -2344,8 +2368,10 @@ File `.env` lokal memasok environment yang dibaca config; tidak dimasukkan Git d
 | [tests/TestCase.php](tests/TestCase.php) | Class dasar test aplikasi | Mewarisi test case Laravel, belum menambah helper khusus. |
 | [tests/Feature/ExampleTest.php](tests/Feature/ExampleTest.php) | test_the_application_returns_a_successful_response | Meminta GET / lalu assert HTTP 200. Tidak membuktikan checkout, reservasi, role, pengiriman atau bukti bekerja. |
 | [tests/Unit/ExampleTest.php](tests/Unit/ExampleTest.php) | test_that_true_is_true | Contoh assertTrue(true), bukan pengujian rumus bisnis. |
+| [tests/Feature/FitrahCheckoutControllerTest.php](tests/Feature/FitrahCheckoutControllerTest.php) | Pengujian checkout | Memeriksa batas kapasitas, pesanan/reservasi yang berhasil, dan penolakan pilihan yang tidak tersedia. |
+| [tests/Feature/RemoveUnusedFrameworkTablesTest.php](tests/Feature/RemoveUnusedFrameworkTablesTest.php) | Pengujian cleanup dan rollback | Memastikan akun/data bisnis serta riwayat migration tetap ada, rollback membuat tabel kosong, dan data/driver database menghentikan seluruh penghapusan. |
 
-Panduan ini tidak menjalankan test aplikasi atau membuat data uji. Pemeriksaan dokumentasi hanya memastikan inventaris/cakupan, tautan dan sintaks diagram konsisten.
+Pembuatan awal panduan hanya memeriksa dokumentasi. Saat menyiapkan penghapusan tabel, pengujian migration dan regresi checkout dijalankan pada SQLite :memory: terpisah dari MySQL aktif: **16 test, 138 assertion lulus**.
 
 ### 9.4 Potongan konfigurasi khusus yang menghubungkan fitur
 
@@ -3535,6 +3561,8 @@ Berisi pelaku opsional, aksi, tipe/ID objek, JSON detail dan IP. Pembayaran QR p
 - CHECK memeriksa bahwa kolom JSON berisi JSON yang sah; tidak membuktikan isi bisnis benar.
 
 ### 12.5 Infrastruktur Laravel
+
+**Status 9 Oktober 2026:** tujuh tabel selain `migrations` di bawah telah disiapkan untuk dihapus, tetapi masih ada pada database aktif karena izin DROP belum tersedia. Kamus ini tetap menggambarkan skema aktual. Laravel Boost tidak membutuhkan tabel tersebut; cache mengikuti driver file aplikasi.
 
 #### Tabel `migrations` — Riwayat migration yang sudah dijalankan
 

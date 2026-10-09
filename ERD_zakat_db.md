@@ -4,6 +4,8 @@ Snapshot skema **8 Oktober 2026 (WIB)**. Sumbernya adalah metadata database MySQ
 
 Dokumen ini dibuat dengan pembacaan skema dan metadata saja. Nama kolom seperti `pass_hash`, `token`, atau `no_rek` merupakan definisi skema; tidak ada kata sandi, hash milik pengguna, nomor rekening, maupun baris data transaksi yang disalin ke dokumentasi.
 
+> **Status 9 Oktober 2026:** penghapusan tujuh tabel infrastruktur telah disiapkan, tetapi belum diterapkan karena izin DROP tidak tersedia. Diagram masih menampilkan seluruh 42 tabel yang benar-benar ada. Setelah migration berhasil, ERD perlu diperbarui menjadi 35 tabel dan 393 kolom. [Instruksi admin](HANDOFF_HAPUS_TABEL_LARAVEL.md).
+
 ## Memilih diagram
 
 | Kebutuhan | Diagram |

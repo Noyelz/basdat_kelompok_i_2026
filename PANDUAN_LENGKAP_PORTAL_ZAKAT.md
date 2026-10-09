@@ -10,6 +10,8 @@
 >
 > Beberapa file tampilan sedang memiliki perubahan lokal saat panduan dibuat. Penjelasan memakai isi yang terbaca di workspace; keberadaan kode bukan bukti bahwa seluruh skenario sudah diuji.
 
+> **Penghapusan tabel infrastruktur — 9 Oktober 2026:** migration baru telah disiapkan untuk menghapus tujuh tabel Laravel yang tidak dipakai, tetapi masih pending karena akun database tidak memiliki izin DROP. Skema aktif tetap 42 tabel dan 432 kolom. Setelah penerapan berhasil: 35 tabel dan 393 kolom; seluruh 55 FK domain tetap ada. Lihat [handout admin database](HANDOFF_HAPUS_TABEL_LARAVEL.md).
+
 ## Daftar isi
 
 1. [Cara membaca dan istilah dasar](#1-cara-membaca-dan-istilah-dasar)
@@ -2179,6 +2181,7 @@ Nama file berawalan waktu menentukan urutan. Tabel yang menjadi induk harus dibu
 | [2026_09_27_124232_create_notification_preferences_table.php](database/migrations/2026_09_27_124232_create_notification_preferences_table.php) | `preferensi_notifikasi` | Membuat preferensi_notifikasi satu baris per user dengan tiga boolean. |
 | [2026_10_08_082353_add_api_source_fields_to_harga_emas.php](database/migrations/2026_10_08_082353_add_api_source_fields_to_harga_emas.php) | `harga_emas` | Menambah delapan kolom metadata API emas/kurs dan indeks unik tanggal sinkronisasi. Riwayat lama tetap ada dan bertipe manual. down menghapus metadata tambahan, bukan nominal/snapshot transaksi. |
 | [2026_10_08_090750_add_proposed_capacity_to_yayasan.php](database/migrations/2026_10_08_090750_add_proposed_capacity_to_yayasan.php) | `yayasan` | Menambah kapasitas_diajukan_kg nullable untuk pengajuan kapasitas beras PJ, terpisah dari kapasitas_penerimaan_kg panitia. down menghapus kolom dan isi pengajuannya. |
+| [2026_10_09_071031_remove_unused_framework_tables.php](database/migrations/2026_10_09_071031_remove_unused_framework_tables.php) | Tujuh tabel infrastruktur selain migrations | Memeriksa driver dan seluruh isi tabel sebelum DROP; down membuat kembali tabel kosong. Pending: penerapan ditolak karena akun MySQL tidak memiliki izin DROP. |
 
 ### 11.2 Data awal dan data contoh
 
@@ -2497,13 +2500,13 @@ Beberapa template memakai Bootstrap/jQuery dari CDN. Tampilan login/register jug
 | [config/app.php](config/app.php) | Nama, environment, debug, URL, timezone UTC, locale, key enkripsi, maintenance | Nama Portal Zakat dan APP_URL untuk tautan/QR; APP_KEY dipakai mengenkripsi token. |
 | [config/auth.php](config/auth.php) | Guard session web, provider Eloquent User, reset broker | Nama provider users tidak berarti tabel harus users; model User menentukan tabel user. Konfigurasi reset bukan bukti route lupa password sudah ada. |
 | [config/database.php](config/database.php) | Koneksi SQLite/MySQL/MariaDB/PostgreSQL/SQL Server dan Redis | Default fallback source adalah sqlite, tetapi environment aktif yang diperiksa memilih mysql menuju zakat_db. Tidak semua driver yang tersedia dipakai. |
-| [config/cache.php](config/cache.php) | Store cache dan lock serta prefix | Default source database, dapat dioverride env. Cache sementara tidak sama dengan stok/history bisnis. |
+| [config/cache.php](config/cache.php) | Store cache dan lock serta prefix | Default source file, dapat dioverride env. Cache/lock memakai filesystem, termasuk kebutuhan scheduler dan Laravel Boost. |
 | [config/filesystems.php](config/filesystems.php) | Disk local/private, public, S3 dan link storage | Disk local berakar storage/app/private, dipakai foto/faktur; public berakar storage/app/public. storage:link hanya untuk public, tidak membuat bukti privat menjadi publik. |
 | [config/logging.php](config/logging.php) | Channel log, level, tujuan/rotasi | Tempat error aplikasi dicatat, terpisah dari audit_log bisnis dan journal systemd/MariaDB. |
 | [config/mail.php](config/mail.php) | Driver dan koneksi pengiriman email | Default source log; belum ada kode pengiriman bukti aktif walaupun kolom preferensi tersedia. |
-| [config/queue.php](config/queue.php) | Backend antrean, retry, batches, failed jobs | Default source database; worker diperlukan untuk pekerjaan queue, tetapi operasi checkout utama sekarang langsung dalam request. |
+| [config/queue.php](config/queue.php) | Backend antrean, retry, batches, failed jobs | Default source sync; pekerjaan dijalankan langsung, dan penyimpanan failed jobs default null. Batching tidak digunakan aplikasi. |
 | [config/services.php](config/services.php) | Kredensial/opsi layanan pihak ketiga yang disediakan kerangka | Bukan implementasi payment gateway. Tidak ada Tripay callback aktif dalam route. |
-| [config/session.php](config/session.php) | Driver session, umur, cookie, domain, secure, same-site | Mengatur sesi login komputer/HP. Sesi HP terpisah; QR publik sengaja tidak memerlukan sesi akun. |
+| [config/session.php](config/session.php) | Driver session, umur, cookie, domain, secure, same-site | Default source file; sesi login disimpan di storage/framework/sessions. Sesi HP terpisah; QR publik sengaja tidak memerlukan sesi akun. |
 
 File `.env` lokal memasok environment yang dibaca config; tidak dimasukkan Git dan isinya tidak disalin ke panduan. Config yang di-cache dapat membuat edit env belum terasa sampai cache diperbarui. APP_KEY jangan diganti sembarang pada database dengan token terenkripsi: token lama memerlukan key yang sesuai.
 
