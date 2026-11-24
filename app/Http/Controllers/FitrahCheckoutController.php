@@ -87,7 +87,9 @@ class FitrahCheckoutController extends Controller
 
         $id = DB::transaction(function () use ($request, $data): int {
             $produk = DB::table('katalog_beras')->where('id', $data['katalog_beras_id'])->lockForUpdate()->first();
-            abort_unless($produk && $produk->is_active, 422, 'Beras tidak tersedia.');
+            if (! $produk || ! $produk->is_active) {
+                throw ValidationException::withMessages(['katalog_beras_id' => 'Beras tidak tersedia. Pilih jenis beras lain.']);
+            }
 
             $tujuan = DB::table('yayasan')
                 ->join('wilayah_layanan', 'wilayah_layanan.id', '=', 'yayasan.wilayah_layanan_id')
@@ -100,7 +102,9 @@ class FitrahCheckoutController extends Controller
                 ->where('wilayah_layanan.is_active', true)
                 ->where('wilayah_layanan.batas_checkout_at', '>', now())
                 ->first(['yayasan.id', 'yayasan.jarak_jalan_km', 'yayasan.kapasitas_penerimaan_kg', 'wilayah_layanan.id as wilayah_id']);
-            abort_unless($tujuan, 422, 'Panti belum dapat menerima pesanan fitrah.');
+            if (! $tujuan) {
+                throw ValidationException::withMessages(['yayasan_id' => 'Panti belum dapat menerima pesanan fitrah. Pilih panti lain.']);
+            }
 
             $tarif = DB::table('tarif_pengiriman')
                 ->where('wilayah_layanan_id', $tujuan->wilayah_id)
@@ -110,7 +114,9 @@ class FitrahCheckoutController extends Controller
                 })
                 ->latest('id')
                 ->first();
-            abort_unless($tarif, 422, 'Tarif pengiriman wilayah belum tersedia.');
+            if (! $tarif) {
+                throw ValidationException::withMessages(['yayasan_id' => 'Tarif pengiriman wilayah panti belum tersedia. Pilih panti lain atau hubungi panitia.']);
+            }
 
             $pengaturan = DB::table('pengaturan_operasional')
                 ->whereIn('kunci', ['bobot_fitrah_per_jiwa_kg', 'persen_keuntungan_beras', 'biaya_admin_rupiah'])
@@ -118,7 +124,15 @@ class FitrahCheckoutController extends Controller
             abort_unless($pengaturan->count() === 3, 503, 'Pengaturan harga belum lengkap.');
 
             $berat = bcmul((string) $data['jumlah_jiwa'], $pengaturan['bobot_fitrah_per_jiwa_kg'], 2);
-            abort_if(bccomp($berat, $tujuan->kapasitas_penerimaan_kg, 2) > 0, 422, 'Jumlah beras pesanan melebihi kapasitas penerimaan panti per kunjungan.');
+            if (bccomp($berat, $tujuan->kapasitas_penerimaan_kg, 2) > 0) {
+                $kapasitas = number_format((float) $tujuan->kapasitas_penerimaan_kg, 2, ',', '.');
+                $kebutuhan = number_format((float) $berat, 2, ',', '.');
+                $maksimalJiwa = (int) bcdiv($tujuan->kapasitas_penerimaan_kg, $pengaturan['bobot_fitrah_per_jiwa_kg'], 0);
+
+                throw ValidationException::withMessages([
+                    'jumlah_jiwa' => "Pesanan membutuhkan {$kebutuhan} kg beras, sedangkan kapasitas panti hanya {$kapasitas} kg per kunjungan. Kurangi jumlah jiwa menjadi maksimal {$maksimalJiwa} atau pilih panti lain.",
+                ]);
+            }
             $sisa = $berat;
             $pokokEmpatDesimal = '0';
             $alokasiLot = [];

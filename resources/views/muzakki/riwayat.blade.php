@@ -1,7 +1,19 @@
 @extends('muzakki.layout')
 
+<style>
+    .riwayat-title {
+        margin-bottom: 20px;
+        color: #325c1c;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+    }
+</style>
+
 @section('content')
-<h1 class="h3 mb-3">Riwayat zakat saya</h1>
+<h1 class="riwayat-title">Riwayat zakat saya</h1>
 <p class="text-muted">Status pembayaran dan penyaluran ditampilkan terpisah. Buka rincian pesanan untuk melihat perkembangannya.</p>
 <div class="card border-0 shadow-sm"><div class="card-body">
     <div class="table-responsive"><table class="table table-hover align-middle">

@@ -1,7 +1,19 @@
 @extends('panitia.layout')
 
+<style>
+    .h3-title {
+        margin-bottom: 10px;
+        color: #325c1c;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+    }
+</style>
+
 @section('content')
-<h1 class="h3 mb-2">Vendor & gudang Surabaya</h1>
+<h1 class="h3-title">Vendor & gudang Surabaya</h1>
 <p class="text-muted mb-4">Setiap penerimaan beras membuat lot dengan harga beli tetap. Stok tersedia adalah stok gudang dikurangi pesanan yang masih reservasi.</p>
 
 <div class="row g-4 mb-4">

@@ -1,8 +1,28 @@
 @extends('muzakki.layout')
 
+<style>
+    .maal-title {
+        margin-bottom: 20px;
+        color: #325c1c;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+    }
+    .h5-title {
+        color: #325c1c;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-size: 25px;
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+    }
+</style>
+
 @section('content')
 <div class="row justify-content-center"><div class="col-lg-10">
-    <h1 class="h3 mb-2">Kalkulator zakat maal keluarga</h1>
+    <h1 class="maal-title">Kalkulator zakat maal keluarga</h1>
     <p class="text-muted">Harta setiap pemilik dihitung sendiri terhadap nisab dan pernyataan haul. Satu akun dapat membayar jumlah kewajiban yang dihasilkan bersama.</p>
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -37,7 +57,7 @@
             <div id="daftar-subjek">
                 @foreach ($subjekAwal as $nomor => $subjek)
                     <section class="card border-0 shadow-sm mb-3 subjek-card"><div class="card-body">
-                        <h2 class="h5">Pemilik harta {{ $loop->iteration }}</h2>
+                        <h2 class="h5-title">Pemilik harta {{ $loop->iteration }}</h2>
                         <div class="row g-3">
                             <div class="col-md-4"><label class="form-label">Hubungan</label><select name="subjek[{{ $nomor }}][hubungan]" class="form-select" required><option value="diri" @selected(($subjek['hubungan'] ?? '') === 'diri')>Diri sendiri</option><option value="istri" @selected(($subjek['hubungan'] ?? '') === 'istri')>Istri</option><option value="anak" @selected(($subjek['hubungan'] ?? '') === 'anak')>Anak</option></select></div>
                             <div class="col-md-4"><label class="form-label">Nama tampilan</label><input name="subjek[{{ $nomor }}][nama_tampilan]" class="form-control" value="{{ $subjek['nama_tampilan'] ?? 'Hamba Allah' }}" maxlength="255"></div>
@@ -57,7 +77,7 @@
             <button type="button" id="tambah-subjek" class="btn btn-outline-primary mb-4">Tambah istri / anak</button>
             <div class="card border-0 shadow-sm mb-4"><div class="card-body">
                 <fieldset>
-                    <legend class="h5">Panti tujuan</legend>
+                    <legend class="h5-title">Panti tujuan</legend>
                     <p class="small text-muted">Panti terverifikasi dapat dipilih langsung atau sistem memilih acak dari panti layak yang belum menerima maal. Bila semuanya pernah menerima, pilihan tetap diacak.</p>
                     <div class="choice-grid mb-3">
                         <label class="choice-card">

@@ -1,7 +1,19 @@
 @extends('panitia.layout')
 
+<style>
+    .h3-title {
+        margin-bottom: 10px;
+        color: #325c1c;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+    }
+</style>
+
 @section('content')
-<h1 class="h3 mb-2">Panti & verifikasi</h1>
+<h1 class="h3-title">Panti & verifikasi</h1>
 <p class="text-muted">Periksa izin, foto, penerima yang layak, dan jarak jalan dari gudang Surabaya sebelum menerima panti.</p>
 
 @forelse ($panti as $item)

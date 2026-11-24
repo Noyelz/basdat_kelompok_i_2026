@@ -6,12 +6,78 @@
     <meta name="description" content="Pelajari perhitungan zakat fitrah dan maal, rincian biaya, serta alur penyaluran di Portal Zakat.">
     <title>Beranda · Portal Zakat</title>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <style>
+        .landing-hero {
+            background-image: linear-gradient( rgba(249, 248, 240, 0.60), rgba(249, 248, 240, 0.60)),
+                url('{{ asset('images/masjid_1.jpg') }}');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            padding-left: max(24px, calc((100vw - 1200px) / 2));
+            padding-right: max(24px, calc((100vw - 1200px) / 2));
+        }
+        .landing-section {
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            padding-left: max(24px, calc((100vw - 1200px) / 2));
+            padding-right: max(24px, calc((100vw - 1200px) / 2));
+        }
+        .landing-section:nth-of-type(3),
+        .landing-section:nth-of-type(5) {
+            background: #325c1c;
+        }
+        .landing-section {
+            padding-top: 70px;
+            padding-bottom: 70px;
+        }
+        .landing-section:nth-of-type(3) h2,
+        .landing-section:nth-of-type(5) h2,
+        .landing-section:nth-of-type(5) h3 {
+            color: #ffc933;
+        }
+        .landing-section:nth-of-type(3) p,
+        .landing-section:nth-of-type(5) p,
+        .landing-section:nth-of-type(5) span {
+            color: #fff3d2;
+        }
+        .landing-section:nth-of-type(5) h4 {
+            color: #325c1c;
+        }
+        .landing-info {
+            background-image: linear-gradient( rgba(249, 248, 240, 0.75), rgba(249, 248, 240, 0.75)),
+                url('{{ asset('images/zakat_2.jpg') }}');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            padding-left: max(24px, calc((100vw - 1200px) / 2));
+            padding-right: max(24px, calc((100vw - 1200px) / 2));
+        }
+        .landing-main {
+            margin-bottom: 0;
+        }
+    </style>
 </head>
 <body>
     <header class="app-navbar">
         <div class="navbar-container">
             <a class="brand-wrapper" href="{{ route('landing') }}">
-                <span class="brand-icon" aria-hidden="true">PZ</span>
+                <span class="brand-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor">
+                    <path d="M9 25 L13 19 L17 25 V51 H9 Z"/>
+                    <path d="M10 19 L13 15 L16 19 Z"/>
+                    <path d="M47 25 L51 19 L55 25 V51 H47 Z"/>
+                    <path d="M48 19 L51 15 L54 19 Z"/>
+                    <path d="M16 31 L32 22 L48 31 V51 H16 Z"/>
+                    <path d="M22 30 A10 10 0 0 1 42 30 Z"/>
+                    <rect x="31" y="17" width="2" height="5" fill="#FFC933"/>
+                    <circle cx="32" cy="16" r="2" fill="#FFC933"/>
+                    <path d="M26 51 V39 A6 6 0 0 1 38 39 V51 Z" fill="#fffdf5"/>
+                    <rect x="5" y="51" width="54" height="3" rx="1.5" fill="#FFC933"/>
+                </svg>
+            </span>
                 <span><strong class="brand-text">Portal Zakat</strong></span>
             </a>
             <nav class="landing-nav" aria-label="Navigasi utama">
@@ -64,9 +130,9 @@
         <section id="cara-kerja" class="landing-section" aria-labelledby="cara-kerja-title">
             <div class="landing-heading"><div><p class="landing-eyebrow">Alur layanan</p><h2 id="cara-kerja-title">Cara kerja</h2></div></div>
             <div class="landing-grid landing-grid-three">
-                <article class="landing-card"><span class="landing-step">01</span><h3>Hitung & pilih</h3><p>Hitung kebutuhan fitrah atau kewajiban maal per pemilik harta, lalu pilih panti yang terverifikasi.</p></article>
-                <article class="landing-card"><span class="landing-step">02</span><h3>Tinjau rincian</h3><p>Periksa jumlah beras atau maal dan rincian biaya, lalu buka QR untuk mencatat konfirmasi pesanan.</p></article>
-                <article class="landing-card"><span class="landing-step">03</span><h3>Ikuti penyaluran</h3><p>Panitia mengalokasikan pesanan secara terpisah. Status selesai dicatat setelah bukti panitia dan panti sesuai.</p></article>
+                <article class="landing-card"><span class="landing-step">01</span><h3>Hitung & pilih</h3><span>Hitung kebutuhan fitrah atau kewajiban maal per pemilik harta, lalu pilih panti yang terverifikasi.</span></article>
+                <article class="landing-card"><span class="landing-step">02</span><h3>Tinjau rincian</h3><span>Periksa jumlah beras atau maal dan rincian biaya, lalu buka QR untuk mencatat konfirmasi pesanan.</span></article>
+                <article class="landing-card"><span class="landing-step">03</span><h3>Ikuti penyaluran</h3><span>Panitia mengalokasikan pesanan secara terpisah. Status selesai dicatat setelah bukti panitia dan panti sesuai.</span></article>
             </div>
         </section>
 
@@ -97,7 +163,7 @@
             <div class="landing-calc-box">
                 <label for="jumlah-jiwa">Jumlah jiwa</label>
                 <input id="jumlah-jiwa" class="app-form-control" type="number" min="1" max="100" value="1" inputmode="numeric">
-                <p>Perkiraan beras: <strong id="hasil-fitrah">{{ number_format((float) $bobotPerJiwa, 2, ',', '.') }} kg</strong></p>
+                <h4>Perkiraan beras: <strong id="hasil-fitrah">{{ number_format((float) $bobotPerJiwa, 2, ',', '.') }} kg</strong></h4>
                 @if (auth()->user()?->role === 'pemberi')
                     <a class="btn-app btn-app-primary" href="{{ route('muzakki.fitrah') }}">Lanjut ke fitrah</a>
                 @elseif (auth()->check())

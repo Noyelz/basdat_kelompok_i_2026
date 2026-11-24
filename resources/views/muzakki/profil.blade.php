@@ -1,12 +1,24 @@
 @extends('muzakki.layout')
 
+<style>
+    .profile-title {
+        margin-bottom: 20px;
+        color: #325c1c;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+    }
+</style>
+
 @section('content')
 <div class="row justify-content-center">
     <div class="col-lg-11">
         <!-- Header Halaman Profil -->
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <div>
-                <h3 class="fw-bold mb-1" style="color: var(--dark);">Profil Saya</h3>
+                <h3 class="profile-title">Profil Saya</h3>
                 <p class="text-muted mb-0">Kelola informasi data diri dan riwayat pembaruan akun Anda.</p>
             </div>
             <span class="badge px-3 py-2" style="background: var(--primary-light); color: var(--primary); font-size: 0.85rem; font-weight: 700; border-radius: var(--radius-md);">
